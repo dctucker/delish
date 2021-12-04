@@ -1,0 +1,70 @@
+#!/usr/bin/deli
+# repl-promote
+
+arg -y --yes = false
+
+include ghe-repl-lib
+ensure_replica
+check_for_config_run
+
+# Set true when the primary instance is not available via SSH.
+forced = false
+
+out "Warning: You are about to promote this Replica node"
+out "Promoting this Replica will tear down replication and enable maintenance mode on the current Primary."
+out "All other Replicas need to be re-setup to use this new Primary server."
+out ""
+if not --yes {
+  reply = prompt "Proceed with promoting this appliance to Primary? [y/N] "
+  if not $reply.match(/^[Yy]$/) {
+    exit 1
+  }
+}
+
+primary = primary_ssh /bin/true
+if not $primary {
+  err "Warning: Primary node is unavailable."
+  err "Warning: Performing hard failover without cleaning up on the primary side."
+  forced = true
+} else {
+  # stop writes on the primary
+  out "Enabling maintenance mode on the primary to prevent writes ..."
+  primary_ssh ghe-maintenance -s
+}
+
+set pipefail
+fun indent(str) {
+  out awk($str, '$0="  | "$0')
+}
+
+if exists("/etc/github/repl-running") {
+  actions = run ghe-config --true app.actions.enabled
+  if $actions {
+    out "Performing MSSQL failover ..."
+    if $forced {
+      promote = run& ghe-mssql-repl-promote -f
+    } else {
+      promote = run& ghe-mssql-repl-promote
+    }
+    out indent($promote.out)
+  }
+
+  out "Stopping replication ..."
+  if $forced {
+    stopping = run& ghe-repl-stop -c -f
+  } else {
+    stopping = run& ghe-repl-stop -c
+  }
+  out indent($stopping.out)
+}
+
+out "Switching out of replica mode ..."
+assert switching = redir 2>1 run ghe-repl-teardown --quick
+out indent($switching.out)
+
+out "Applying configuration and starting services ..."
+
+assert applying = redir 3>1 1>/dev/null 2>3 run ghe-single-config-apply
+out indent($applying.out)
+
+out "Success: Replica has been promoted to primary and is now accepting requests."

@@ -1,0 +1,13 @@
+#!/usr/bin/deli
+# redis-cli
+
+arg --local = 0
+arg --remote = 0
+
+port = 6380
+if --local or --remote {
+  port = 6379
+}
+
+run redis-cli -p $port $@
+

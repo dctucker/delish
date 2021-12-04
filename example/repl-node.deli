@@ -1,0 +1,76 @@
+#!/usr/bin/deli
+# repl-node
+
+arg -a --active = false
+arg -d --datacenter = ""
+arg    --default-datacenter = false
+arg -i --inactive = false
+arg -v --verbose = false
+
+env GHE_CLUSTER_FILE = "/etc/github/cluster"
+
+datacenter = --datacenter
+if --default-datacenter {
+  datacenter = "default"
+}
+if --datacenter or --default-datacenter {
+  set_datacenter = true
+}
+
+if exists($GHE_CLUSTER_FILE) {
+  err "This command is not available in legacy replication mode."
+  err "Please tear down and set up replication again to switch to Cluster replication."
+  exit 1
+}
+
+node = cat($GHE_CLUSTER_FILE)
+messages = ""
+
+if $set_datacenter {
+  run ghe-config "cluster.$node.datacenter" $datacenter
+  messages += "Datacenter is set to $datacenter for this node.\n"
+}
+
+if --active or --inactive {
+  replica = run ghe-config "cluster.$node.replica"
+  if $replica.out == "" {
+    err "Error: This command can only be run on a replica."
+    exit 1
+  }
+
+  if --active {
+    ran = run ghe-config --get-regexp "cluster.*.hostname"
+    for n in $ran.out.split(' ') {
+      blank   = run ghe-config --blank "cluster.$n.datacenter"
+      default = run ghe-config --eq    "cluster.$n.datacenter" "default"
+      if $blank or $default {
+        err "Error: Enabling an active replica requires that all nodes, including the primary and"
+        err "       any active or non-active replicas, have a non-default datacenter configured."
+        exit 1
+      }
+    }
+    label = "enabled"
+    value = true
+  } else {
+    value = false
+    label = "disabled"
+  }
+
+  run ghe-config "cluster.$node.active-replica-server" $value
+  run ghe-config "cluster.$node.memcache-server"       $value
+  messages += "Active replica mode is $label for this node.\n"
+}
+
+if $messages != "" {
+  if $SKIP_SYNC == "" {
+    run sudo env HA_CLUSTER=1 ghe-cluster-config-update
+  }
+  out $messages
+  out "To apply the change please run `ghe-config-apply`."
+  exit
+} else {
+  usage
+  exit 2
+}
+
+

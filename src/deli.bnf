@@ -1,0 +1,13 @@
+
+arg_stmt = "arg", white space, arg-names, white space, "=", white space, arg_default ;
+arg_names = ( arg_short_name, [ white space, arg_long_name ] ) | arg_long_name ;
+arg_short_name = "-", word ;
+arg_long_name = "--", word ;
+arg_default = literal ;
+literal = string | integer | constant ;
+string = double string | single string ;
+double string = '"', character, { character }, '"' ;
+single string = "'", character, { character }, "'" ;
+digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+integer = [ "-" ], digit, { digit } ;
+constant = "in" | "out" | "err" | "true" | "false" ;

@@ -1,0 +1,4 @@
+#!/usr/bin/deli
+
+arg -y --yes = false
+arg -n --no = true
