@@ -1,5 +1,9 @@
 #!/usr/bin/deli
 
-arg -y --yes = false
-arg -n --no = true
+arg    --yes = false
+arg -n       = true
 arg -v --verbose = false
+
+include "scriptlib.deli"
+functioncall
+#comment

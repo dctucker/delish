@@ -5,7 +5,7 @@ import deliast
 import strutils
 import std/tables
 import stacks
-#import sequtils
+import sequtils
 
 import pegs
 
@@ -18,29 +18,51 @@ let source = readFile(paramStr(1))
 
 #type Args = Table[string, string]
 
-let grammar = peg"""
-  script         <- ( \s* statement / \s* comment / \s* \n )*
+let grammar_source = """
+  script         <- ( \s* statement \n / \s* comment / \s* \n )+
   comment        <- '#' @ \n
-  statement      <- arg_stmt (comment)* \n
+  statement      <- (arg_stmt / include_stmt / function_stmt) (comment)*
+  function_stmt  <- (\w+)
+  include_stmt   <- "include" \s+ strliteral
   arg_stmt       <- "arg" \s+ arg_names \s* "=" \s+ arg_default
   arg_names      <- ( arg_name \s+ )+
   arg_name       <- ( arg_short_name / arg_long_name )
   arg_short_name <- "-" \w
   arg_long_name  <- "-" ("-" \w+)+
-  arg_default    <- { strliteral / integer / constant }
-  strliteral     <- '"' \w+ '"' / "'" \w+ "'"
+  arg_default    <- strliteral / integer / constant
+  strliteral     <- '"' @ '"' / "'" @ "'"
   integer        <- \d+
   constant       <- "true" / "false" / "in" / "out" / "err"
 """
 
-#if source =~ grammar:
-#  echo matches
+let symbol_names = grammar_source.splitLines().map(proc(x:string):string =
+  let split = x.splitWhitespace()
+  if split.len() > 0:
+    return split[0]
+).filter(proc(x:string):bool = x.len() > 0)
+
+let grammar = peg(grammar_source)
+
+#proc echoItems(p: Peg) =
+#  if p.len() == 0:
+#    return
+#  for item in p.items():
+#    echo item.kind, item
+#    echoItems(item)
+#echoItems(grammar)
+
 
 var stack_table = initTable[string, Stack[DeliNode]]()
-stack_table["arg_short_name"] = Stack[DeliNode]()
-stack_table["arg_long_name"] = Stack[DeliNode]()
-stack_table["arg_default"] = Stack[DeliNode]()
-stack_table["arg_stmt"] = Stack[DeliNode]()
+proc popOption(key: string): DeliNode =
+  if not stack_table[key].isEmpty():
+    return stack_table[key].pop()
+  return deliNone()
+
+
+for symbol in symbol_names:
+  stack_table[symbol] = Stack[DeliNode]()
+
+stack_table["script"].push(DeliNode(kind: dkClause))
 
 let parser = grammar.eventParser:
   pkNonTerminal:
@@ -49,23 +71,38 @@ let parser = grammar.eventParser:
         let matchStr = s.substr(start, start+length-1)
         echo "leave nt ", p, " at ", matchStr
 
-        case p.nt.name
+        let symbol = p.nt.name
+        var stack = addr stack_table[symbol]
+        case symbol
         of "arg_stmt":
-          let short = stack_table["arg_short_name"].pop()
-          let long = stack_table["arg_long_name"].pop()
+          var short = popOption("arg_short_name")
+          var long  = popOption("arg_long_name")
           let default = stack_table["arg_default"].pop()
-          stack_table["arg_stmt"].push(DeliNode(kind: dkArgStmt, short_name: short, long_name: long, default_value: default))
+          stack[].push(DeliNode(kind: dkArgStmt, short_name: short, long_name: long, default_value: default))
 
         of "arg_short_name":
-          stack_table[p.nt.name].push(DeliNode(kind: dkArg, argName: matchStr))
+          stack[].push(DeliNode(kind: dkArg, argName: matchStr))
         of "arg_long_name":
-          stack_table[p.nt.name].push(DeliNode(kind: dkArg, argName: matchStr))
+          stack[].push(DeliNode(kind: dkArg, argName: matchStr))
         of "arg_default":
-          stack_table[p.nt.name].push(DeliNode(kind: dkArg, argName: matchStr))
+          stack[].push(DeliNode(kind: dkArg, argName: matchStr))
+        of "strliteral":
+          stack[].push(DeliNode(kind: dkString, strVal: matchStr))
+        of "include_stmt":
+          let literal = stack_table["strliteral"].pop()
+          stack[].push(DeliNode(kind: dkIncludeStmt, includeVal: literal))
+        of "statement":
+          for popme in ["arg_stmt", "include_stmt", "function_stmt"]:
+            if not stack_table[popme].isEmpty():
+              var clause = stack_table["script"].pop()
+              clause.addStatement(stack_table[popme].pop())
+              stack_table["script"].push(clause)
 
 let r = parser(source)
-echo r
+if r != source.len():
+  echo "\nERROR: Stopped parsing at pos ", r, "/", source.len()
 
+echo "\n== Stack Table =="
 for k,v in stack_table:
   echo k, "="
   for node in v.toSeq():

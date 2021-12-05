@@ -8,7 +8,9 @@ type
     dkInteger,
     dkBoolean,
     dkArg,
-    dkArgStmt
+    dkArgStmt,
+    dkIncludeStmt,
+    dkClause
   DeliNode* = ref object
     case kind*: DeliKind
     of dkNone: none: bool
@@ -20,6 +22,16 @@ type
     of dkArgStmt:
       short_name*, long_name*: DeliNode
       default_value*: DeliNode
+    of dkIncludeStmt:
+      includeVal*: DeliNode
+    of dkClause:
+      statements: seq[DeliNode]
+
+proc addStatement*(clause: DeliNode, node: DeliNode) =
+  clause.statements.add(node)
+
+proc deliNone*(): DeliNode =
+  return DeliNode(kind: dkNone, none: true)
 
 #Table[string, DeliKind]
 
