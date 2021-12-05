@@ -11,4 +11,5 @@ bin           = @["delish"]
 # Dependencies
 
 requires "nim >= 1.4.8"
+requires "stacks >= 0.4.2"
 #requires "npeg >= 0.26.0"
