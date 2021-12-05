@@ -2,3 +2,4 @@
 
 arg -y --yes = false
 arg -n --no = true
+arg -v --verbose = false

@@ -37,7 +37,7 @@ fun indent(str) {
   out awk($str, '$0="  | "$0')
 }
 
-if exists("/etc/github/repl-running") {
+if exists(/etc/github/repl-running) {
   actions = run ghe-config --true app.actions.enabled
   if $actions {
     out "Performing MSSQL failover ..."
