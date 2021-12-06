@@ -12,7 +12,7 @@ syn region deliFunction   start=+\w*(+ end=+)+ fold contains=deliString,deliDoll
 syn region deliRunStatement start=+\s*run&\? + end=+$+ fold contains=deliString,deliDollarVar,deliArgument
 
 syn keyword deliReserved for if assert exit arg redir include and or not set env
-syn keyword deliMacro in out err true false run run& prompt
+syn keyword deliMacro in out err true false run run& prompt pipe
 
 hi def link deliReserved         Keyword
 hi def link deliDollarVar        Identifier

@@ -1,6 +1,7 @@
 # This is just an example to get you started. A typical binary package
 # uses this file as the main entry point of the application.
 
+import deliengine
 import deliast
 import strutils
 import std/tables
@@ -32,7 +33,8 @@ let grammar_source = """
   arg_default    <- strliteral / integer / constant
   strliteral     <- '"' @ '"' / "'" @ "'"
   integer        <- \d+
-  constant       <- "true" / "false" / "in" / "out" / "err"
+  constant       <- boolean / "in" / "out" / "err"
+  boolean        <- "true" / "false"
 """
 
 let symbol_names = grammar_source.splitLines().map(proc(x:string):string =
@@ -75,8 +77,8 @@ let parser = grammar.eventParser:
         var stack = addr stack_table[symbol]
         case symbol
         of "arg_stmt":
-          var short = popOption("arg_short_name")
-          var long  = popOption("arg_long_name")
+          let short = popOption("arg_short_name")
+          let long  = popOption("arg_long_name")
           let default = stack_table["arg_default"].pop()
           stack[].push(DeliNode(kind: dkArgStmt, short_name: short, long_name: long, default_value: default))
 
@@ -85,9 +87,23 @@ let parser = grammar.eventParser:
         of "arg_long_name":
           stack[].push(DeliNode(kind: dkArg, argName: matchStr))
         of "arg_default":
-          stack[].push(DeliNode(kind: dkArg, argName: matchStr))
+          let b = popOption("boolean")
+          let c = popOption("strliteral")
+          let d = popOption("integer")
+          if b.kind != dkNone:
+            stack[].push(DeliNode(kind: dkBoolean, boolVal: b.boolVal))
+          elif c.kind != dkNone:
+            stack[].push(DeliNode(kind: dkString, strVal: c.strVal))
+          elif d.kind != dkNone:
+            stack[].push(DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
+          else:
+            stack[].push(DeliNode(kind: dkString, strVal: ""))
         of "strliteral":
           stack[].push(DeliNode(kind: dkString, strVal: matchStr))
+        of "boolean":
+          stack[].push(DeliNode(kind: dkBoolean, boolVal: matchStr == "true"))
+        of "integer":
+          stack[].push(DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
         of "include_stmt":
           let literal = stack_table["strliteral"].pop()
           stack[].push(DeliNode(kind: dkIncludeStmt, includeVal: literal))
@@ -106,9 +122,34 @@ echo "\n== Stack Table =="
 for k,v in stack_table:
   echo k, "="
   for node in v.toSeq():
-    echo node[]
+    echo "  ", node[]
 
+var engine: Engine = newEngine()
+let script = stack_table["script"].pop()
+for s in script.statements:
+  echo s[]
+  case s.kind
+  of dkArgStmt:
+    var sn = ""
+    var ln = ""
+    var dv = ""
+    if s.short_name.kind == dkArg:
+      sn = s.short_name.argName
+    if s.long_name.kind == dkArg:
+      ln = s.long_name.argName
+    dv = case s.default_value.kind
+    of dkString:
+      s.default_value.strVal
+    of dkInteger:
+      $(s.default_value.intVal)
+    of dkBoolean:
+      $(s.default_value.boolVal)
+    else:
+      $s.default_value.kind
 
+    engine.addArgument(sn, ln, dv)
+  else:
+    echo ""
 
 
 

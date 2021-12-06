@@ -25,7 +25,7 @@ type
     of dkIncludeStmt:
       includeVal*: DeliNode
     of dkClause:
-      statements: seq[DeliNode]
+      statements*: seq[DeliNode]
 
 proc addStatement*(clause: DeliNode, node: DeliNode) =
   clause.statements.add(node)

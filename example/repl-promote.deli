@@ -33,38 +33,32 @@ if not $primary {
 }
 
 set pipefail
-fun indent(str) {
-  out awk($str, '$0="  | "$0')
-}
+indent = pipe awk '$0="  | "$0'
 
 if exists(/etc/github/repl-running) {
   actions = run ghe-config --true app.actions.enabled
   if $actions {
     out "Performing MSSQL failover ..."
     if $forced {
-      promote = run& ghe-mssql-repl-promote -f
+      redir 2>1 run ghe-mssql-repl-promote -f | indent
     } else {
-      promote = run& ghe-mssql-repl-promote
+      redir 2>1 run ghe-mssql-repl-promote | indent
     }
-    out indent($promote.out)
   }
 
   out "Stopping replication ..."
   if $forced {
-    stopping = run& ghe-repl-stop -c -f
+    redir 2>1 run ghe-repl-stop -c -f | indent
   } else {
-    stopping = run& ghe-repl-stop -c
+    redir 2>1 run ghe-repl-stop -c | indent
   }
-  out indent($stopping.out)
 }
 
 out "Switching out of replica mode ..."
-assert switching = redir 2>1 run ghe-repl-teardown --quick
-out indent($switching.out)
+redir 2>1 run ghe-repl-teardown --quick | $indent
 
 out "Applying configuration and starting services ..."
 
-assert applying = redir 3>1 1>/dev/null 2>3 run ghe-single-config-apply
-out indent($applying.out)
+redir 3>1 1>/dev/null 2>3 run ghe-single-config-apply | $indent
 
 out "Success: Replica has been promoted to primary and is now accepting requests."
