@@ -18,17 +18,31 @@ if paramCount() < 1:
 let source = readFile(paramStr(1))
 
 let grammar_source = """
-  Script        <- ( \s* \n / \s* Comment / \s* Statement \n )+
+  Script        <- ( \s* \n
+                   / \s* Comment
+                   / \s* Statement \n
+                   )+
+                   \s*
   Comment       <- '#' @ \n
-  Statement     <- (ArgStmt / IncludeStmt / StreamStmt / FunctionStmt) (Comment)*
+  Conditional   <- "if" \s+ Expr \s+ Block \s*
+  Block         <- "{"
+                     ( \s* \n
+                     / \s* Comment
+                     / \s* Statement \n
+                     )*
+                     \s*
+                   "}"
+
+  Statement     <- (Conditional / ArgStmt / IncludeStmt / StreamStmt / FunctionStmt) (Comment)*
   FunctionStmt  <- Identifier
   IncludeStmt   <- "include" \s+ StrLiteral
   ArgStmt       <- "arg" \s+ ArgNames \s* "=" \s+ ArgDefault
-  ArgNames      <- ( ( ArgLongName / ArgShortName ) \s+ )+
+  ArgNames      <- ( Arg \s+ )+
+  Arg           <- ArgLongName / ArgShortName
   ArgShortName  <- "-" { \w }
   ArgLongName   <- { "-" ("-" \w+)+ }
   ArgDefault    <- Expr
-  Expr          <- StrLiteral / Integer / Boolean / Variable
+  Expr          <- StrLiteral / Integer / Boolean / Variable / Arg
   Integer       <- { \d+ }
   Identifier    <- { \w+ }
   StrLiteral    <- ('"' @@ '"') / ("'" @@ "'")

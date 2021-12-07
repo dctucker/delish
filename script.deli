@@ -6,4 +6,7 @@ arg -v --verbose = false
 
 include "scriptlib.deli"
 functioncall
-#comment
+
+if --yes {
+  func
+}
