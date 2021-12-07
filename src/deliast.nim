@@ -5,15 +5,18 @@ type
     dkNone,
     dkVariable,
     dkString,
+    dkIdentifier,
     dkInteger,
     dkBoolean,
     dkArg,
     dkArgStmt,
     dkIncludeStmt,
+    dkFunctionStmt,
     dkClause
   DeliNode* = ref object
     case kind*: DeliKind
     of dkNone: none: bool
+    of dkIdentifier: id*: string
     of dkString: strVal*: string
     of dkInteger: intVal*: int
     of dkBoolean: boolVal*: bool
@@ -24,8 +27,12 @@ type
       default_value*: DeliNode
     of dkIncludeStmt:
       includeVal*: DeliNode
+    of dkFunctionStmt:
+      funcName*: DeliNode
     of dkClause:
       statements*: seq[DeliNode]
+    #else:
+    #  unknown: bool
 
 proc addStatement*(clause: DeliNode, node: DeliNode) =
   clause.statements.add(node)

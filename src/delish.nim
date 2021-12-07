@@ -20,21 +20,25 @@ let source = readFile(paramStr(1))
 #type Args = Table[string, string]
 
 let grammar_source = """
-  script         <- ( \s* statement \n / \s* comment / \s* \n )+
-  comment        <- '#' @ \n
-  statement      <- (arg_stmt / include_stmt / function_stmt) (comment)*
-  function_stmt  <- (\w+)
-  include_stmt   <- "include" \s+ strliteral
-  arg_stmt       <- "arg" \s+ arg_names \s* "=" \s+ arg_default
-  arg_names      <- ( arg_name \s+ )+
-  arg_name       <- ( arg_short_name / arg_long_name )
-  arg_short_name <- "-" \w
-  arg_long_name  <- "-" ("-" \w+)+
-  arg_default    <- strliteral / integer / constant
-  strliteral     <- '"' @ '"' / "'" @ "'"
-  integer        <- \d+
-  constant       <- boolean / "in" / "out" / "err"
-  boolean        <- "true" / "false"
+  Script        <- ( \s* \n / \s* Comment / \s* Statement \n )+
+  Comment       <- '#' @ \n
+  Statement     <- (ArgStmt / IncludeStmt / StreamStmt / FunctionStmt) (Comment)*
+  FunctionStmt  <- Identifier
+  IncludeStmt   <- "include" \s+ StrLiteral
+  ArgStmt       <- "arg" \s+ ArgNames \s* "=" \s+ ArgDefault
+  ArgNames      <- ( ( ArgLongName / ArgShortName ) \s+ )+
+  ArgShortName  <- "-" { \w }
+  ArgLongName   <- { "-" ("-" \w+)+ }
+  ArgDefault    <- Expr
+  Expr          <- StrLiteral / Integer / Boolean / Variable
+  Integer       <- { \d+ }
+  Identifier    <- { \w+ }
+  StrLiteral    <- ('"' @@ '"') / ("'" @@ "'")
+  Boolean       <- { "true" } / { "false" }
+  Variable      <- "$" { \w+ }
+  StreamStmt    <- Stream ExprList
+  ExprList      <- Expr ( "," \s* Expr \s* )*
+  Stream        <- "in" / "out" / "err"
 """
 
 let symbol_names = grammar_source.splitLines().map(proc(x:string):string =
@@ -53,66 +57,110 @@ let grammar = peg(grammar_source)
 #    echoItems(item)
 #echoItems(grammar)
 
+var symbol_stack = Stack[string]()
 
 var stack_table = initTable[string, Stack[DeliNode]]()
 proc popOption(key: string): DeliNode =
   if not stack_table[key].isEmpty():
-    return stack_table[key].pop()
+    result = stack_table[key].pop()
+    echo indent("pop ", 4*symbol_stack.len()), key, " = ", stack_table[key].len()
+    return result
   return deliNone()
+
+proc popExpect(key: string): DeliNode =
+  return stack_table[key].pop()
 
 
 for symbol in symbol_names:
   stack_table[symbol] = Stack[DeliNode]()
 
-stack_table["script"].push(DeliNode(kind: dkClause))
+stack_table["Script"].push(DeliNode(kind: dkClause))
+
+proc parseCapture(start, length: int, s: string) =
+  if length > 0:
+    let matchStr = s.substr(start, start+length-1)
+    echo indent("capture: ", 4*symbol_stack.len()), matchStr
+
+proc pushNewNode(symbol: string) =
+  #var stack = addr stack_table[symbol]
+  case symbol
+  of "Statement":
+    discard
+
+proc pushNode(symbol: string, node: DeliNode) =
+  var stack = addr stack_table[symbol]
+  stack[].push(node)
+  echo indent("push ", 4*symbol_stack.len()), symbol, " = ", stack[].len()
+
+proc popNode(symbol, matchStr: string) =
+  var stack = addr stack_table[symbol]
+  case symbol
+  of "ArgStmt":
+    let short = popOption("ArgShortName")
+    let long  = popOption("ArgLongName")
+    let default = popExpect("ArgDefault")
+    #let k = parseEnum[DeliKind]("dk" & symbol)
+    stack[].push(DeliNode(kind: dkArgStmt, short_name: short, long_name: long, default_value: default))
+
+  of "ArgShortName", "ArgLongName":
+    pushNode(symbol, DeliNode(kind: dkArg, argName: matchStr))
+
+  of "ArgDefault":
+    let b = popOption("Boolean")
+    let c = popOption("StrLiteral")
+    let d = popOption("Integer")
+    if b.kind != dkNone:
+      pushNode(symbol, DeliNode(kind: dkBoolean, boolVal: b.boolVal))
+    elif c.kind != dkNone:
+      pushNode(symbol, DeliNode(kind: dkString, strVal: c.strVal))
+    elif d.kind != dkNone:
+      pushNode(symbol, DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
+    else:
+      pushNode(symbol, DeliNode(kind: dkString, strVal: ""))
+
+  of "Identifier", "StrLiteral":
+    pushNode(symbol, DeliNode(kind: dkString, strVal: matchStr))
+  of "Boolean":
+    pushNode(symbol, DeliNode(kind: dkBoolean, boolVal: matchStr == "true"))
+  of "Integer":
+    pushNode(symbol, DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
+
+  of "IncludeStmt":
+    let literal = popExpect("StrLiteral")
+    pushNode(symbol, DeliNode(kind: dkIncludeStmt, includeVal: literal))
+
+  of "FunctionStmt":
+    let id = popExpect("Identifier")
+    pushNode(symbol, DeliNode(kind: dkFunctionStmt, funcName: id))
+
+  of "Statement":
+    for popme in ["ArgStmt", "IncludeStmt", "FunctionStmt"]:
+      if not stack_table[popme].isEmpty():
+        var clause = popExpect("Script")
+        clause.addStatement(popExpect(popme))
+        stack_table["Script"].push(clause)
 
 let parser = grammar.eventParser:
-  pkNonTerminal:
+  pkCapture:
     leave:
+      parseCapture(start, length, s)
+  pkCapturedSearch:
+    leave:
+      parseCapture(start, length-1, s)
+  pkNonTerminal:
+    enter:
+      pushNewNode(p.nt.name)
+
+      echo indent("enter ", 4*symbol_stack.len()), p.nt.name
+      symbol_stack.push(p.nt.name)
+    leave:
+      discard symbol_stack.pop()
       if length > 0:
         let matchStr = s.substr(start, start+length-1)
-        echo "leave nt ", p, " at ", matchStr
+        echo indent("leave ", 4*symbol_stack.len()), p, ": ", matchStr
 
         let symbol = p.nt.name
-        var stack = addr stack_table[symbol]
-        case symbol
-        of "arg_stmt":
-          let short = popOption("arg_short_name")
-          let long  = popOption("arg_long_name")
-          let default = stack_table["arg_default"].pop()
-          stack[].push(DeliNode(kind: dkArgStmt, short_name: short, long_name: long, default_value: default))
-
-        of "arg_short_name":
-          stack[].push(DeliNode(kind: dkArg, argName: matchStr))
-        of "arg_long_name":
-          stack[].push(DeliNode(kind: dkArg, argName: matchStr))
-        of "arg_default":
-          let b = popOption("boolean")
-          let c = popOption("strliteral")
-          let d = popOption("integer")
-          if b.kind != dkNone:
-            stack[].push(DeliNode(kind: dkBoolean, boolVal: b.boolVal))
-          elif c.kind != dkNone:
-            stack[].push(DeliNode(kind: dkString, strVal: c.strVal))
-          elif d.kind != dkNone:
-            stack[].push(DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
-          else:
-            stack[].push(DeliNode(kind: dkString, strVal: ""))
-        of "strliteral":
-          stack[].push(DeliNode(kind: dkString, strVal: matchStr))
-        of "boolean":
-          stack[].push(DeliNode(kind: dkBoolean, boolVal: matchStr == "true"))
-        of "integer":
-          stack[].push(DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
-        of "include_stmt":
-          let literal = stack_table["strliteral"].pop()
-          stack[].push(DeliNode(kind: dkIncludeStmt, includeVal: literal))
-        of "statement":
-          for popme in ["arg_stmt", "include_stmt", "function_stmt"]:
-            if not stack_table[popme].isEmpty():
-              var clause = stack_table["script"].pop()
-              clause.addStatement(stack_table[popme].pop())
-              stack_table["script"].push(clause)
+        popNode(symbol, matchStr)
 
 let r = parser(source)
 if r != source.len():
@@ -125,7 +173,7 @@ for k,v in stack_table:
     echo "  ", node[]
 
 var engine: Engine = newEngine()
-let script = stack_table["script"].pop()
+let script = stack_table["Script"].pop()
 for s in script.statements:
   echo s[]
   case s.kind
