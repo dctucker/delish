@@ -23,8 +23,7 @@ type
     of dkVariable: varName*: string
     of dkArg: argName*: string
     of dkArgStmt:
-      short_name*, long_name*: DeliNode
-      default_value*: DeliNode
+      short_name*, long_name*, default_value*: DeliNode
     of dkIncludeStmt:
       includeVal*: DeliNode
     of dkFunctionStmt:

@@ -17,8 +17,6 @@ if paramCount() < 1:
 
 let source = readFile(paramStr(1))
 
-#type Args = Table[string, string]
-
 let grammar_source = """
   Script        <- ( \s* \n / \s* Comment / \s* Statement \n )+
   Comment       <- '#' @ \n
@@ -37,7 +35,7 @@ let grammar_source = """
   Boolean       <- { "true" } / { "false" }
   Variable      <- "$" { \w+ }
   StreamStmt    <- Stream ExprList
-  ExprList      <- Expr ( "," \s* Expr \s* )*
+  ExprList      <- Expr ( \s* "," \s* Expr \s* )*
   Stream        <- "in" / "out" / "err"
 """
 
@@ -95,16 +93,18 @@ proc pushNode(symbol: string, node: DeliNode) =
 proc popNode(symbol, matchStr: string) =
   var stack = addr stack_table[symbol]
   case symbol
-  of "ArgStmt":
-    let short = popOption("ArgShortName")
-    let long  = popOption("ArgLongName")
-    let default = popExpect("ArgDefault")
-    #let k = parseEnum[DeliKind]("dk" & symbol)
-    stack[].push(DeliNode(kind: dkArgStmt, short_name: short, long_name: long, default_value: default))
+
+  of "StrLiteral":
+    pushNode(symbol, DeliNode(kind: dkString, strVal: matchStr))
+  of "Identifier":
+    pushNode(symbol, DeliNode(kind: dkIdentifier, id: matchStr))
+  of "Boolean":
+    pushNode(symbol, DeliNode(kind: dkBoolean, boolVal: matchStr == "true"))
+  of "Integer":
+    pushNode(symbol, DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
 
   of "ArgShortName", "ArgLongName":
     pushNode(symbol, DeliNode(kind: dkArg, argName: matchStr))
-
   of "ArgDefault":
     let b = popOption("Boolean")
     let c = popOption("StrLiteral")
@@ -118,12 +118,12 @@ proc popNode(symbol, matchStr: string) =
     else:
       pushNode(symbol, DeliNode(kind: dkString, strVal: ""))
 
-  of "Identifier", "StrLiteral":
-    pushNode(symbol, DeliNode(kind: dkString, strVal: matchStr))
-  of "Boolean":
-    pushNode(symbol, DeliNode(kind: dkBoolean, boolVal: matchStr == "true"))
-  of "Integer":
-    pushNode(symbol, DeliNode(kind: dkInteger, intVal: parseInt(matchStr)))
+  of "ArgStmt":
+    let short = popOption("ArgShortName")
+    let long  = popOption("ArgLongName")
+    let default = popExpect("ArgDefault")
+    #let k = parseEnum[DeliKind]("dk" & symbol)
+    stack[].push(DeliNode(kind: dkArgStmt, short_name: short, long_name: long, default_value: default))
 
   of "IncludeStmt":
     let literal = popExpect("StrLiteral")
@@ -196,8 +196,13 @@ for s in script.statements:
       $s.default_value.kind
 
     engine.addArgument(sn, ln, dv)
+  of dkIncludeStmt:
+    echo s.includeVal.strVal
+    #engine.addInclude(s.includeVal)
+  of dkFunctionStmt:
+    echo s.funcName.id
   else:
-    echo ""
+    echo $(s.kind)
 
 
 
