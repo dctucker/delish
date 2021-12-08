@@ -17,7 +17,7 @@ proc newEngine*(): Engine =
   return Engine(arguments: newSeq[Argument](5))
 
 proc runProgram*(engine: Engine, script: DeliNode) =
-  for s in script.statements:
+  for s in script.sons:
     echo s[]
     case s.kind
     of dkArgStmt:

@@ -1,47 +1,43 @@
+import deligrammar
+
 ### AST representation
+grammarToEnum(@["String","None"])
 
 type
-  DeliKind* = enum
-    dkNone,
-    dkVariable,
-    dkString,
-    dkIdentifier,
-    dkInteger,
-    dkBoolean,
-    dkArg,
-    dkArgStmt,
-    dkIncludeStmt,
-    dkFunctionStmt,
-    dkClause
   DeliNode* = ref object
     case kind*: DeliKind
-    of dkNone: none: bool
-    of dkIdentifier: id*: string
-    of dkString: strVal*: string
-    of dkInteger: intVal*: int
-    of dkBoolean: boolVal*: bool
-    of dkVariable: varName*: string
-    of dkArg: argName*: string
-    of dkArgStmt:
-      short_name*, long_name*, default_value*: DeliNode
-    of dkIncludeStmt:
-      includeVal*: DeliNode
-    of dkFunctionStmt:
-      funcName*: DeliNode
-    of dkClause:
-      statements*: seq[DeliNode]
-    #else:
-    #  unknown: bool
-
-proc addStatement*(clause: DeliNode, node: DeliNode) =
-  clause.statements.add(node)
+    of dkNone:         none:        bool
+    of dkIdentifier:   id*:         string
+    of dkString:       strVal*:     string
+    of dkInteger:      intVal*:     int
+    of dkBoolean:      boolVal*:    bool
+    of dkVariable:     varName*:    string
+    of dkInvocation:   cmd*:        string
+    of dkArgShort,
+       dkArgLong,
+       dkArg:          argName*:    string
+    of dkArgStmt:      short_name*, long_name*, default_value*: DeliNode
+    of dkIncludeStmt:  includeVal*: DeliNode
+    of dkFunctionStmt: funcName*:   DeliNode
+    else:
+      discard
+    sons*: seq[DeliNode]
 
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
+proc toString*(node: DeliNode): string =
+  result = case node.kind
+  of dkIdentifier: node.id
+  of dkString:     node.strVal
+  of dkInteger:    $(node.intVal)
+  of dkBoolean:    $(node.boolVal)
+  of dkVariable:   $(node.varName)
+  of dkArg,
+     dkArgShort,
+     dkArgLong:    $(node.argName)
+  else:            "[" & $(node.kind) & "]"
 
-
-#Table[string, DeliKind]
 
 #when isMainModule:
 #  import strutils

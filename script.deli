@@ -4,8 +4,8 @@ arg    --yes = false
 arg -n       = true
 arg -v --verbose = false
 arg -h --help = """
-some documentation
-"""
+#some documentation
+#"""
 
 if --yes {
   func
@@ -16,12 +16,12 @@ $flags += -l
 $flags += -a
 $flags += -h
 
-$js = json """
-{
-  "a": "1",
-  "b": 2
-}
-"""
+#$js = json """
+#{
+#  "a": "1",
+#  "b": 2
+#}
+#"""
 
 out $js."a"
 
