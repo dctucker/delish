@@ -3,10 +3,35 @@
 arg    --yes = false
 arg -n       = true
 arg -v --verbose = false
-
-include "scriptlib.deli"
-functioncall
+arg -h --help = """
+some documentation
+"""
 
 if --yes {
   func
 }
+
+$flags = []
+$flags += -l
+$flags += -a
+$flags += -h
+
+$js = json """
+{
+  "a": "1",
+  "b": 2
+}
+"""
+
+out $js."a"
+
+run ls $flags \
+"string"
+
+$found = run find . -name "disk*" | grep "sdb"
+
+include "scriptlib.deli"
+functioncall
+
+
+$arr = [ 1, 2, 3 ]
