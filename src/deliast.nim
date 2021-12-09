@@ -42,7 +42,10 @@ proc toString*(node: DeliNode): string =
      dkArgShort,
      dkArgLong:    $(node.argName)
   else: ""
-  return $(node.kind) & " " & value
+  if value == "":
+    return ($(node.kind)).substr(2)
+  else:
+    return ($(node.kind)).substr(2) & " " & value
 
 
 #when isMainModule:

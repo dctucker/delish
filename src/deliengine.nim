@@ -19,9 +19,15 @@ proc `+`(a, b: DeliNode): DeliNode =
     of dkString:
       return DeliNode(kind: dkString, strVal: a.strVal & b.strVal)
     of dkArray:
-      return DeliNode(kind: dkArray, sons: concat(a.sons, b.sons))
+      result = DeliNode(kind: dkArray)
+      for n in a.sons:
+        result.sons.add(n)
+      for n in b.sons:
+        result.sons.add(n)
+        return result
     else:
-      discard
+      return deliNone()
+  return deliNone()
 
 
 proc newEngine*(): Engine =
@@ -30,17 +36,29 @@ proc newEngine*(): Engine =
     variables: initTable[string, DeliNode]()
   )
 
+proc printSons(node: DeliNode) =
+  stdout.write( ($(node.kind)).substr(2), " " )
+  if node.sons.len() > 0:
+    for son in node.sons:
+      stdout.write( toString(son) )
+      if son.sons.len() > 0:
+        stdout.write("(")
+        printSons(son)
+        stdout.write(") ")
+      #stdout.write(",")
+
 proc printSons(node: DeliNode, level: int) =
-  for son in node.sons:
-    echo indent(toString(son), 4*level)
-    printSons(son, level+1)
+  if node.sons.len() > 0:
+    for son in node.sons:
+      echo indent(toString(son), 4*level)
+      printSons(son, level+1)
 
 proc printVariables(engine: Engine) =
-  echo "Engine Variables:"
+  echo "Engine Variables: (", engine.variables.len(), ")"
   for k,v in engine.variables:
     stdout.write("  $", k, " = ")
-    printSons(v, 0)
-  echo ""
+    printSons(v)
+    echo ""
 
 proc printArguments(engine: Engine) =
   for arg in engine.arguments:
@@ -62,6 +80,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     let ran = engine.doRun(val.sons)
     result = DeliNode(kind: dkRan)
     result.sons.add(ran)
+  of dkExpr:
+    result = val.sons[0]
   else:
     echo "Not implemented: evaluate ", val.kind
 
@@ -104,9 +124,11 @@ proc runStmt(engine: Engine, s: DeliNode) =
 proc runProgram*(engine: Engine, script: DeliNode) =
   echo "\nRunning program..."
   for s in script.sons:
-    printSons(s, 0)
-    echo s[]
-    engine.runStmt(s.sons[0])
+    stdout.write("! ")
+    printSons(s)
+    echo ""
+    if s.sons.len() > 0:
+      engine.runStmt(s.sons[0])
     #case s.kind
     #of dkIncludeStmt:
     #  echo s.includeVal.strVal
