@@ -11,6 +11,8 @@ type Parser* = ref object
   captures:     Stack[string]
   symbol_stack: Stack[string]
   stack_table:  Table[string, Stack[DeliNode]]
+  node_stack:   Stack[DeliNode]
+  entry_point:  DeliNode
   line_numbers: seq[int]
   parsed_len:   int
 
@@ -29,12 +31,6 @@ proc line_number(parser: Parser, pos: int): int =
 proc indent(parser: Parser, msg: string): string =
   return indent( msg, 4*parser.symbol_stack.len() )
 
-proc parseCapture(parser: Parser, start, length: int, s: string) =
-  if length > 0:
-    let matchStr = s.substr(start, start+length-1)
-    parser.captures.push(matchStr)
-    echo "\27[1;33m", parser.indent("capture: "), "\27[4m", matchStr.replace("\n","\\n"), "\27[0m"
-
 proc pushNode(parser: Parser, symbol: string, node: DeliNode) =
   var stack = addr parser.stack_table[symbol]
   stack[].push(node)
@@ -50,35 +46,47 @@ proc parseStreamInt(str: string): int =
   of "out": return 1
   of "err": return 2
 
-proc newNode(parser: Parser, symbol: string, line: int): DeliNode =
-  result = case symbol
-  of "StrLiteral",
-     "StrBlock":   DeliNode(line: line, kind: dkString,    strVal: parser.popCapture())
-  of "Path":       DeliNode(line: line, kind: dkPath,      strVal: parser.popCapture())
-  of "Identifier": DeliNode(line: line, kind: dkIdentifier,    id: parser.popCapture())
-  of "Variable":   DeliNode(line: line, kind: dkVariable, varName: parser.popCapture())
-  of "Invocation": DeliNode(line: line, kind: dkInvocation,   cmd: parser.popCapture())
-  of "Boolean":    DeliNode(line: line, kind: dkBoolean,  boolVal: parser.popCapture() == "true")
-  of "Stream":     DeliNode(line: line, kind: dkStream,    intVal: parseStreamInt(parser.popCapture()))
-  of "Integer":    DeliNode(line: line, kind: dkInteger,   intVal: parseInt(parser.popCapture()))
-  of "Arg":        DeliNode(line: line, kind: dkArg)
-  of "ArgShort":   DeliNode(line: line, kind: dkArgShort, argName: parser.popCapture())
-  of "ArgLong":    DeliNode(line: line, kind: dkArgLong,  argName: parser.popCapture())
+proc parseCapture(node: DeliNode, capture: string) =
+  case node.kind
+  of dkString:     node.strVal  = capture
+  of dkPath:       node.strVal  = capture
+  of dkIdentifier: node.id      = capture
+  of dkVariable:   node.varName = capture
+  of dkInvocation: node.cmd     = capture
+  of dkBoolean:    node.boolVal = capture == "true"
+  of dkStream:     node.intVal  = parseStreamInt(capture)
+  of dkInteger:    node.intVal  = parseInt(capture)
+  of dkArgShort:   node.argName = capture
+  of dkArgLong:    node.argName = capture
   else:
-    let k = parseEnum[DeliKind]("dk" & symbol)
-    DeliNode(kind: k, line: line)
+    discard
 
-proc parse*(parser: Parser): int =
+proc parseCapture(parser: Parser, start, length: int, s: string) =
+  if length > 0:
+    let matchStr = s.substr(start, start+length-1)
+    parser.captures.push(matchStr)
+    echo "\27[1;33m", parser.indent("capture: "), "\27[4m", matchStr.replace("\n","\\n"), "\27[0m"
+
+    let node = parser.node_stack.pop()
+    node.parseCapture(s[ start .. start+length-1 ])
+    parser.node_stack.push(node)
+
+proc initParser(parser: Parser) =
   parser.captures     = Stack[string]()
   parser.symbol_stack = Stack[string]()
   parser.stack_table  = initTable[string, Stack[DeliNode]]()
   for symbol in symbol_names:
     parser.stack_table[symbol] = Stack[DeliNode]()
 
+proc initLineNumbers(parser: Parser) =
   parser.line_numbers = @[0]
   for offset in parser.line_offsets():
     parser.line_numbers.add(offset)
   echo parser.line_numbers
+
+proc parse*(parser: Parser): int =
+  parser.initParser()
+  parser.initLineNumbers()
 
   let grammar = peg(grammar_source)
   let peg_parser = grammar.eventParser:
@@ -95,27 +103,26 @@ proc parse*(parser: Parser): int =
     pkNonTerminal:
       enter:
         if p.nt.name notin ["Blank", "VLine", "Comment"]:
+          let k = parseEnum[DeliKind]("dk" & p.nt.name)
+          parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(start)))
           echo "\27[1;30m", parser.indent("> "), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
           parser.symbol_stack.push(p.nt.name)
       leave:
         if p.nt.name notin ["Blank", "VLine", "Comment"]:
+          let inner_node = parser.node_stack.pop()
           let symbol = parser.symbol_stack.pop()
           if length > 0:
             let matchStr = s.substr(start, start+length-1)
             echo parser.indent("\27[1m< "), p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
 
-            let parent = if parser.symbol_stack.len() > 0:
-              parser.symbol_stack.peek()
-            else: "Script"
+            if parser.node_stack.len() > 0:
+              var outer_node = parser.node_stack.pop()
+              outer_node.sons.add( inner_node )
+              parser.entry_point = outer_node
+              parser.node_stack.push(outer_node)
 
-            let line = parser.line_number(start)
-            #echo start, " :",  line
-            let node = parser.newNode(symbol, line)
-
-            for son in parser.stack_table[symbol].toSeq():
-              node.sons.add( son )
-            parser.stack_table[symbol].clear()
-            parser.pushNode(parent, node)
+            #let line = parser.line_number(start)
+            ##echo start, " :",  line
 
   parser.parsed_len = peg_parser(parser.source)
   return parser.parsed_len
@@ -126,7 +133,7 @@ proc getLine*(parser: Parser, line: int): string =
   return parser.source[start .. endl-2]
 
 proc getScript*(parser: Parser): DeliNode =
-  return DeliNode(kind: dkScript, sons: parser.stack_table["Script"].toSeq())
+  return parser.entry_point
 
 proc printSons(node: DeliNode, level: int) =
   for son in node.sons:
@@ -140,4 +147,8 @@ proc printStackTable*(parser: Parser) =
     for node in v.toSeq():
       printSons(node, 0)
       #echo "  ", node[], " sons = ", node[].sons.len()
+
+proc printEntryPoint*(parser: Parser) =
+  echo "\n== Node Stack =="
+  printSons(parser.entry_point, 0)
 

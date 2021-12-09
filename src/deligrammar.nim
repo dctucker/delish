@@ -13,17 +13,16 @@ import macros
 #"""
 
 const grammar_source* = """
-  Script        <- ( Blank* VLine )+ Blank*
+  Script        <- Code
+  Code          <- ( Blank* VLine )+ Blank*
   Blank         <- ("\\" \n) / \9 / " "
-  VLine         <- \n / Comment / BlockBegin / BlockEnd / Statement Comment* \n
+  VLine         <- \n / Comment / Block / Statement Comment* \n
   Comment       <- '#' @ \n
   Expr          <- VarDeref / Arg / Object / Array / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
-  Conditional   <- "if" Blank+ Expr
-  Loop          <- "while" Blank+ Expr
-  Subshell      <- "sub" Blank+
-  BlockHead     <- Conditional / Loop / Subshell
-  BlockBegin    <- BlockHead Blank+ "{"
-  BlockEnd      <- "}"
+  Block         <- Conditional / Loop / Subshell
+  Conditional   <- "if"    Blank+ Expr Blank+ "{" \s* Code \s* "}" \s*
+  Loop          <- "while" Blank+ Expr Blank+ "{" \s* Code \s* "}" \s*
+  Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code \s* "}" \s*
   Statement     <- AssignStmt / ArgStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
   AssignStmt    <- Variable Blank* ( AssignOp / AppendOp )  Blank* (Expr / RunStmt)
   AssignOp      <- "="

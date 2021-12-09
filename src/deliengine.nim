@@ -1,7 +1,7 @@
 import std/tables
 import deliast
-import sequtils
 import strutils
+#import sequtils
 
 type
   Argument = ref object
@@ -144,7 +144,7 @@ iterator tick*(engine: Engine, script: DeliNode): int =
 proc runProgram*(engine: Engine, script: DeliNode) =
   echo "\nRunning program..."
   for s in script.sons:
-    stdout.write(":", s.line, " ")
+    stdout.write(":", s.line, " ", toString(s))
     printSons(s)
     echo ""
     if s.sons.len() > 0:

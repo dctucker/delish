@@ -1,6 +1,6 @@
 #!/usr/bin/deli
 
-$found = run find . -name "disk*" | grep "sdb"
+#$found = run find . -name "disk*" | grep "sdb"
 
 arg    --yes     = false
 arg -n           = true
@@ -11,6 +11,11 @@ some documentation
 
 if --yes {
   func
+  if --verbose {
+    out "Done."
+    err "No errors"
+  }
+  $var = "x"
 }
 
 $flags = []
