@@ -17,6 +17,7 @@ const grammar_source* = """
   Blank         <- ("\\" \n) / \9 / " "
   VLine         <- \n / Comment / BlockBegin / BlockEnd / Statement Comment* \n
   Comment       <- '#' @ \n
+  Expr          <- VarDeref / Arg / Object / Array / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
   Conditional   <- "if" Blank+ Expr
   Loop          <- "while" Blank+ Expr
   Subshell      <- "sub" Blank+
@@ -24,37 +25,34 @@ const grammar_source* = """
   BlockBegin    <- BlockHead Blank+ "{"
   BlockEnd      <- "}"
   Statement     <- AssignStmt / ArgStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
-  AssignStmt    <- Variable Blank* AssignOp Blank* (Expr / RunStmt)
-  AssignOp      <- Assign / AppendOp
-  Assign        <- "="
+  AssignStmt    <- Variable Blank* ( AssignOp / AppendOp )  Blank* (Expr / RunStmt)
+  AssignOp      <- "="
   AppendOp      <- "+="
   FunctionStmt  <- Identifier
   IncludeStmt   <- "include" Blank+ StrLiteral
-  RunStmt       <- "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )* \n
-  Invocation    <- { \w+ } ( Blank+ Expr )+
+  RunStmt       <- "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
+  Invocation    <- { \w+ } ( Blank+ Expr )*
   ArgStmt       <- "arg" Blank+ ArgNames Blank* "=" Blank+ ArgDefault
   ArgNames      <- ( Arg Blank+ )+
   Arg           <- ArgLong / ArgShort
   ArgShort      <- "-" { \w+ }
   ArgLong       <- { "-" ("-" \w+)+ }
   ArgDefault    <- Expr
-  Expr          <- ArrayLiteral / StrBlock / StrLiteral / Integer / Boolean / VarDeref / Variable / Arg / Path / EmptyArray / JsonBlock
-  EmptyArray    <- "[" Blank* "]"
-  ArrayLiteral  <- "[" Blank* ExprList Blank* "]"
+  VarDeref      <- Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
+  Variable      <- "$" { \w+ }
+  Object        <- "[" ( \s* Expr Blank* ":" Blank* Expr Blank* ","? \s* )+ "]"
+  Array         <- "[" ( \s* Expr Blank* ","? \s* )* "]"
   Integer       <- { \d+ }
   Identifier    <- !Keyword { \w+ }
   Keyword       <- "sub" / "if" / "white" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
   StrLiteral    <- ('"' @@ '"') / ("'" @@ "'")
   StrBlock      <- (\"\"\") \n @@ (\"\"\")
   JsonBlock     <- "json" Blank+ StrBlock
-  VarDeref      <- Variable ( DotOp ( StrLiteral / Integer / Variable / Identifier ) )+
-  DotOp         <- "."
-  Path          <- "." / ("."? "/") @@ \s*
-  Boolean       <- { "true" } / { "false" }
-  Variable      <- "$" { \w+ }
+  Path          <- { [.] / ([.]? "/") [^ ]* }
+  Boolean       <- { "true" / "false" }
   StreamStmt    <- Stream Blank+ ExprList
   ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
-  Stream        <- "in" / "out" / "err"
+  Stream        <- { "in" / "out" / "err" }
 """
 
 let symbol_names* = grammar_source.splitLines().map(proc(x:string):string =
@@ -75,3 +73,11 @@ macro grammarToEnum*(extra: static[seq[string]]) =
   let stmt = "type DeliKind* = enum " & options.join(", ")
   result = parseStmt(stmt)
 
+
+#proc echoItems(p: Peg) =
+#  if p.len() == 0:
+#    return
+#  for item in p.items():
+#    echo item.kind, item
+#    echoItems(item)
+#echoItems(grammar)

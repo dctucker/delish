@@ -1,15 +1,17 @@
 import deligrammar
 
 ### AST representation
-grammarToEnum(@["String","None"])
+grammarToEnum(@["String","None","Ran"])
 
 type
   DeliNode* = ref object
     case kind*: DeliKind
     of dkNone:         none:        bool
     of dkIdentifier:   id*:         string
-    of dkString:       strVal*:     string
-    of dkInteger:      intVal*:     int
+    of dkPath,
+       dkString:       strVal*:     string
+    of dkStream,
+       dkInteger:      intVal*:     int
     of dkBoolean:      boolVal*:    bool
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
@@ -27,16 +29,20 @@ proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
 proc toString*(node: DeliNode): string =
-  result = case node.kind
+  let value = case node.kind
   of dkIdentifier: node.id
-  of dkString:     node.strVal
-  of dkInteger:    $(node.intVal)
+  of dkPath,
+     dkString:     node.strVal
+  of dkStream,
+     dkInteger:    $(node.intVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
+  of dkInvocation: node.cmd
   of dkArg,
      dkArgShort,
      dkArgLong:    $(node.argName)
-  else:            "[" & $(node.kind) & "]"
+  else: ""
+  return $(node.kind) & " " & value
 
 
 #when isMainModule:
