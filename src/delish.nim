@@ -24,11 +24,28 @@ var stack_table  = initTable[string, Stack[DeliNode]]()
 for symbol in symbol_names:
   stack_table[symbol] = Stack[DeliNode]()
 
+iterator line_offsets(src: string): int =
+  var start = 0
+  let length = src.len()
+  while start < length:
+    yield start
+    start = src.find("\n", start) + 1
+
+var line_numbers: seq[int] = @[0]
+for offset in line_offsets(source):
+  line_numbers.add(offset)
+echo line_numbers
+
+proc line_number(pos: int): int =
+  for line, offset in line_numbers:
+    if offset > pos:
+      return line - 1
+
 proc parseCapture(start, length: int, s: string) =
   if length > 0:
     let matchStr = s.substr(start, start+length-1)
     captures.push(matchStr)
-    echo indent("\27[33mcapture: \27[1;4m", 4*symbol_stack.len()), matchStr.replace("\n","\\n"), "\27[0m"
+    echo indent("\27[1;33mcapture: \27[4m", 4*symbol_stack.len()), matchStr.replace("\n","\\n"), "\27[0m"
 
 proc pushNode(symbol: string, node: DeliNode) =
   var stack = addr stack_table[symbol]
@@ -45,24 +62,23 @@ proc parseStreamInt(str: string): int =
   of "out": return 1
   of "err": return 2
 
-proc newNode(symbol: string): DeliNode =
+proc newNode(symbol: string, line: int): DeliNode =
   result = case symbol
   of "StrLiteral",
-     "StrBlock":   DeliNode(kind: dkString,    strVal: popCapture())
-  of "Path":       DeliNode(kind: dkPath,      strVal: popCapture())
-  of "Identifier": DeliNode(kind: dkIdentifier,    id: popCapture())
-  of "Variable":   DeliNode(kind: dkVariable, varName: popCapture())
-  of "Invocation": DeliNode(kind: dkInvocation,   cmd: popCapture())
-  of "Boolean":    DeliNode(kind: dkBoolean,  boolVal: popCapture() == "true")
-  of "Stream":     DeliNode(kind: dkStream,    intVal: parseStreamInt(popCapture()))
-  of "Integer":    DeliNode(kind: dkInteger,   intVal: parseInt(popCapture()))
-  of "Arg":        DeliNode(kind: dkArg)
-  of "ArgShort":   DeliNode(kind: dkArgShort, argName: popCapture())
-  of "ArgLong":    DeliNode(kind: dkArgLong,  argName: popCapture())
+     "StrBlock":   DeliNode(line: line, kind: dkString,    strVal: popCapture())
+  of "Path":       DeliNode(line: line, kind: dkPath,      strVal: popCapture())
+  of "Identifier": DeliNode(line: line, kind: dkIdentifier,    id: popCapture())
+  of "Variable":   DeliNode(line: line, kind: dkVariable, varName: popCapture())
+  of "Invocation": DeliNode(line: line, kind: dkInvocation,   cmd: popCapture())
+  of "Boolean":    DeliNode(line: line, kind: dkBoolean,  boolVal: popCapture() == "true")
+  of "Stream":     DeliNode(line: line, kind: dkStream,    intVal: parseStreamInt(popCapture()))
+  of "Integer":    DeliNode(line: line, kind: dkInteger,   intVal: parseInt(popCapture()))
+  of "Arg":        DeliNode(line: line, kind: dkArg)
+  of "ArgShort":   DeliNode(line: line, kind: dkArgShort, argName: popCapture())
+  of "ArgLong":    DeliNode(line: line, kind: dkArgLong,  argName: popCapture())
   else:
     let k = parseEnum[DeliKind]("dk" & symbol)
-    DeliNode(kind: k)
-
+    DeliNode(kind: k, line: line)
 
 let grammar* = peg(grammar_source)
 let parser = grammar.eventParser:
@@ -79,7 +95,7 @@ let parser = grammar.eventParser:
   pkNonTerminal:
     enter:
       if p.nt.name notin ["Blank", "VLine", "Comment"]:
-        echo indent("> ", 4*symbol_stack.len()), p.nt.name, ": \27[34m", s.substr(start).split("\n")[0], "\27[0m"
+        echo "\27[1;30m", indent("> ", 4*symbol_stack.len()), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
         symbol_stack.push(p.nt.name)
     leave:
       if p.nt.name notin ["Blank", "VLine", "Comment"]:
@@ -92,12 +108,17 @@ let parser = grammar.eventParser:
             symbol_stack.peek()
           else: "Script"
 
-          let node = newNode(symbol)
+          let line = line_number(start)
+          #echo start, " :",  line
+          let node = newNode(symbol, line)
 
           for son in stack_table[symbol].toSeq():
             node.sons.add( son )
           stack_table[symbol].clear()
           pushNode(parent, node)
+
+
+
 
 let parsed_len = parser(source)
 
@@ -120,5 +141,10 @@ if parsed_len != source.len():
 
 var engine: Engine = newEngine()
 let script = DeliNode(kind: dkScript, sons: stack_table["Script"].toSeq())
-engine.runProgram(script)
+#engine.runProgram(script)
+
+for line in engine.tick(script):
+  let start = line_numbers[line]
+  let endl  = line_numbers[line+1]
+  stdout.write( "\27[1;30m:", line, " \27[0;34;4m", source.substr(start, endl-2), "\27[1;24m" )
 

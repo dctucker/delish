@@ -27,7 +27,18 @@ proc `+`(a, b: DeliNode): DeliNode =
         return result
     else:
       return deliNone()
+
+  case a.kind
+  of dkArray:
+    a.sons.add(b)
+    return a
+  else:
+    return a
+
   return deliNone()
+
+proc todo(msg: varargs[string, `$`]) =
+  echo "\27[33mTODO: ", msg.join(""), "\27[0m"
 
 
 proc newEngine*(): Engine =
@@ -37,10 +48,10 @@ proc newEngine*(): Engine =
   )
 
 proc printSons(node: DeliNode) =
-  stdout.write( ($(node.kind)).substr(2), " " )
+  #stdout.write( ($(node.kind)).substr(2), " " )
   if node.sons.len() > 0:
     for son in node.sons:
-      stdout.write( toString(son) )
+      stdout.write( " ", toString(son) )
       if son.sons.len() > 0:
         stdout.write("(")
         printSons(son)
@@ -57,7 +68,9 @@ proc printVariables(engine: Engine) =
   echo "Engine Variables: (", engine.variables.len(), ")"
   for k,v in engine.variables:
     stdout.write("  $", k, " = ")
+    stdout.write( toString(v), "(" )
     printSons(v)
+    stdout.write( ")" )
     echo ""
 
 proc printArguments(engine: Engine) =
@@ -83,7 +96,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   of dkExpr:
     result = val.sons[0]
   else:
-    echo "Not implemented: evaluate ", val.kind
+    todo "evaluate ", val.kind
 
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
   case op.kind
@@ -94,7 +107,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
     engine.variables[key.varName] = engine.variables[key.varName] + val
     engine.printVariables()
   else:
-    echo "Not implemented: assign ", op.kind
+    todo "assign ", op.kind
 
 proc doArg(engine: Engine, names: seq[DeliNode], val: DeliNode ) =
   let arg = Argument()
@@ -105,7 +118,7 @@ proc doArg(engine: Engine, names: seq[DeliNode], val: DeliNode ) =
     of dkArgLong:
       arg.long_name = name.sons[0].argName
     else:
-      echo "Not implemented: arg ", name.sons[0].kind
+      todo "arg ", name.sons[0].kind
   arg.value = val
   engine.arguments.add(arg)
   engine.printArguments()
@@ -117,14 +130,21 @@ proc runStmt(engine: Engine, s: DeliNode) =
   of dkArgStmt:
     engine.doArg(s.sons[0].sons, s.sons[1])
   else:
-    echo "Not implemented: run ", s.kind
+    todo "run ", s.kind
 
-
+iterator tick*(engine: Engine, script: DeliNode): int =
+  echo "\nRunning program..."
+  for s in script.sons:
+    yield s.line
+    printSons(s)
+    echo "\27[0m"
+    if s.sons.len() > 0:
+      engine.runStmt(s.sons[0])
 
 proc runProgram*(engine: Engine, script: DeliNode) =
   echo "\nRunning program..."
   for s in script.sons:
-    stdout.write("! ")
+    stdout.write(":", s.line, " ")
     printSons(s)
     echo ""
     if s.sons.len() > 0:
