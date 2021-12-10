@@ -86,7 +86,7 @@ proc printArguments(engine: Engine) =
       stdout.write("   ")
     stdout.write(repeat(" ", longest-arg.long_name.len()))
     stdout.write("  = ")
-    printSons(arg.value)
+    stdout.write($(arg.value))
     stdout.write("\n")
 
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
@@ -106,25 +106,25 @@ proc initArguments(engine: Engine) =
 
 proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
   echo "  argument to deref: ", $arg
-  for b in engine.arguments:
-    echo b.short_name, b.long_name, "?"
-    if b.short_name == arg.argName:
-      return b.value
-    if b.long_name == arg.argName:
-      return b.value
-  return deliNone()
+  return findArgument(engine.arguments, arg.argName).value
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkInteger, dkPath, dkStream:
+  of dkBoolean, dkString, dkInteger, dkPath, dkStream, dkStrBlock:
     return val
+  of dkArray:
+    result = DeliNode(kind: dkArray)
+    for son in val.sons:
+      result.sons.add(engine.evaluate(son))
+    return result
   of dkRunStmt:
     let ran = engine.doRun(val.sons)
     return ran
   of dkExpr:
     result = engine.evaluate(val.sons[0])
   of dkArg:
-    result = engine.evaluate(engine.getArgument(val.sons[0]))
+    let arg = engine.getArgument(val.sons[0])
+    result = engine.evaluate(arg)
     echo $result
   else:
     todo "evaluate ", val.kind
@@ -141,7 +141,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
   else:
     todo "assign ", op.kind
 
-proc doArg(engine: Engine, names: seq[DeliNode], val: DeliNode ) =
+proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode ) =
   let arg = Argument()
   for name in names:
     case name.sons[0].kind
@@ -151,7 +151,16 @@ proc doArg(engine: Engine, names: seq[DeliNode], val: DeliNode ) =
       arg.long_name = name.sons[0].argName
     else:
       todo "arg ", name.sons[0].kind
-  arg.value = val
+
+  let user_arg = findArgument(user_args, names[0].sons[0].argName)
+  if user_arg.value == nil:
+    arg.value = DeliNode(kind: dkBoolean, boolVal: true)
+  elif user_arg.value.kind == dkNone:
+    arg.value = engine.evaluate(default)
+  else:
+    arg.value = user_arg.value
+  echo "arg value = ", $(arg.value)
+
   engine.arguments.add(arg)
   engine.printArguments()
 
@@ -175,6 +184,8 @@ proc doConditional(engine: Engine, condition: DeliNode, code: DeliNode) =
 
 proc runStmt(engine: Engine, s: DeliNode) =
   case s.kind
+  of dkStatement, dkBlock:
+    engine.runStmt(s.sons[0])
   of dkAssignStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:

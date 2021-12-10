@@ -33,3 +33,15 @@ proc initUserArguments*() =
   echo "== User Arguments =="
   for arg in user_args:
     echo arg
+
+proc findArgument*(args: seq[Argument], name: string): Argument =
+  #echo "searching for arg ", name
+  for b in args:
+    if b.short_name == name:
+      #echo $b
+      return b
+    if b.long_name == name:
+      #echo $b
+      return b
+  return Argument(value: deliNone())
+
