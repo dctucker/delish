@@ -73,7 +73,7 @@ proc initLineNumbers(parser: Parser) =
   parser.line_numbers = @[0]
   for offset in parser.line_offsets():
     parser.line_numbers.add(offset)
-  echo parser.line_numbers
+  #echo parser.line_numbers
 
 proc parse*(parser: Parser): int =
   parser.initParser()
@@ -128,7 +128,7 @@ proc getScript*(parser: Parser): DeliNode =
 
 proc printSons(node: DeliNode, level: int) =
   for son in node.sons:
-    echo indent(toString(son), 4*level)
+    echo indent($son, 4*level)
     printSons(son, level+1)
 
 proc printEntryPoint*(parser: Parser) =

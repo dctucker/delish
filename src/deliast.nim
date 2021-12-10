@@ -1,9 +1,14 @@
+import std/tables
 import deligrammar
 
 ### AST representation
 grammarToEnum(@["String","None","Ran"])
 
 type
+  Argument* = ref object
+    short_name*, long_name* : string
+    value*: DeliNode
+
   DeliNode* = ref object
     case kind*: DeliKind
     of dkNone:         none:        bool
@@ -15,6 +20,7 @@ type
     of dkBoolean:      boolVal*:    bool
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
+    of dkObject:       table*:      Table[string, DeliNode]
     of dkArgShort,
        dkArgLong,
        dkArg:          argName*:    string
@@ -29,7 +35,7 @@ type
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
-proc toString*(node: DeliNode): string =
+proc `$`*(node: DeliNode): string =
   let value = case node.kind
   of dkIdentifier: node.id
   of dkPath,
@@ -38,13 +44,25 @@ proc toString*(node: DeliNode): string =
      dkInteger:    $(node.intVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
+  of dkArgDefault: $(node.sons[0])
   of dkInvocation: node.cmd
   of dkArg,
      dkArgShort,
      dkArgLong:    $(node.argName)
+  of dkObject:     $(node.table)
   else: ""
   if value == "":
     return ($(node.kind)).substr(2)
   else:
     return ($(node.kind)).substr(2) & " " & value
 
+proc `$`*(arg: Argument): string =
+  result = ""
+  if arg.short_name != "":
+    result &= " -" & arg.short_name
+  if arg.long_name != "":
+    result &= " --" & arg.long_name
+  #if ( arg.short_name != "" or arg.long_name != "" ) and arg.value != nil:
+  result &= " = "
+  if arg.value != nil:
+    result &= $(arg.value)

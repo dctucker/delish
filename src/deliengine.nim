@@ -2,11 +2,9 @@ import std/tables
 import deliast
 import strutils
 import sequtils
+import deliargs
 
 type
-  Argument = ref object
-    short_name, long_name : string
-    value: DeliNode
   Engine* = ref object
     arguments: seq[Argument]
     variables: Table[string, DeliNode]
@@ -51,7 +49,7 @@ proc printSons(node: DeliNode) =
   #stdout.write( ($(node.kind)).substr(2), " " )
   if node.sons.len() > 0:
     for son in node.sons:
-      stdout.write( " ", toString(son) )
+      stdout.write( " ", son )
       if son.sons.len() > 0:
         stdout.write("(")
         printSons(son)
@@ -61,14 +59,14 @@ proc printSons(node: DeliNode) =
 proc printSons(node: DeliNode, level: int) =
   if node.sons.len() > 0:
     for son in node.sons:
-      echo indent(toString(son), 4*level)
+      echo indent($son, 4*level)
       printSons(son, level+1)
 
 proc printVariables(engine: Engine) =
   echo "== Engine Variables (", engine.variables.len(), ") =="
   for k,v in engine.variables:
     stdout.write("  $", k, " = ")
-    stdout.write( toString(v), "(" )
+    stdout.write( v, "(" )
     printSons(v)
     stdout.write( ")" )
     echo ""
@@ -94,23 +92,43 @@ proc printArguments(engine: Engine) =
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   todo "run and consume output"
   return DeliNode(kind: dkRan, sons: @[
-    DeliNode(kind: dkObject, sons: @[
-      DeliNode(kind: dkStream, intVal: 1, sons: @[
+    DeliNode(kind: dkObject, table: {
+      "out": DeliNode(kind: dkStream, intVal: 1, sons: @[
       ]),
-      DeliNode(kind: dkStream, intVal: 2, sons: @[
+      "err": DeliNode(kind: dkStream, intVal: 2, sons: @[
       ])
-    ])
+    }.toTable())
   ])
+
+proc initArguments(engine: Engine) =
+  initUserArguments()
+  engine.arguments = @[]
+
+proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
+  echo "  argument to deref: ", $arg
+  for b in engine.arguments:
+    echo b.short_name, b.long_name, "?"
+    if b.short_name == arg.argName:
+      return b.value
+    if b.long_name == arg.argName:
+      return b.value
+  return deliNone()
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
+  of dkBoolean, dkString, dkInteger, dkPath, dkStream:
+    return val
   of dkRunStmt:
     let ran = engine.doRun(val.sons)
     return ran
   of dkExpr:
-    result = val.sons[0]
+    result = engine.evaluate(val.sons[0])
+  of dkArg:
+    result = engine.evaluate(engine.getArgument(val.sons[0]))
+    echo $result
   else:
     todo "evaluate ", val.kind
+    return deliNone()
 
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
   case op.kind
@@ -137,17 +155,38 @@ proc doArg(engine: Engine, names: seq[DeliNode], val: DeliNode ) =
   engine.arguments.add(arg)
   engine.printArguments()
 
+proc isTruthy(engine: Engine, node: DeliNode): bool =
+  case node.kind
+  of dkBoolean: return node.boolVal
+  else:
+    return false
+
+  return false
+
+proc runStmt(engine: Engine, s: DeliNode)
+
+proc doConditional(engine: Engine, condition: DeliNode, code: DeliNode) =
+  let eval = engine.evaluate(condition)
+  echo "condition: ", eval
+  let ok = engine.isTruthy(eval)
+  if not ok: return
+  for stmt in code.sons:
+    engine.runStmt(stmt)
+
 proc runStmt(engine: Engine, s: DeliNode) =
   case s.kind
   of dkAssignStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
-    engine.doArg(s.sons[0].sons, s.sons[1])
+    engine.doArg(s.sons[0].sons, s.sons[1].sons[0])
+  of dkConditional:
+    engine.doConditional(s.sons[0], s.sons[1])
   else:
     todo "run ", s.kind
 
 iterator tick*(engine: Engine, script: DeliNode): int =
   echo "\nRunning program..."
+  engine.initArguments()
   for s in script.sons:
     yield s.line
     printSons(s)
@@ -157,8 +196,9 @@ iterator tick*(engine: Engine, script: DeliNode): int =
 
 proc runProgram*(engine: Engine, script: DeliNode) =
   echo "\nRunning program..."
+  engine.initArguments()
   for s in script.sons:
-    stdout.write(":", s.line, " ", toString(s))
+    stdout.write(":", s.line, " ", s)
     printSons(s)
     echo ""
     if s.sons.len() > 0:
