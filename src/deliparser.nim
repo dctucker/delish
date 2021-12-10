@@ -10,7 +10,6 @@ type Parser* = ref object
   source*:      string
   captures:     Stack[string]
   symbol_stack: Stack[string]
-  stack_table:  Table[string, Stack[DeliNode]]
   node_stack:   Stack[DeliNode]
   entry_point:  DeliNode
   line_numbers: seq[int]
@@ -30,11 +29,6 @@ proc line_number(parser: Parser, pos: int): int =
 
 proc indent(parser: Parser, msg: string): string =
   return indent( msg, 4*parser.symbol_stack.len() )
-
-proc pushNode(parser: Parser, symbol: string, node: DeliNode) =
-  var stack = addr parser.stack_table[symbol]
-  stack[].push(node)
-  echo parser.indent("PUSH "), symbol, " = ", stack[].len()
 
 proc popCapture(parser: Parser): string =
   result = parser.captures.pop()
@@ -74,9 +68,6 @@ proc parseCapture(parser: Parser, start, length: int, s: string) =
 proc initParser(parser: Parser) =
   parser.captures     = Stack[string]()
   parser.symbol_stack = Stack[string]()
-  parser.stack_table  = initTable[string, Stack[DeliNode]]()
-  for symbol in symbol_names:
-    parser.stack_table[symbol] = Stack[DeliNode]()
 
 proc initLineNumbers(parser: Parser) =
   parser.line_numbers = @[0]
@@ -139,14 +130,6 @@ proc printSons(node: DeliNode, level: int) =
   for son in node.sons:
     echo indent(toString(son), 4*level)
     printSons(son, level+1)
-
-proc printStackTable*(parser: Parser) =
-  echo "\n== Stack Table =="
-  for k,v in parser.stack_table:
-    echo k, "="
-    for node in v.toSeq():
-      printSons(node, 0)
-      #echo "  ", node[], " sons = ", node[].sons.len()
 
 proc printEntryPoint*(parser: Parser) =
   echo "\n== Node Stack =="

@@ -35,7 +35,7 @@ const grammar_source* = """
   ArgNames      <- ( Arg Blank+ )+
   Arg           <- ArgLong / ArgShort
   ArgShort      <- "-" { \w+ }
-  ArgLong       <- { "-" ("-" \w+)+ }
+  ArgLong       <- "--" { (\w ("-" \w)*)+ }
   ArgDefault    <- Expr
   VarDeref      <- Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
   Variable      <- "$" { \w+ }

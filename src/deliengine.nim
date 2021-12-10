@@ -1,7 +1,8 @@
 import std/tables
+import std/strformat
 import deliast
 import strutils
-#import sequtils
+import sequtils
 
 type
   Argument = ref object
@@ -65,7 +66,7 @@ proc printSons(node: DeliNode, level: int) =
       printSons(son, level+1)
 
 proc printVariables(engine: Engine) =
-  echo "Engine Variables: (", engine.variables.len(), ")"
+  echo "== Engine Variables (", engine.variables.len(), ") =="
   for k,v in engine.variables:
     stdout.write("  $", k, " = ")
     stdout.write( toString(v), "(" )
@@ -74,9 +75,22 @@ proc printVariables(engine: Engine) =
     echo ""
 
 proc printArguments(engine: Engine) =
+  echo "== Engine Arguments =="
+  let longest = engine.arguments.map(proc(x:Argument):int = x.long_name.len()).max()
   for arg in engine.arguments:
-    stdout.write("-", arg.short_name, " ", arg.long_name, " = ")
-    printSons(arg.value, 0)
+    stdout.write("  ")
+    if arg.short_name != "":
+      stdout.write("-", arg.short_name)
+    else:
+      stdout.write("  ")
+    if arg.long_name != "":
+      stdout.write(" --", arg.long_name)
+    else:
+      stdout.write("   ")
+    stdout.write(repeat(" ", longest-arg.long_name.len()))
+    stdout.write("  = ")
+    printSons(arg.value)
+    stdout.write("\n")
 
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   return DeliNode(kind: dkRan)

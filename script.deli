@@ -1,6 +1,6 @@
 #!/usr/bin/deli
 
-#$found = run find . -name "disk*" | grep "sdb"
+$found = run find . -name "disk*" | grep "sdb"
 
 arg    --yes     = false
 arg -n           = true

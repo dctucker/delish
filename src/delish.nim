@@ -23,7 +23,7 @@ when isMainModule:
   var parsed_len = 0
   benchmark "parsing":
     parsed_len = parser.parse()
-  parser.printStackTable()
+  #parser.printStackTable()
   parser.printEntryPoint()
 
   if parsed_len != source.len():
