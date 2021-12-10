@@ -1,5 +1,4 @@
 import std/tables
-import std/strformat
 import deliast
 import strutils
 import sequtils
@@ -93,20 +92,21 @@ proc printArguments(engine: Engine) =
     stdout.write("\n")
 
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
-  return DeliNode(kind: dkRan)
-  #, sons: [
-  #  DeliNode(kind: dkObject, sons: [
-  #    DeliNode(kind: dkExpr
-  #    DeliNode(kind: dkStream, intVal: 1)
-  #    DeliNode(kind: dkStream, intVal: 2)
-  #]])
+  todo "run and consume output"
+  return DeliNode(kind: dkRan, sons: @[
+    DeliNode(kind: dkObject, sons: @[
+      DeliNode(kind: dkStream, intVal: 1, sons: @[
+      ]),
+      DeliNode(kind: dkStream, intVal: 2, sons: @[
+      ])
+    ])
+  ])
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
   of dkRunStmt:
     let ran = engine.doRun(val.sons)
-    result = DeliNode(kind: dkRan)
-    result.sons.add(ran)
+    return ran
   of dkExpr:
     result = val.sons[0]
   else:
@@ -163,15 +163,6 @@ proc runProgram*(engine: Engine, script: DeliNode) =
     echo ""
     if s.sons.len() > 0:
       engine.runStmt(s.sons[0])
-    #case s.kind
-    #of dkIncludeStmt:
-    #  echo s.includeVal.strVal
-    #  #engine.addInclude(s.includeVal)
-    #of dkFunctionStmt:
-    #  echo s.funcName.id
-    #else:
-    #  echo $(s.kind)
-
 
 ### do stuff with environment
 #
