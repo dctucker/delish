@@ -24,22 +24,23 @@ const grammar_source* = """
   Loop          <- "while" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
   Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code* \s* "}" \s*
   Function      <- Identifier Blank* "=" Blank* "{" \s* Code* \s* "}" \s*
-  Statement     <- AssignStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
+  Statement     <- AssignStmt / LocalStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
   AssignStmt    <- Variable Blank* ( AssignOp / AppendOp )  Blank* (Expr / RunStmt)
   AssignOp      <- "="
   AppendOp      <- "+="
-  FunctionStmt  <- Identifier
+  FunctionStmt  <- Identifier (Blank+ Expr)*
   IncludeStmt   <- "include" Blank+ StrLiteral
   RunStmt       <- "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
   Invocation    <- { \w+ } ( Blank+ Expr )*
-  EnvStmt       <- "env" Blank+ Variable (Blank* "=" Blank* EnvDefault)?
+  EnvStmt       <- "env" Blank+ Variable (Blank* "|=" Blank* EnvDefault)?
   EnvDefault    <- Expr
-  ArgStmt       <- "arg" Blank+ ArgNames Blank* "=" Blank* ArgDefault
-  ArgNames      <- ( Arg Blank+ )+
+  ArgStmt       <- "arg" ArgNames (Blank* "|=" Blank* ArgDefault)?
+  ArgNames      <- ( Blank+ Arg )+
   Arg           <- ArgLong / ArgShort
   ArgShort      <- "-" { \w+ }
   ArgLong       <- "--" { (\w ("-" \w)*)+ }
   ArgDefault    <- Expr
+  LocalStmt     <- "local" Blank+ Variable
   VarDeref      <- Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
   Variable      <- "$" { \w+ }
   Object        <- "[" ( \s* Expr Blank* ":" Blank* Expr Blank* ","? \s* )+ "]"

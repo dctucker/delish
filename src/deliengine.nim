@@ -129,7 +129,7 @@ proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkInteger, dkPath, dkStream, dkStrBlock, dkStrLiteral:
+  of dkBoolean, dkString, dkInteger, dkPath, dkStream, dkStrBlock, dkStrLiteral, dkNone:
     return val
   of dkArray:
     result = DeliNode(kind: dkArray)
@@ -170,7 +170,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
   else:
     todo "assign ", op.kind
 
-proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode ) =
+proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode) =
   let arg = Argument()
   for name in names:
     case name.sons[0].kind
@@ -214,27 +214,37 @@ proc doConditional(engine: Engine, condition: DeliNode, code: DeliNode) =
   for stmt in code.sons:
     engine.runStmt(stmt)
 
-proc doFunction(engine: Engine, id: DeliNode, code: DeliNode) =
+proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   engine.functions[id.id] = code
   echo engine.functions
 
+proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
+  let code = engine.functions[id.id]
+  todo "execute function call"
+
 proc runStmt(engine: Engine, s: DeliNode) =
+  let nsons = s.sons.len()
   case s.kind
   of dkStatement, dkBlock:
     engine.runStmt(s.sons[0])
   of dkAssignStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
-    engine.doArg(s.sons[0].sons, s.sons[1].sons[0])
+    if nsons > 1:
+      engine.doArg(s.sons[0].sons, s.sons[1].sons[0])
+    else:
+      engine.doArg(s.sons[0].sons, deliNone())
   of dkEnvStmt:
-    if s.sons.len() > 1:
+    if nsons > 1:
       engine.doEnv(s.sons[0], s.sons[1])
     else:
       engine.doEnv(s.sons[0])
   of dkConditional:
     engine.doConditional(s.sons[0], s.sons[1])
   of dkFunction:
-    engine.doFunction(s.sons[0], s.sons[1])
+    engine.doFunctionDef(s.sons[0], s.sons[1])
+  of dkFunctionStmt:
+    engine.doFunctionCall(s.sons[0], s.sons[1 .. ^1])
   else:
     todo "run ", s.kind
 
@@ -263,11 +273,11 @@ proc initArguments(engine: Engine) =
       if f.isNone():
         raise newException(Exception, "Unknown argument: " & arg.long_name)
       else:
-        if arg.value == nil:
+        if arg.value.isNone():
           arg.value = DeliNode(kind: dkBoolean, boolVal: true)
         f.value = arg.value
 
-  #engine.printArguments()
+  engine.printArguments()
 
 iterator tick*(engine: Engine): int =
   echo "\nRunning program..."

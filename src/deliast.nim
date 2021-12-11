@@ -34,6 +34,11 @@ type
     sons*: seq[DeliNode]
     line*: int
 
+proc isNone*(node: DeliNode):bool =
+  if node.kind == dkNone:
+    return true
+  return false
+
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
@@ -64,6 +69,7 @@ proc `$`*(node: DeliNode): string =
   else:
     return ($(node.kind)).substr(2) & " " & value
 
+
 proc `$`*(arg: Argument): string =
   result = ""
   if arg.short_name != "":
@@ -75,8 +81,9 @@ proc `$`*(arg: Argument): string =
   if arg.value != nil:
     result &= $(arg.value)
 
-proc isNone*(node: DeliNode):bool =
-  if node.kind == dkNone:
-    return true
-  return false
+proc isNone*(arg: Argument):bool =
+  return arg.short_name == "" and arg.long_name == "" and arg.value.isNone()
+
+proc isFlag*(arg: Argument):bool =
+  return arg.short_name != "" or arg.long_name != ""
 

@@ -12,12 +12,12 @@ iterator parseCmdLine(): Argument =
     of cmdEnd: break
     of cmdLongOption:
       if p.val == "":
-        yield Argument(long_name: p.key)
+        yield Argument(long_name: p.key, value: deliNone())
       else:
         yield Argument(long_name: p.key, value: strVal p.val)
     of cmdShortOption:
       if p.val == "":
-        yield Argument(short_name: p.key)
+        yield Argument(short_name: p.key, value: deliNone())
       else:
         yield Argument(short_name: p.key, value: strval p.val)
     of cmdArgument:
@@ -34,12 +34,6 @@ proc initUserArguments*() =
   user_args = @[]
   for arg in parseCmdLine():
     user_args.add(arg)
-
-proc isNone*(arg: Argument):bool =
-  return arg.value != nil and arg.value.kind == dkNone
-
-proc isFlag*(arg: Argument):bool =
-  return arg.short_name != "" or arg.long_name != ""
 
 proc matchNames(a, b: Argument): bool =
   if a.short_name != "" and a.short_name == b.short_name:

@@ -2,10 +2,11 @@
 
 $found = run find . -name "disk*" | grep "sdb"
 
-arg -y --yes     = false
-arg -n           = true
-arg -v --verbose = false
-arg    --help    = """
+arg -y --yes     |= false
+arg -n           |= true
+arg -v --verbose |= false
+arg --default
+arg    --help    |= """
 some documentation
 """
 #arg $filename
@@ -13,11 +14,12 @@ env $GAS
 $GAS = "propane"
 
 func = {
-  out "func called"
+  local $message
+  out $message
 }
 
 if --yes {
-  func
+  func "func called"
   if --verbose {
     out "Done."
     err "No errors"
