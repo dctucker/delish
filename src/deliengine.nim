@@ -3,6 +3,7 @@ import os
 import deliast
 import strutils
 import sequtils
+import stacks
 import deliargs
 import deliparser
 
@@ -10,10 +11,12 @@ type
   Engine* = ref object
     arguments: seq[Argument]
     variables: Table[string, DeliNode]
+    locals:    Stack[ Table[string, DeliNode] ]
     envars:    Table[string, string]
     functions: Table[string, DeliNode]
     parser:    Parser
     script:    DeliNode
+    current:   DeliNode
 
 proc `+`(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
@@ -44,14 +47,31 @@ proc `+`(a, b: DeliNode): DeliNode =
 proc todo(msg: varargs[string, `$`]) =
   stderr.write("\27[33mTODO: ", msg.join(""), "\27[0m\n")
 
+proc repr(node: DeliNode): string =
+  result = ""
+  result &= $node
+  if node.sons.len() > 0:
+    result &= "( "
+    for n in node.sons:
+      result &= repr(n)
+    result &= ")"
+  result &= " "
+
+proc lineInfo*(engine: Engine, line: int): string =
+  let sline = engine.parser.getLine(line)
+  let linenum = "\27[1;30m:" & $line
+  let source = " \27[0;34;4m" & sline
+  let parsed = "\27[1;24m " & repr(engine.current)
+  return linenum & source & parsed & "\27[0m\n"
 
 proc newEngine*(parser: Parser): Engine =
-  return Engine(
+  result = Engine(
     arguments: newSeq[Argument](),
     variables: initTable[string, DeliNode](),
     parser:    parser,
     script:    parser.getScript()
   )
+  result.locals.push(initTable[string, DeliNode]())
 
 proc printSons(node: DeliNode) =
   #stdout.write( ($(node.kind)).substr(2), " " )
@@ -145,6 +165,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     let arg = engine.getArgument(val.sons[0])
     result = engine.evaluate(arg)
     echo $result
+  of dkEnvDefault:
+    return engine.evaluate(val.sons[0])
   else:
     todo "evaluate ", val.kind
     return deliNone()
@@ -154,19 +176,28 @@ proc assignEnvar(engine: Engine, key: string, value: string) =
   engine.envars[key] = value
   engine.printEnvars()
 
+proc assignLocal(engine: Engine, key: string, value: DeliNode) =
+  var locals = engine.locals.pop()
+  locals[key] = value
+  engine.locals.push(locals)
+  echo engine.locals
+
 proc assignVariable(engine: Engine, key: string, value: DeliNode) =
-  if engine.envars.contains(key):
+  if engine.locals.peek().contains(key):
+    engine.assignLocal(key, value)
+  elif engine.envars.contains(key):
     engine.assignEnvar(key, value.toString())
-  engine.variables[key] = value
+    engine.variables[key] = value
+  else:
+    engine.variables[key] = value
+    engine.printVariables()
 
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
   case op.kind
   of dkAssignOp:
     engine.assignVariable(key.varName, engine.evaluate(val))
-    engine.printVariables()
   of dkAppendOp:
     engine.assignVariable(key.varName, engine.variables[key.varName] + val)
-    engine.printVariables()
   else:
     todo "assign ", op.kind
 
@@ -218,11 +249,31 @@ proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   engine.functions[id.id] = code
   echo engine.functions
 
+
+proc pushLocals(engine: Engine) =
+  engine.locals.push(engine.locals.peek())
+  echo "  push locals ", engine.locals
+
+proc popLocals(engine: Engine) =
+  discard engine.locals.pop()
+  echo "  pop locals ", engine.locals
+
 proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
   let code = engine.functions[id.id]
-  todo "execute function call"
+  engine.pushLocals()
+  for s in code.sons:
+    engine.runStmt(s)
+  engine.popLocals()
+
+proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
+  var locals = engine.locals.pop()
+  locals[name.varName] = default
+  engine.locals.push(locals)
 
 proc runStmt(engine: Engine, s: DeliNode) =
+  engine.current = s
+  if s.kind notin [dkStatement, dkBlock]:
+    echo engine.lineInfo(s.line)
   let nsons = s.sons.len()
   case s.kind
   of dkStatement, dkBlock:
@@ -239,6 +290,11 @@ proc runStmt(engine: Engine, s: DeliNode) =
       engine.doEnv(s.sons[0], s.sons[1])
     else:
       engine.doEnv(s.sons[0])
+  of dkLocalStmt:
+    if nsons > 1:
+      engine.doLocal(s.sons[0], s.sons[1])
+    else:
+      engine.doLocal(s.sons[0], deliNone())
   of dkConditional:
     engine.doConditional(s.sons[0], s.sons[1])
   of dkFunction:
@@ -279,15 +335,22 @@ proc initArguments(engine: Engine) =
 
   engine.printArguments()
 
+iterator runStatements(engine: Engine, statements: seq[DeliNode]): int =
+  for s in statements:
+    #echo s.kind
+    #printSons(s)
+    #echo "\27[0m"
+    if s.sons.len() > 0:
+      for s2 in s.sons:
+        yield s2.line
+        engine.runStmt(s2)
+
 iterator tick*(engine: Engine): int =
   echo "\nRunning program..."
   engine.initArguments()
-  for s in engine.script.sons:
-    yield s.line
-    printSons(s)
-    echo "\27[0m"
-    if s.sons.len() > 0:
-      engine.runStmt(s.sons[0])
+  for line in runStatements(engine, engine.script.sons):
+    yield line
+
 
 ### do stuff with environment
 #
@@ -300,5 +363,3 @@ iterator tick*(engine: Engine): int =
 #    let dir = toSeq(walkDir(".", relative=true))
 #    for f in dir:
 #      echo f
-#
-#

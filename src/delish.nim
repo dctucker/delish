@@ -39,6 +39,8 @@ when isMainModule:
 
   benchmark "executing":
     for line in engine.tick():
-      let sline = parser.getLine(line)
-      stdout.write( "\27[1;30m:", line, " \27[0;34;4m", sline, "\27[1;24m" )
+      echo "\27[0m"
+      #let sline = parser.getLine(line)
+      #echo engine.lineInfo(line)
+      #stdout.write( "\27[1;30m:", line, " \27[0;34;4m", sline, "\27[0m\n") #, "\27[1;24m" )
 

@@ -10,21 +10,22 @@ arg    --help    |= """
 some documentation
 """
 #arg $filename
-env $GAS
+env $GAS |= "diesel"
 $GAS = "propane"
 
 func = {
   local $message
+  $message = "hello"
   out $message
 }
 
 if --yes {
+  $var = "x"
   func "func called"
   if --verbose {
     out "Done."
     err "No errors"
   }
-  $var = "x"
 }
 
 #$flags = []

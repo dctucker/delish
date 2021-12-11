@@ -39,9 +39,9 @@ proc line_number*(parser: Parser, pos: int): int =
 proc indent(parser: Parser, msg: string): string =
   return indent( msg, 4*parser.symbol_stack.len() )
 
-proc popCapture(parser: Parser): string =
-  result = parser.captures.pop()
-  debug(parser, parser.indent("POPCAP "), result)
+#proc popCapture(parser: Parser): string =
+#  result = parser.captures.pop()
+#  debug(parser, parser.indent("POPCAP "), result)
 
 proc parseStreamInt(str: string): int =
   case str
@@ -112,7 +112,7 @@ proc parse*(parser: Parser): int =
       leave:
         if p.nt.name notin ["Blank", "VLine", "Comment"]:
           let inner_node = parser.node_stack.pop()
-          let symbol = parser.symbol_stack.pop()
+          discard parser.symbol_stack.pop()
           if length > 0:
             let matchStr = s.substr(start, start+length-1)
             debug parser, parser.indent("\27[1m< "), $p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"

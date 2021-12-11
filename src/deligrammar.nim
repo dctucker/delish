@@ -40,7 +40,7 @@ const grammar_source* = """
   ArgShort      <- "-" { \w+ }
   ArgLong       <- "--" { (\w ("-" \w)*)+ }
   ArgDefault    <- Expr
-  LocalStmt     <- "local" Blank+ Variable
+  LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
   VarDeref      <- Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
   Variable      <- "$" { \w+ }
   Object        <- "[" ( \s* Expr Blank* ":" Blank* Expr Blank* ","? \s* )+ "]"
