@@ -1,4 +1,5 @@
 import std/tables
+import os
 import deliast
 import strutils
 import sequtils
@@ -9,6 +10,8 @@ type
   Engine* = ref object
     arguments: seq[Argument]
     variables: Table[string, DeliNode]
+    envars:    Table[string, string]
+    functions: Table[string, DeliNode]
     parser:    Parser
     script:    DeliNode
 
@@ -96,6 +99,13 @@ proc printArguments(engine: Engine) =
     stdout.write($(arg.value))
     stdout.write("\n")
 
+proc printEnvars(engine: Engine) =
+  echo "ENV = ", engine.envars
+  #echo "--- available envars ---"
+  #for k,v in envPairs():
+  #  stdout.write(k, " ")
+  #stdout.write("\n")
+
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   todo "run and consume output"
   return DeliNode(kind: dkRan, sons: @[
@@ -139,17 +149,26 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     todo "evaluate ", val.kind
     return deliNone()
 
+proc assignEnvar(engine: Engine, key: string, value: string) =
+  putEnv(key, value)
+  engine.envars[key] = value
+  engine.printEnvars()
+
+proc assignVariable(engine: Engine, key: string, value: DeliNode) =
+  if engine.envars.contains(key):
+    engine.assignEnvar(key, value.toString())
+  engine.variables[key] = value
+
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
   case op.kind
   of dkAssignOp:
-    engine.variables[key.varName] = engine.evaluate(val)
+    engine.assignVariable(key.varName, engine.evaluate(val))
     engine.printVariables()
   of dkAppendOp:
-    engine.variables[key.varName] = engine.variables[key.varName] + val
+    engine.assignVariable(key.varName, engine.variables[key.varName] + val)
     engine.printVariables()
   else:
     todo "assign ", op.kind
-
 
 proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode ) =
   let arg = Argument()
@@ -168,12 +187,21 @@ proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode ) =
     #engine.printArguments()
     #echo "\n"
 
+proc doEnv(engine: Engine, name: DeliNode, default: DeliNode = deliNone()) =
+  let key = name.varName
+  let def = if default.isNone():
+    ""
+  else:
+    engine.evaluate(default).toString()
+  let value = getEnv(key, def)
+  engine.envars[ name.varName ] = value
+  engine.printEnvars()
+
 proc isTruthy(engine: Engine, node: DeliNode): bool =
   case node.kind
   of dkBoolean: return node.boolVal
   else:
     return false
-
   return false
 
 proc runStmt(engine: Engine, s: DeliNode)
@@ -186,6 +214,10 @@ proc doConditional(engine: Engine, condition: DeliNode, code: DeliNode) =
   for stmt in code.sons:
     engine.runStmt(stmt)
 
+proc doFunction(engine: Engine, id: DeliNode, code: DeliNode) =
+  engine.functions[id.id] = code
+  echo engine.functions
+
 proc runStmt(engine: Engine, s: DeliNode) =
   case s.kind
   of dkStatement, dkBlock:
@@ -194,8 +226,15 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
     engine.doArg(s.sons[0].sons, s.sons[1].sons[0])
+  of dkEnvStmt:
+    if s.sons.len() > 1:
+      engine.doEnv(s.sons[0], s.sons[1])
+    else:
+      engine.doEnv(s.sons[0])
   of dkConditional:
     engine.doConditional(s.sons[0], s.sons[1])
+  of dkFunction:
+    engine.doFunction(s.sons[0], s.sons[1])
   else:
     todo "run ", s.kind
 
@@ -207,7 +246,6 @@ proc runArgStmts(engine: Engine, node: DeliNode) =
     engine.runStmt(node)
   else:
     discard
-
 
 proc initArguments(engine: Engine) =
   engine.arguments = @[]
@@ -247,11 +285,6 @@ iterator tick*(engine: Engine): int =
 #when isMainModule:
 #  stdout.write "$ "
 #  var cmdline = readLine(stdin)
-#
-#  if cmdline == "envars":
-#    for k,v in envPairs():
-#      stdout.write(k, " ")
-#    stdout.write("\n")
 #
 #  if cmdline == "glob":
 #    let dir = toSeq(walkDir(".", relative=true))

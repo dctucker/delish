@@ -37,8 +37,9 @@ type
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
-proc `$`*(node: DeliNode): string =
-  let value = case node.kind
+proc `$`*(node: DeliNode): string
+proc toString*(node: DeliNode):string =
+  return case node.kind
   of dkIdentifier: node.id
   of dkPath,
      dkStrLiteral,
@@ -55,6 +56,9 @@ proc `$`*(node: DeliNode): string =
      dkArgLong:    $(node.argName)
   of dkObject:     $(node.table)
   else: ""
+
+proc `$`*(node: DeliNode): string =
+  let value = node.toString()
   if value == "":
     return ($(node.kind)).substr(2)
   else:
@@ -70,3 +74,9 @@ proc `$`*(arg: Argument): string =
   result &= " = "
   if arg.value != nil:
     result &= $(arg.value)
+
+proc isNone*(node: DeliNode):bool =
+  if node.kind == dkNone:
+    return true
+  return false
+

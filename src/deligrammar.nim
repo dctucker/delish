@@ -23,7 +23,7 @@ const grammar_source* = """
   Conditional   <- "if"    Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
   Loop          <- "while" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
   Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code* \s* "}" \s*
-  Function      <- Identifier Blank* "(" Blank* ")" Blank* "{" \s* Code* \s* "}" \s*
+  Function      <- Identifier Blank* "=" Blank* "{" \s* Code* \s* "}" \s*
   Statement     <- AssignStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
   AssignStmt    <- Variable Blank* ( AssignOp / AppendOp )  Blank* (Expr / RunStmt)
   AssignOp      <- "="

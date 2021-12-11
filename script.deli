@@ -9,9 +9,10 @@ arg    --help    = """
 some documentation
 """
 #arg $filename
-env $USER
+env $GAS
+$GAS = "propane"
 
-func(){
+func = {
   out "func called"
 }
 
