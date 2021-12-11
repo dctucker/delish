@@ -2,12 +2,18 @@
 
 $found = run find . -name "disk*" | grep "sdb"
 
-arg    --yes     = false
+arg -y --yes     = false
 arg -n           = true
 arg -v --verbose = false
-arg -h --help    = """
+arg    --help    = """
 some documentation
 """
+#arg $filename
+env $USER
+
+func(){
+  out "func called"
+}
 
 if --yes {
   func
@@ -18,30 +24,30 @@ if --yes {
   $var = "x"
 }
 
-$flags = []
-$flags += -l
-$flags += -a
-$flags += -h
-
-#$js = json """
-#{
-#  "a": "1",
-#  "b": 2
-#}
-#"""
-
-out $js."a"
-
-run ls $flags \
-"string"
-
-include "scriptlib.deli"
-functioncall
-
-
-$arr = [ 1, 2, 3 ]
-
-#$ran = [
-#  out: "Hello world"
-#  err: ""
-#]
+#$flags = []
+#$flags += -l
+#$flags += -a
+#$flags += -h
+#
+##$js = json """
+##{
+##  "a": "1",
+##  "b": 2
+##}
+##"""
+#
+#out $js."a"
+#
+#run ls $flags \
+#"string"
+#
+#include "scriptlib.deli"
+#functioncall
+#
+#
+#$arr = [ 1, 2, 3 ]
+#
+##$ran = [
+##  out: "Hello world"
+##  err: ""
+##]

@@ -25,23 +25,35 @@ iterator parseCmdLine(): Argument =
 
 var user_args*: seq[Argument]
 
+proc printUserArguments*() =
+  echo "== User Arguments =="
+  for arg in user_args:
+    echo arg
+
 proc initUserArguments*() =
   user_args = @[]
   for arg in parseCmdLine():
     user_args.add(arg)
 
-  echo "== User Arguments =="
-  for arg in user_args:
-    echo arg
+proc isNone*(arg: Argument):bool =
+  return arg.value != nil and arg.value.kind == dkNone
 
-proc findArgument*(args: seq[Argument], name: string): Argument =
+proc isFlag*(arg: Argument):bool =
+  return arg.short_name != "" or arg.long_name != ""
+
+proc matchNames(a, b: Argument): bool =
+  if a.short_name != "" and a.short_name == b.short_name:
+    return true
+  if a.long_name != "" and a.long_name == b.long_name:
+    return true
+  return false
+
+proc findArgument*(args: seq[Argument], a: Argument): Argument =
   #echo "searching for arg ", name
   for b in args:
-    if b.short_name == name:
-      #echo $b
-      return b
-    if b.long_name == name:
-      #echo $b
+    if not b.isFlag():
+      continue
+    if matchNames(a,b):
       return b
   return Argument(value: deliNone())
 

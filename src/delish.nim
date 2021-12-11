@@ -18,23 +18,27 @@ when isMainModule:
     echo "usage: delish script.deli"
     quit 2
 
-  let source = readFile(paramStr(1))
-  let parser = Parser(source: source)
+  let filename = paramStr(1)
+  let source = readFile(filename)
+  let parser = Parser(source: source, debug: false)
   var parsed_len = 0
   benchmark "parsing":
     parsed_len = parser.parse()
   #parser.printStackTable()
-  parser.printEntryPoint()
+  #parser.printEntryPoint()
 
   if parsed_len != source.len():
     stderr.write("\n*** ERROR: Stopped parsing at pos ", parsed_len, "/", source.len(), "\n")
+    let num = parser.line_number(parsed_len)
+    let errline = parser.getLine(num)
+    stderr.write("Syntax error in ", filename, ":", num, " near ", errline, "\n\n")
     quit 1
 
-  let script = parser.getScript()
-  var engine: Engine = newEngine()
+  #let script = parser.getScript()
+  var engine: Engine = newEngine(parser)
 
   benchmark "executing":
-    for line in engine.tick(script):
+    for line in engine.tick():
       let sline = parser.getLine(line)
       stdout.write( "\27[1;30m:", line, " \27[0;34;4m", sline, "\27[1;24m" )
 

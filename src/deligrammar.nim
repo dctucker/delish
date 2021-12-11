@@ -19,11 +19,12 @@ const grammar_source* = """
   VLine         <- \n / Comment / Block / Statement Comment* \n
   Comment       <- '#' @ \n
   Expr          <- VarDeref / Arg / Object / Array / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
-  Block         <- Conditional / Loop / Subshell
-  Conditional   <- "if"    Blank+ Expr Blank+ "{" \s* Code \s* "}" \s*
-  Loop          <- "while" Blank+ Expr Blank+ "{" \s* Code \s* "}" \s*
-  Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code \s* "}" \s*
-  Statement     <- AssignStmt / ArgStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
+  Block         <- Conditional / Loop / Subshell / Function
+  Conditional   <- "if"    Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
+  Loop          <- "while" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
+  Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code* \s* "}" \s*
+  Function      <- Identifier Blank* "(" Blank* ")" Blank* "{" \s* Code* \s* "}" \s*
+  Statement     <- AssignStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
   AssignStmt    <- Variable Blank* ( AssignOp / AppendOp )  Blank* (Expr / RunStmt)
   AssignOp      <- "="
   AppendOp      <- "+="
@@ -31,7 +32,9 @@ const grammar_source* = """
   IncludeStmt   <- "include" Blank+ StrLiteral
   RunStmt       <- "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
   Invocation    <- { \w+ } ( Blank+ Expr )*
-  ArgStmt       <- "arg" Blank+ ArgNames Blank* "=" Blank+ ArgDefault
+  EnvStmt       <- "env" Blank+ Variable (Blank* "=" Blank* EnvDefault)?
+  EnvDefault    <- Expr
+  ArgStmt       <- "arg" Blank+ ArgNames Blank* "=" Blank* ArgDefault
   ArgNames      <- ( Arg Blank+ )+
   Arg           <- ArgLong / ArgShort
   ArgShort      <- "-" { \w+ }

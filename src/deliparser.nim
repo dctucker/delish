@@ -1,5 +1,6 @@
 import std/tables
 import std/deques
+import macros
 import strutils
 import stacks
 import pegs
@@ -8,12 +9,20 @@ import deligrammar
 
 type Parser* = ref object
   source*:      string
+  debug*:       bool
   captures:     Stack[string]
   symbol_stack: Stack[string]
   node_stack:   Stack[DeliNode]
   entry_point:  DeliNode
   line_numbers: seq[int]
   parsed_len:   int
+
+proc debug(parser: Parser, msg: varargs[string]) =
+  if not parser.debug:
+    return
+  for m in msg:
+    stdout.write(m)
+  stdout.write("\n")
 
 iterator line_offsets(parser: Parser): int =
   var start = 0
@@ -22,7 +31,7 @@ iterator line_offsets(parser: Parser): int =
     yield start
     start = parser.source.find("\n", start) + 1
 
-proc line_number(parser: Parser, pos: int): int =
+proc line_number*(parser: Parser, pos: int): int =
   for line, offset in parser.line_numbers:
     if offset > pos:
       return line - 1
@@ -32,7 +41,7 @@ proc indent(parser: Parser, msg: string): string =
 
 proc popCapture(parser: Parser): string =
   result = parser.captures.pop()
-  echo parser.indent("POPCAP "), result
+  debug(parser, parser.indent("POPCAP "), result)
 
 proc parseStreamInt(str: string): int =
   case str
@@ -42,7 +51,9 @@ proc parseStreamInt(str: string): int =
 
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
-  of dkString:     node.strVal  = capture
+  of dkStrLiteral,
+     dkStrBlock,
+     dkString:     node.strVal  = capture
   of dkPath:       node.strVal  = capture
   of dkIdentifier: node.id      = capture
   of dkVariable:   node.varName = capture
@@ -56,10 +67,10 @@ proc parseCapture(node: DeliNode, capture: string) =
     discard
 
 proc parseCapture(parser: Parser, start, length: int, s: string) =
-  if length > 0:
+  if length >= 0:
     let matchStr = s.substr(start, start+length-1)
     parser.captures.push(matchStr)
-    echo "\27[1;33m", parser.indent("capture: "), "\27[4m", matchStr.replace("\n","\\n"), "\27[0m"
+    debug parser, "\27[1;33m", parser.indent("capture: "), "\27[4m", matchStr.replace("\n","\\n"), "\27[0m"
 
     let node = parser.node_stack.pop()
     node.parseCapture(s[ start .. start+length-1 ])
@@ -73,7 +84,7 @@ proc initLineNumbers(parser: Parser) =
   parser.line_numbers = @[0]
   for offset in parser.line_offsets():
     parser.line_numbers.add(offset)
-  #echo parser.line_numbers
+  #parser.debug parser.line_numbers
 
 proc parse*(parser: Parser): int =
   parser.initParser()
@@ -96,7 +107,7 @@ proc parse*(parser: Parser): int =
         if p.nt.name notin ["Blank", "VLine", "Comment"]:
           let k = parseEnum[DeliKind]("dk" & p.nt.name)
           parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(start)))
-          echo "\27[1;30m", parser.indent("> "), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
+          debug parser, "\27[1;30m", parser.indent("> "), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
           parser.symbol_stack.push(p.nt.name)
       leave:
         if p.nt.name notin ["Blank", "VLine", "Comment"]:
@@ -104,7 +115,7 @@ proc parse*(parser: Parser): int =
           let symbol = parser.symbol_stack.pop()
           if length > 0:
             let matchStr = s.substr(start, start+length-1)
-            echo parser.indent("\27[1m< "), p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
+            debug parser, parser.indent("\27[1m< "), $p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
 
             if parser.node_stack.len() > 0:
               var outer_node = parser.node_stack.pop()
@@ -113,7 +124,7 @@ proc parse*(parser: Parser): int =
               parser.node_stack.push(outer_node)
 
             #let line = parser.line_number(start)
-            ##echo start, " :",  line
+            ##debug start, " :",  line
 
   parser.parsed_len = peg_parser(parser.source)
   return parser.parsed_len

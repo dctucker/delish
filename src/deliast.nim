@@ -14,6 +14,8 @@ type
     of dkNone:         none:        bool
     of dkIdentifier:   id*:         string
     of dkPath,
+       dkStrBlock,
+       dkStrLiteral,
        dkString:       strVal*:     string
     of dkStream,
        dkInteger:      intVal*:     int
@@ -39,6 +41,8 @@ proc `$`*(node: DeliNode): string =
   let value = case node.kind
   of dkIdentifier: node.id
   of dkPath,
+     dkStrLiteral,
+     dkStrBlock,
      dkString:     node.strVal
   of dkStream,
      dkInteger:    $(node.intVal)

@@ -3,11 +3,14 @@ import deliast
 import strutils
 import sequtils
 import deliargs
+import deliparser
 
 type
   Engine* = ref object
     arguments: seq[Argument]
     variables: Table[string, DeliNode]
+    parser:    Parser
+    script:    DeliNode
 
 proc `+`(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
@@ -36,13 +39,15 @@ proc `+`(a, b: DeliNode): DeliNode =
   return deliNone()
 
 proc todo(msg: varargs[string, `$`]) =
-  echo "\27[33mTODO: ", msg.join(""), "\27[0m"
+  stderr.write("\27[33mTODO: ", msg.join(""), "\27[0m\n")
 
 
-proc newEngine*(): Engine =
+proc newEngine*(parser: Parser): Engine =
   return Engine(
     arguments: newSeq[Argument](),
-    variables: initTable[string, DeliNode]()
+    variables: initTable[string, DeliNode](),
+    parser:    parser,
+    script:    parser.getScript()
   )
 
 proc printSons(node: DeliNode) =
@@ -66,9 +71,11 @@ proc printVariables(engine: Engine) =
   echo "== Engine Variables (", engine.variables.len(), ") =="
   for k,v in engine.variables:
     stdout.write("  $", k, " = ")
-    stdout.write( v, "(" )
-    printSons(v)
-    stdout.write( ")" )
+    stdout.write( v)
+    if( v.sons.len() > 0 ):
+      stdout.write("(")
+      printSons(v)
+      stdout.write(")")
     echo ""
 
 proc printArguments(engine: Engine) =
@@ -100,17 +107,19 @@ proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
     }.toTable())
   ])
 
-proc initArguments(engine: Engine) =
-  initUserArguments()
-  engine.arguments = @[]
-
 proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
   echo "  argument to deref: ", $arg
-  return findArgument(engine.arguments, arg.argName).value
+  case arg.kind
+  of dkArgShort:
+    return findArgument(engine.arguments, Argument(short_name:arg.argName)).value
+  of dkArgLong:
+    return findArgument(engine.arguments, Argument(long_name:arg.argName)).value
+  else:
+    todo "getArgument " & $(arg.kind)
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkInteger, dkPath, dkStream, dkStrBlock:
+  of dkBoolean, dkString, dkInteger, dkPath, dkStream, dkStrBlock, dkStrLiteral:
     return val
   of dkArray:
     result = DeliNode(kind: dkArray)
@@ -141,28 +150,23 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
   else:
     todo "assign ", op.kind
 
+
 proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode ) =
   let arg = Argument()
   for name in names:
     case name.sons[0].kind
-    of dkArgShort:
-      arg.short_name = name.sons[0].argName
-    of dkArgLong:
-      arg.long_name = name.sons[0].argName
+    of dkArgShort: arg.short_name = name.sons[0].argName
+    of dkArgLong:  arg.long_name  = name.sons[0].argName
     else:
       todo "arg ", name.sons[0].kind
 
-  let user_arg = findArgument(user_args, names[0].sons[0].argName)
-  if user_arg.value == nil:
-    arg.value = DeliNode(kind: dkBoolean, boolVal: true)
-  elif user_arg.value.kind == dkNone:
-    arg.value = engine.evaluate(default)
-  else:
-    arg.value = user_arg.value
-  echo "arg value = ", $(arg.value)
+  var eng_arg = findArgument(engine.arguments, arg)
 
-  engine.arguments.add(arg)
-  engine.printArguments()
+  if eng_arg.isNone():
+    arg.value = engine.evaluate(default)
+    engine.arguments.add(arg)
+    #engine.printArguments()
+    #echo "\n"
 
 proc isTruthy(engine: Engine, node: DeliNode): bool =
   case node.kind
@@ -195,23 +199,45 @@ proc runStmt(engine: Engine, s: DeliNode) =
   else:
     todo "run ", s.kind
 
-iterator tick*(engine: Engine, script: DeliNode): int =
+proc runArgStmts(engine: Engine, node: DeliNode) =
+  case node.kind
+  of dkStatement:
+    engine.runArgStmts(node.sons[0])
+  of dkArgStmt:
+    engine.runStmt(node)
+  else:
+    discard
+
+
+proc initArguments(engine: Engine) =
+  engine.arguments = @[]
+  for stmt in engine.script.sons:
+    engine.runArgStmts(stmt)
+
+  initUserArguments()
+  #engine.printArguments()
+  #echo "checking user arguments"
+
+  for arg in user_args:
+    #echo arg
+    if arg.isFlag():
+      let f = findArgument(engine.arguments, arg)
+      if f.isNone():
+        raise newException(Exception, "Unknown argument: " & arg.long_name)
+      else:
+        if arg.value == nil:
+          arg.value = DeliNode(kind: dkBoolean, boolVal: true)
+        f.value = arg.value
+
+  #engine.printArguments()
+
+iterator tick*(engine: Engine): int =
   echo "\nRunning program..."
   engine.initArguments()
-  for s in script.sons:
+  for s in engine.script.sons:
     yield s.line
     printSons(s)
     echo "\27[0m"
-    if s.sons.len() > 0:
-      engine.runStmt(s.sons[0])
-
-proc runProgram*(engine: Engine, script: DeliNode) =
-  echo "\nRunning program..."
-  engine.initArguments()
-  for s in script.sons:
-    stdout.write(":", s.line, " ", s)
-    printSons(s)
-    echo ""
     if s.sons.len() > 0:
       engine.runStmt(s.sons[0])
 
