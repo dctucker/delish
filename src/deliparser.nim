@@ -48,6 +48,8 @@ proc parseStreamInt(str: string): int =
   of "in":  return 0
   of "out": return 1
   of "err": return 2
+  else:
+    return str.parseInt()
 
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind

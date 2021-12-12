@@ -63,7 +63,7 @@ proc lineInfo*(engine: Engine, line: int): string =
   let linenum = "\27[1;30m:" & $line
   let source = " \27[0;34;4m" & sline
   let parsed = "\27[1;24m " & repr(engine.current)
-  return linenum & source & parsed & "\27[0m\n"
+  return linenum & source & parsed & "\27[0m"
 
 proc newEngine*(parser: Parser): Engine =
   result = Engine(
@@ -251,7 +251,7 @@ proc doConditional(engine: Engine, condition: DeliNode, code: DeliNode) =
 
 proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   engine.functions[id.id] = code
-  echo engine.functions
+  echo "define ", engine.functions
 
 
 proc pushLocals(engine: Engine) =
@@ -274,11 +274,42 @@ proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   locals[name.varName] = default
   engine.locals.push(locals)
 
-proc doStream(engine: Engine, stream: DeliNode, exprs: seq[DeliNode]) =
-  let fd = engine.fds[stream.intVal]
-  for expr in exprs:
+proc evaluateStream(engine: Engine, stream: DeliNode): File =
+  #let num = if stream.sons.len() > 0:
+  #  engine.variables[stream.sons[0].varName].intVal
+  #else:
+  #  stream.intVal
+  let num = stream.intVal
+  if engine.fds.contains(num):
+    return engine.fds[num]
+
+proc doStream(engine: Engine, nodes: seq[DeliNode]) =
+  var expr_pos = 1
+  var fd: File
+  if nodes[0].kind == dkVariable:
+    let num = engine.variables[nodes[0].varName].intVal
+    if engine.fds.contains(num):
+      fd = engine.fds[num]
+    expr_pos = 2
+  elif nodes[0].kind == dkStream:
+    fd = engine.evaluateStream(nodes[0])
+
+  for expr in nodes[expr_pos].sons:
     fd.write(engine.evaluate(expr).toString(), "\n")
 
+proc doOpen(engine: Engine, nodes: seq[DeliNode]) =
+  let variable = nodes[0]
+  var mode = fmReadWrite
+  for node in nodes[1 .. ^1]:
+    case node.kind
+    of dkStream:
+      let mode = node.intVal
+    of dkPath:
+      let path = node.strVal
+    else:
+      discard
+  engine.variables[variable.varName] = DeliNode(kind: dkStream, intVal: -1)
+  todo "open file and assign file descriptor"
 
 proc runStmt(engine: Engine, s: DeliNode) =
   engine.current = s
@@ -312,7 +343,9 @@ proc runStmt(engine: Engine, s: DeliNode) =
   of dkFunctionStmt:
     engine.doFunctionCall(s.sons[0], s.sons[1 .. ^1])
   of dkStreamStmt:
-    engine.doStream(s.sons[0], s.sons[1].sons)
+    engine.doStream(s.sons)
+  of dkOpenStmt:
+    engine.doOpen(s.sons)
   else:
     todo "run ", s.kind
 

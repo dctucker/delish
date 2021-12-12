@@ -20,7 +20,7 @@ when isMainModule:
 
   let filename = paramStr(1)
   let source = readFile(filename)
-  let parser = Parser(source: source, debug: false)
+  let parser = Parser(source: source, debug: true)
   var parsed_len = 0
   benchmark "parsing":
     parsed_len = parser.parse()
@@ -34,13 +34,8 @@ when isMainModule:
     stderr.write("Syntax error in ", filename, ":", num, " near ", errline, "\n\n")
     quit 1
 
-  #let script = parser.getScript()
   var engine: Engine = newEngine(parser)
-
   benchmark "executing":
     for line in engine.tick():
       echo "\27[0m"
-      #let sline = parser.getLine(line)
-      #echo engine.lineInfo(line)
-      #stdout.write( "\27[1;30m:", line, " \27[0;34;4m", sline, "\27[0m\n") #, "\27[1;24m" )
 

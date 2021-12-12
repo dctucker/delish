@@ -10,8 +10,8 @@ arg    --help    |= """
 some documentation
 """
 #arg $filename
-env $GAS |= "diesel"
-$GAS = "propane"
+env $SANDO |= "chicken parm"
+$SANDO = "meatball"
 
 func = {
   local $message
@@ -27,6 +27,9 @@ if --yes {
     err "No errors"
   }
 }
+
+$log.out = open ./log.txt
+$log.out "hello"
 
 #$flags = []
 #$flags += -l

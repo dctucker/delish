@@ -24,10 +24,12 @@ const grammar_source* = """
   Loop          <- "while" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
   Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code* \s* "}" \s*
   Function      <- Identifier Blank* "=" Blank* "{" \s* Code* \s* "}" \s*
-  Statement     <- AssignStmt / LocalStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
+  Statement     <- AssignStmt / LocalStmt / OpenStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
   AssignStmt    <- Variable Blank* ( AssignOp / AppendOp )  Blank* (Expr / RunStmt)
   AssignOp      <- "="
   AppendOp      <- "+="
+  OpenStmt      <- Variable ( "." Stream )? Blank* "=" Blank* "open" Blank+ Path
+  CloseStmt     <- Variable ".close"
   FunctionStmt  <- Identifier (Blank+ Expr)*
   IncludeStmt   <- "include" Blank+ StrLiteral
   RunStmt       <- "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
@@ -42,7 +44,6 @@ const grammar_source* = """
   ArgDefault    <- Expr
   LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
   VarDeref      <- Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
-  Variable      <- "$" { \w+ }
   Object        <- "[" ( \s* Expr Blank* ":" Blank* Expr Blank* ","? \s* )+ "]"
   Array         <- "[" ( \s* Expr Blank* ","? \s* )* "]"
   Integer       <- { \d+ }
@@ -51,11 +52,12 @@ const grammar_source* = """
   StrLiteral    <- ('"' @@ '"') / ("'" @@ "'")
   StrBlock      <- (\"\"\") \n @@ (\"\"\")
   JsonBlock     <- "json" Blank+ StrBlock
-  Path          <- { [.] / ([.]? "/") [^ ]* }
+  Path          <- { ("."* "/" \S+ ) / "." }
   Boolean       <- { "true" / "false" }
-  StreamStmt    <- Stream Blank+ ExprList
+  StreamStmt    <- ( Variable "." )? Stream Blank+ ExprList
   ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
   Stream        <- { "in" / "out" / "err" }
+  Variable      <- "$" { \w+ }
 """
 
 let symbol_names* = grammar_source.splitLines().map(proc(x:string):string =
