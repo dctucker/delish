@@ -17,6 +17,7 @@ type
     parser:    Parser
     script:    DeliNode
     current:   DeliNode
+    fds:       Table[int, File]
 
 proc `+`(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
@@ -72,6 +73,9 @@ proc newEngine*(parser: Parser): Engine =
     script:    parser.getScript()
   )
   result.locals.push(initTable[string, DeliNode]())
+  result.fds[0] = stdin
+  result.fds[1] = stdout
+  result.fds[2] = stderr
 
 proc printSons(node: DeliNode) =
   #stdout.write( ($(node.kind)).substr(2), " " )
@@ -270,6 +274,12 @@ proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   locals[name.varName] = default
   engine.locals.push(locals)
 
+proc doStream(engine: Engine, stream: DeliNode, exprs: seq[DeliNode]) =
+  let fd = engine.fds[stream.intVal]
+  for expr in exprs:
+    fd.write(engine.evaluate(expr).toString(), "\n")
+
+
 proc runStmt(engine: Engine, s: DeliNode) =
   engine.current = s
   if s.kind notin [dkStatement, dkBlock]:
@@ -301,6 +311,8 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.doFunctionDef(s.sons[0], s.sons[1])
   of dkFunctionStmt:
     engine.doFunctionCall(s.sons[0], s.sons[1 .. ^1])
+  of dkStreamStmt:
+    engine.doStream(s.sons[0], s.sons[1].sons)
   else:
     todo "run ", s.kind
 
