@@ -70,7 +70,7 @@ proc parseCapture(node: DeliNode, capture: string) =
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture
   else:
-    discard
+    todo "capture failed for " & $(node.kind) & " '" & capture & "'"
 
 proc parseCapture(parser: Parser, start, length: int, s: string) =
   if length >= 0:
@@ -92,11 +92,27 @@ proc initLineNumbers(parser: Parser) =
     parser.line_numbers.add(offset)
   #parser.debug parser.line_numbers
 
+
+proc echoItems(p: Peg) =
+  for item in p.items():
+    echo item.kind, item
+    echoItems(item)
+
 proc parse*(parser: Parser): int =
   parser.initParser()
   parser.initLineNumbers()
 
+
   let grammar = peg(grammar_source)
+
+  #echo "=== Grammar ==="
+  #echo grammar.repr
+  #echo "=== /Grammar ==="
+
+  #let serial = $$grammar
+  #let grammar_unmarshal = to[Peg](serial)
+  #echo grammar_unmarshal.repr
+
   let peg_parser = grammar.eventParser:
     pkCapture:
       leave:

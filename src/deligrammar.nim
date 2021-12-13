@@ -1,6 +1,7 @@
 import strutils
 import sequtils
 import macros
+#import pegs
 
 #let file_io_funcs = """
 #  unlink
@@ -11,6 +12,11 @@ import macros
 #  chmod
 #  symlink
 #"""
+
+#let VLine = term("\n")
+#let Blank = sequence( term("\\"), term("\n") ) / term("\9") / term(" ")
+#let Code = sequence( +sequence( *Blank, VLine ), *Blank )
+#echo Code.repr
 
 const grammar_source* = """
   Script        <- Code
@@ -39,7 +45,7 @@ const grammar_source* = """
   AsyncFlag     <- "async"
   RedirFlag     <- "redir" (Blank+ (Variable / Path / Stream) Blank* RedirOp Blank* (Variable / Path / Stream))+
   RedirOp       <- { "<" / ">" / "<<" / ">>" }
-  Invocation    <- { \w+ } ( Blank+ (Expr / {\S+}) )*
+  Invocation    <- { Word+ } ( Blank+ (Expr / {\S+}) )*
   EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
   EnvDefault    <- Expr
   ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
@@ -53,7 +59,7 @@ const grammar_source* = """
   Object        <- "[" ( \s* Expr Blank* ":" Blank* Expr Blank* ","? \s* )+ "]"
   Array         <- "[" ( \s* Expr Blank* ","? \s* )* "]"
   Integer       <- { \d+ }
-  Identifier    <- !Keyword { \w+ }
+  Identifier    <- !Keyword { Word+ }
   Keyword       <- "sub" / "if" / "white" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
   StrLiteral    <- ('"' @@ '"') / ("'" @@ "'")
   StrBlock      <- (\"\"\") \n @@ (\"\"\")
@@ -63,16 +69,10 @@ const grammar_source* = """
   StreamStmt    <- ( Variable "." )? Stream Blank+ ExprList
   ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
   Stream        <- { "in" / "out" / "err" }
-  Variable      <- "$" { \w+ }
+  Variable      <- "$" { Word+ }
   DefaultOp     <- "|="
+  Word          <- (\w / "'")
 """
-
-let symbol_names* = grammar_source.splitLines().map(proc(x:string):string =
-  if x.contains("<-"):
-    let split = x.splitWhitespace()
-    if split.len() > 0:
-      return split[0]
-).filter(proc(x:string):bool = x.len() > 0)
 
 macro grammarToEnum*(extra: static[seq[string]]) =
   let symbols = grammar_source.splitLines().map(proc(x:string):string =
@@ -85,11 +85,3 @@ macro grammarToEnum*(extra: static[seq[string]]) =
   let stmt = "type DeliKind* = enum " & options.join(", ")
   result = parseStmt(stmt)
 
-
-#proc echoItems(p: Peg) =
-#  if p.len() == 0:
-#    return
-#  for item in p.items():
-#    echo item.kind, item
-#    echoItems(item)
-#echoItems(grammar)

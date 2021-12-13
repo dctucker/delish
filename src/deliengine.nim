@@ -7,7 +7,6 @@ import stacks
 import deliargs
 import deliparser
 
-
 type
   Engine* = ref object
     arguments: seq[Argument]
@@ -44,12 +43,10 @@ proc `+`(a, b: DeliNode): DeliNode =
     a.sons.add(b)
     return a
   else:
+    todo "add " & $(a.kind) & " + " & $(b.kind)
     return a
 
   return deliNone()
-
-proc todo(msg: varargs[string, `$`]) =
-  stderr.write("\27[33mTODO: ", msg.join(""), "\27[0m\n")
 
 proc repr(node: DeliNode): string =
   result = ""

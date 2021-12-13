@@ -20,7 +20,7 @@ when isMainModule:
 
   let filename = paramStr(1)
   let source = readFile(filename)
-  let parser = Parser(source: source, debug: true)
+  let parser = Parser(source: source, debug: false)
   var parsed_len = 0
   benchmark "parsing":
     parsed_len = parser.parse()

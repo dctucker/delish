@@ -87,3 +87,7 @@ proc isNone*(arg: Argument):bool =
 proc isFlag*(arg: Argument):bool =
   return arg.short_name != "" or arg.long_name != ""
 
+import strutils
+proc todo*(msg: varargs[string, `$`]) =
+  stderr.write("\27[33mTODO: ", msg.join(""), "\27[0m\n")
+
