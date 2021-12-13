@@ -7,6 +7,7 @@ import stacks
 import deliargs
 import deliparser
 
+
 type
   Engine* = ref object
     arguments: seq[Argument]
@@ -18,6 +19,8 @@ type
     script:    DeliNode
     current:   DeliNode
     fds:       Table[int, File]
+
+proc evaluate(engine: Engine, val: DeliNode): DeliNode
 
 proc `+`(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
@@ -142,7 +145,6 @@ proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   ])
 
 proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
-  echo "  argument to deref: ", $arg
   case arg.kind
   of dkArgShort:
     return findArgument(engine.arguments, Argument(short_name:arg.argName)).value
@@ -150,6 +152,27 @@ proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
     return findArgument(engine.arguments, Argument(long_name:arg.argName)).value
   else:
     todo "getArgument " & $(arg.kind)
+
+proc getVariable(engine: Engine, name: string): DeliNode =
+  let locals = engine.locals.peek()
+  if locals.contains(name):
+    return locals[name]
+  elif engine.variables.contains(name):
+    return engine.variables[name]
+
+proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
+  let variable = vard.sons[0]
+  result = engine.getVariable(variable.varName)
+  for son in vard.sons[1 .. ^1]:
+    case result.kind
+    of dkObject:
+      let str = son.toString()
+      result = result.table[str]
+    of dkArray:
+      let idx = engine.evaluate(son).intVal
+      result = result.sons[idx]
+    else:
+      todo "evalVarDeref using " & $(son.kind)
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
@@ -165,9 +188,13 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return ran
   of dkExpr:
     result = engine.evaluate(val.sons[0])
+  of dkVarDeref:
+    result = engine.evalVarDeref(val)
   of dkArg:
+    stdout.write("  dereference ", $(val.sons[0]))
     let arg = engine.getArgument(val.sons[0])
     result = engine.evaluate(arg)
+    stdout.write(" = ")
     echo $result
   of dkEnvDefault:
     return engine.evaluate(val.sons[0])
@@ -243,7 +270,7 @@ proc runStmt(engine: Engine, s: DeliNode)
 
 proc doConditional(engine: Engine, condition: DeliNode, code: DeliNode) =
   let eval = engine.evaluate(condition)
-  echo "condition: ", eval
+  echo "  condition: ", eval
   let ok = engine.isTruthy(eval)
   if not ok: return
   for stmt in code.sons:
@@ -308,7 +335,7 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]) =
       let path = node.strVal
     else:
       discard
-  engine.variables[variable.varName] = DeliNode(kind: dkStream, intVal: -1)
+  engine.variables[variable.varName] = DeliNode(kind: dkStream, intVal: 1)
   todo "open file and assign file descriptor"
 
 proc runStmt(engine: Engine, s: DeliNode) =
@@ -323,12 +350,12 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
     if nsons > 1:
-      engine.doArg(s.sons[0].sons, s.sons[1].sons[0])
+      engine.doArg(s.sons[0].sons, s.sons[2].sons[0])
     else:
       engine.doArg(s.sons[0].sons, deliNone())
   of dkEnvStmt:
     if nsons > 1:
-      engine.doEnv(s.sons[0], s.sons[1])
+      engine.doEnv(s.sons[0], s.sons[2])
     else:
       engine.doEnv(s.sons[0])
   of dkLocalStmt:

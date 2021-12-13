@@ -19,24 +19,30 @@ const grammar_source* = """
   VLine         <- \n / Comment / Block / Statement Comment* \n
   Comment       <- '#' @ \n
   Expr          <- VarDeref / Arg / Object / Array / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
-  Block         <- Conditional / Loop / Subshell / Function
+  Block         <- Conditional / WhileLoop / ForLoop / Subshell / Function
   Conditional   <- "if"    Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
-  Loop          <- "while" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
+  WhileLoop     <- "while" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
+  ForLoop       <- "for" Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
   Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code* \s* "}" \s*
   Function      <- Identifier Blank* "=" Blank* "{" \s* Code* \s* "}" \s*
   Statement     <- AssignStmt / LocalStmt / OpenStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
-  AssignStmt    <- Variable Blank* ( AssignOp / AppendOp )  Blank* (Expr / RunStmt)
+  AssignStmt    <- Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (Expr / RunStmt)
   AssignOp      <- "="
   AppendOp      <- "+="
-  OpenStmt      <- Variable ( "." Stream )? Blank* "=" Blank* "open" Blank+ Path
+  RemoveOp      <- "-="
+  OpenStmt      <- Variable ( "." Stream )? Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path
   CloseStmt     <- Variable ".close"
   FunctionStmt  <- Identifier (Blank+ Expr)*
   IncludeStmt   <- "include" Blank+ StrLiteral
-  RunStmt       <- "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
-  Invocation    <- { \w+ } ( Blank+ Expr )*
-  EnvStmt       <- "env" Blank+ Variable (Blank* "|=" Blank* EnvDefault)?
+  RunStmt       <- (RunFlags Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
+  RunFlags      <- AsyncFlag / RedirFlag / (AsyncFlag RedirFlag)
+  AsyncFlag     <- "async"
+  RedirFlag     <- "redir" (Blank+ (Variable / Path / Stream) Blank* RedirOp Blank* (Variable / Path / Stream))+
+  RedirOp       <- { "<" / ">" / "<<" / ">>" }
+  Invocation    <- { \w+ } ( Blank+ (Expr / {\S+}) )*
+  EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
   EnvDefault    <- Expr
-  ArgStmt       <- "arg" ArgNames (Blank* "|=" Blank* ArgDefault)?
+  ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
   ArgNames      <- ( Blank+ Arg )+
   Arg           <- ArgLong / ArgShort
   ArgShort      <- "-" { \w+ }
@@ -58,6 +64,7 @@ const grammar_source* = """
   ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
   Stream        <- { "in" / "out" / "err" }
   Variable      <- "$" { \w+ }
+  DefaultOp     <- "|="
 """
 
 let symbol_names* = grammar_source.splitLines().map(proc(x:string):string =

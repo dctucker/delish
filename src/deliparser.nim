@@ -59,7 +59,11 @@ proc parseCapture(node: DeliNode, capture: string) =
   of dkPath:       node.strVal  = capture
   of dkIdentifier: node.id      = capture
   of dkVariable:   node.varName = capture
-  of dkInvocation: node.cmd     = capture
+  of dkInvocation:
+    if node.cmd == "":
+      node.cmd     = capture
+    else:
+      node.sons.add(DeliNode(kind:dkString, strVal: capture))
   of dkBoolean:    node.boolVal = capture == "true"
   of dkStream:     node.intVal  = parseStreamInt(capture)
   of dkInteger:    node.intVal  = parseInt(capture)

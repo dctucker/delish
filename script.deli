@@ -28,13 +28,22 @@ if --yes {
   }
 }
 
-$log.out = open ./log.txt
+$input = open < ./input.txt
+$log.out = open > ./log.txt
 $log.out "hello"
 
-#$flags = []
-#$flags += -l
-#$flags += -a
-#$flags += -h
+$background = async run dd if=/dev/random bs=10G of=/dev/null count=1 oflag=dsync
+
+
+
+$flags = []
+$flags += -l
+$flags += -a
+$flags += -h
+
+for $flag in $flags {
+  out $flag
+}
 #
 ##$js = json """
 ##{
