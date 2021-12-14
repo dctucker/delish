@@ -65,7 +65,7 @@ proc parseCapture(node: DeliNode, capture: string) =
     else:
       node.sons.add(DeliNode(kind:dkString, strVal: capture))
   of dkBoolean:    node.boolVal = capture == "true"
-  of dkStream:     node.intVal  = parseStreamInt(capture)
+  #of dkStream:     node.intVal  = parseStreamInt(capture)
   of dkInteger:    node.intVal  = parseInt(capture)
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture
@@ -100,6 +100,13 @@ proc echoItems(p: Peg) =
 
 let grammar = peg(grammar_source)
 
+proc assimilate(inner, outer: DeliNode) =
+  if outer.kind == dkStream:
+    outer.intVal = case inner.kind
+      of dkStreamIn:  0
+      of dkStreamOut: 1
+      of dkStreamErr: 2
+      else: -1
 
 proc parse*(parser: Parser): int =
   parser.initParser()
@@ -113,6 +120,7 @@ proc parse*(parser: Parser): int =
   #let serial = $$grammar
   #let grammar_unmarshal = to[Peg](serial)
   #echo grammar_unmarshal.repr
+
 
   let peg_parser = grammar.eventParser:
     pkCapture:
@@ -143,6 +151,7 @@ proc parse*(parser: Parser): int =
             if parser.node_stack.len() > 0:
               var outer_node = parser.node_stack.pop()
               outer_node.sons.add( inner_node )
+              assimilate(inner_node, outer_node)
               parser.entry_point = outer_node
               parser.node_stack.push(outer_node)
 

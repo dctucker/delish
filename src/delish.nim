@@ -43,5 +43,6 @@ when isMainModule:
   var engine: Engine = newEngine(parser)
   benchmark "executing":
     for line in engine.tick():
-      echo "\27[30;1m", filename, ":", line, "\27[0m> "
+      echo engine.lineInfo(line)
+      echo "\27[30;1m", filename, ":", line.abs, "\27[0m> "
 

@@ -73,9 +73,19 @@ proc repr(node: DeliNode): string =
     result &= ")"
   result &= " "
 
+proc getOneliner(node: DeliNode): string =
+  case node.kind
+  of dkAssignStmt:
+    return "$" & node.sons[0].varName & " <- " & node.sons[2].toString()
+  else:
+    return $(node.kind) & "?"
+
 proc lineInfo*(engine: Engine, line: int): string =
-  let sline = engine.parser.getLine(line)
-  let linenum = "\27[1;30m:" & $line
+  let sline = if line > 0:
+    engine.parser.getLine(line)
+  else:
+    getOneliner(engine.current)
+  let linenum = "\27[1;30m:" & $abs(line)
   let source = " \27[0;34;4m" & sline
   let parsed = "\27[1;24m " & repr(engine.current)
   return linenum & source & parsed & "\27[0m"
@@ -149,7 +159,7 @@ proc printEnvars(engine: Engine) =
   #stdout.write("\n")
 
 proc printNext(engine: Engine) =
-  echo "== Next: "
+  stdout.write("  next = ")
   var head = engine.readhead.next
   while head != nil:
     stdout.write(head.value.line, " ")
@@ -244,7 +254,7 @@ proc assignLocal(engine: Engine, key: string, value: DeliNode) =
   var locals = engine.locals.pop()
   locals[key] = value
   engine.locals.push(locals)
-  echo engine.locals
+  echo "  locals = ", engine.locals
 
 proc assignVariable(engine: Engine, key: string, value: DeliNode) =
   if engine.locals.peek().contains(key):
@@ -256,7 +266,11 @@ proc assignVariable(engine: Engine, key: string, value: DeliNode) =
     engine.variables[key] = value
     engine.printVariables()
 
-proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, val: DeliNode) =
+proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
+  let val = if expr.kind == dkExpr:
+      expr.sons[0]
+    else:
+      expr
   case op.kind
   of dkAssignOp:
     engine.assignVariable(key.varName, engine.evaluate(val))
@@ -387,12 +401,19 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]) =
   engine.variables[variable.varName] = DeliNode(kind: dkStream, intVal: 1)
   todo "open file and assign file descriptor"
 
+proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
+  result = DeliNode(kind: dkAssignStmt, line: line, sons: @[
+    DeliNode(kind: dkVariable, varName: variable),
+    DeliNode(kind: dkAssignOp),
+    value
+  ])
+
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0].varName
   let things = engine.evaluate(node.sons[1])
   let code = node.sons[2]
   for thing in things.sons:
-    engine.assignLocal(variable, thing)
+    engine.insertStmt(deliLocalAssign(variable, thing, -node.line))
     for stmt in code.sons:
       engine.insertStmt(stmt)
   engine.printNext()
@@ -481,7 +502,6 @@ iterator tick*(engine: Engine): int =
   echo "\nRunning program..."
   while true:
     engine.current = engine.readhead.value
-    echo engine.lineInfo(engine.current.line)
     yield engine.current.line
     engine.runStmt(engine.current)
     if engine.readhead.next == nil:
