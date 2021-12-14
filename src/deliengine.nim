@@ -173,8 +173,10 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkInteger, dkPath, dkStream, dkStrBlock, dkStrLiteral, dkNone:
+  of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkNone:
     return val
+  of dkStream:
+    return engine.evaluate(val.sons[0])
   of dkArray:
     result = DeliNode(kind: dkArray)
     for son in val.sons:
@@ -321,17 +323,31 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
   for expr in nodes[expr_pos].sons:
     fd.write(engine.evaluate(expr).toString(), "\n")
 
+proc getRedirOpenMode(node: DeliNode): FileMode =
+  case node.kind
+  of dkRedirReadOp:
+    return fmRead
+  of dkRedirWriteOp:
+    return fmWrite
+  of dkRedirAppendOp:
+    return fmAppend
+  of dkRedirDuplexOp:
+    return fmReadWrite
+  else:
+    todo "redir open mode " & $(node.kind)
+
 proc doOpen(engine: Engine, nodes: seq[DeliNode]) =
   let variable = nodes[0]
   var mode = fmReadWrite
+  var path: string
   for node in nodes[1 .. ^1]:
     case node.kind
-    of dkStream:
-      let mode = node.intVal
     of dkPath:
-      let path = node.strVal
+      path = node.strVal
+    of dkRedirOp:
+      mode = getRedirOpenMode(node.sons[0])
     else:
-      discard
+      todo "open " & $(node.kind)
   engine.variables[variable.varName] = DeliNode(kind: dkStream, intVal: 1)
   todo "open file and assign file descriptor"
 

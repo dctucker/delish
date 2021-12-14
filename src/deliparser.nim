@@ -98,12 +98,13 @@ proc echoItems(p: Peg) =
     echo item.kind, item
     echoItems(item)
 
+let grammar = peg(grammar_source)
+
+
 proc parse*(parser: Parser): int =
   parser.initParser()
   parser.initLineNumbers()
 
-
-  let grammar = peg(grammar_source)
 
   #echo "=== Grammar ==="
   #echo grammar.repr

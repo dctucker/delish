@@ -18,60 +18,66 @@ import macros
 #let Code = sequence( +sequence( *Blank, VLine ), *Blank )
 #echo Code.repr
 
-const grammar_source* = """
+const grammar_source* = static"""
   Script        <- Code
   Code          <- ( Blank* VLine )+ Blank*
   Blank         <- ("\\" \n) / \9 / " "
   VLine         <- \n / Comment / Block / Statement Comment* \n
   Comment       <- '#' @ \n
-  Expr          <- VarDeref / Arg / Object / Array / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
-  Block         <- Conditional / WhileLoop / ForLoop / Subshell / Function
-  Conditional   <- "if"    Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
-  WhileLoop     <- "while" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
-  ForLoop       <- "for" Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
-  Subshell      <- "sub"   Blank+      Blank+ "{" \s* Code* \s* "}" \s*
-  Function      <- Identifier Blank* "=" Blank* "{" \s* Code* \s* "}" \s*
-  Statement     <- AssignStmt / LocalStmt / OpenStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
-  AssignStmt    <- Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (Expr / RunStmt)
+  Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
+  Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell
+  Conditional   <- "if"    Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
+  WhileLoop     <- "while" Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
+  ForLoop       <- "for"   Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
+  Subshell      <- "sub"   Blank+          Blank+                         "{" \s* Code* \s* "}" \s*
+  Function      <- Identifier Blank* "="   Blank*                         "{" \s* Code* \s* "}" \s*
+  Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
+  AssignStmt    <- &'$' Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (Expr / RunStmt)
   AssignOp      <- "="
   AppendOp      <- "+="
   RemoveOp      <- "-="
-  OpenStmt      <- Variable ( "." Stream )? Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path
-  CloseStmt     <- Variable ".close"
+  OpenStmt      <- &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path
+  CloseStmt     <- &'$' Variable ".close"
   FunctionStmt  <- Identifier (Blank+ Expr)*
   IncludeStmt   <- "include" Blank+ StrLiteral
   RunStmt       <- (RunFlags Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
   RunFlags      <- AsyncFlag / RedirFlag / (AsyncFlag RedirFlag)
   AsyncFlag     <- "async"
   RedirFlag     <- "redir" (Blank+ (Variable / Path / Stream) Blank* RedirOp Blank* (Variable / Path / Stream))+
-  RedirOp       <- { "<" / ">" / "<<" / ">>" }
-  Invocation    <- { Word+ } ( Blank+ (Expr / {\S+}) )*
+  RedirOp       <- RedirAppendOp / RedirReadOp / RedirWriteOp / RedirDuplexOp
+  RedirAppendOp <- ">>"
+  RedirReadOp   <- "<"
+  RedirWriteOp  <- ">"
+  RedirDuplexOp <- "<>"
+  Invocation    <- { \w (\w/"-")* } ( Blank+ (Expr / {\S+}) )*
   EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
   EnvDefault    <- Expr
   ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
   ArgNames      <- ( Blank+ Arg )+
-  Arg           <- ArgLong / ArgShort
-  ArgShort      <- "-" { \w+ }
-  ArgLong       <- "--" { (\w ("-" \w)*)+ }
+  Arg           <- &'-' (ArgLong / ArgShort)
+  ArgShort      <- '-' { \w+ }
+  ArgLong       <- "--" { (\w ('-' \w)*)+ }
   ArgDefault    <- Expr
   LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
-  VarDeref      <- Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
-  Object        <- "[" ( \s* Expr Blank* ":" Blank* Expr Blank* ","? \s* )+ "]"
-  Array         <- "[" ( \s* Expr Blank* ","? \s* )* "]"
+  VarDeref      <- &'$' Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
+  Array         <- '[' ( \s* Expr Blank* ','? \s* )* ']'
+  Object        <- '[' ( \s* Expr Blank* ':' Blank* Expr Blank* ','? \s* )+ ']'
   Integer       <- { \d+ }
-  Identifier    <- !Keyword { Word+ }
+  Identifier    <- !Keyword { (\w/"-")+ }
   Keyword       <- "sub" / "if" / "white" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
-  StrLiteral    <- ('"' @@ '"') / ("'" @@ "'")
+  StrLiteral    <- ('"' @@ '"') / ('\'' @@ '\'')
   StrBlock      <- (\"\"\") \n @@ (\"\"\")
   JsonBlock     <- "json" Blank+ StrBlock
   Path          <- { ("."* "/" \S+ ) / "." }
   Boolean       <- { "true" / "false" }
   StreamStmt    <- ( Variable "." )? Stream Blank+ ExprList
   ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
-  Stream        <- { "in" / "out" / "err" }
-  Variable      <- "$" { Word+ }
+  Stream        <- &[ioe] (StreamIn / StreamOut / StreamErr)
+  StreamIn      <- "in"
+  StreamOut     <- "out"
+  StreamErr     <- "err"
+  Variable      <- '$' { (\w / '-')+ }
   DefaultOp     <- "|="
-  Word          <- (\w / "'")
 """
 
 macro grammarToEnum*(extra: static[seq[string]]) =

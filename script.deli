@@ -29,7 +29,7 @@ if --yes {
 }
 
 $input = open < ./input.txt
-$log.out = open > ./log.txt
+$log = open > ./log.txt
 $log.out "hello"
 
 $background = async run dd if=/dev/random bs=10G of=/dev/null count=1 oflag=dsync

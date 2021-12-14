@@ -1,10 +1,13 @@
 # This is just an example to get you started. A typical binary package
 # uses this file as the main entry point of the application.
 
-import deliparser
-import deliengine
 import os
 import times
+import deliparser
+import deliengine
+
+#when isMainModule:
+#  import delinpeg
 
 template benchmark(benchmarkName: string, code: untyped) =
   block:
@@ -14,13 +17,16 @@ template benchmark(benchmarkName: string, code: untyped) =
     echo "CPU Time [", benchmarkName, "] ", elapsed, "s"
 
 when isMainModule:
+
+  let debug = true
+
   if paramCount() < 1:
     echo "usage: delish script.deli"
     quit 2
 
   let filename = paramStr(1)
   let source = readFile(filename)
-  let parser = Parser(source: source, debug: false)
+  let parser = Parser(source: source, debug: debug)
   var parsed_len = 0
   benchmark "parsing":
     parsed_len = parser.parse()
