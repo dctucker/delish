@@ -171,12 +171,20 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
     else:
       todo "evalVarDeref using " & $(son.kind)
 
+proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
+  result = expr
+  while result.kind == dkExpr:
+    result = engine.evaluate(result.sons[0])
+
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
   of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkNone:
     return val
   of dkStream:
     return engine.evaluate(val.sons[0])
+  of dkStreamIn:  return DeliNode(kind: dkStream, intVal: 0)
+  of dkStreamOut: return DeliNode(kind: dkStream, intVal: 1)
+  of dkStreamErr: return DeliNode(kind: dkStream, intVal: 2)
   of dkArray:
     result = DeliNode(kind: dkArray)
     for son in val.sons:
@@ -186,7 +194,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     let ran = engine.doRun(val.sons)
     return ran
   of dkExpr:
-    result = engine.evaluate(val.sons[0])
+    return engine.evalExpression(val)
   of dkVarDeref:
     result = engine.evalVarDeref(val)
   of dkArg:
@@ -305,7 +313,7 @@ proc evaluateStream(engine: Engine, stream: DeliNode): File =
   #  engine.variables[stream.sons[0].varName].intVal
   #else:
   #  stream.intVal
-  let num = stream.intVal
+  let num = engine.evaluate(stream).intVal
   if engine.fds.contains(num):
     return engine.fds[num]
 
@@ -351,6 +359,15 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]) =
   engine.variables[variable.varName] = DeliNode(kind: dkStream, intVal: 1)
   todo "open file and assign file descriptor"
 
+proc doForLoop(engine: Engine, node: DeliNode) =
+  let variable = node.sons[0].varName
+  let things = engine.evaluate(node.sons[1])
+  let code = node.sons[2]
+  for thing in things.sons:
+    engine.assignLocal(variable, thing)
+    for stmt in code.sons:
+      engine.runStmt(stmt)
+
 proc runStmt(engine: Engine, s: DeliNode) =
   engine.current = s
   if s.kind notin [dkStatement, dkBlock]:
@@ -378,6 +395,8 @@ proc runStmt(engine: Engine, s: DeliNode) =
       engine.doLocal(s.sons[0], deliNone())
   of dkConditional:
     engine.doConditional(s.sons[0], s.sons[1])
+  of dkForLoop:
+    engine.doForLoop(s)
   of dkFunction:
     engine.doFunctionDef(s.sons[0], s.sons[1])
   of dkFunctionStmt:

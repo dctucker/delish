@@ -6,6 +6,8 @@ arg -y --yes     |= false
 arg -n           |= true
 arg -v --verbose |= false
 arg --default
+arg -l
+arg -a
 arg    --help    |= """
 some documentation
 """
