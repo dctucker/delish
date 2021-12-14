@@ -49,7 +49,8 @@ const grammar_source* = static"""
   RedirReadOp   <- "<"
   RedirWriteOp  <- ">"
   RedirDuplexOp <- "<>"
-  Invocation    <- { \w (\w/"-")* } ( Blank+ (Expr / {\S+}) )*
+  Invocation    <- { \w (\w/"-")* } ( Blank+ (Expr / String) )*
+  String        <- {\S+}
   EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
   EnvDefault    <- Expr
   ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?

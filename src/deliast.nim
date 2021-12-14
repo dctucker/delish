@@ -2,7 +2,7 @@ import std/tables
 import deligrammar
 
 ### AST representation
-grammarToEnum(@["String","None","Ran"])
+grammarToEnum(@["None","Ran"])
 
 type
   Argument* = ref object
@@ -44,6 +44,12 @@ proc deliNone*(): DeliNode =
 
 proc `$`*(node: DeliNode): string
 proc toString*(node: DeliNode):string =
+  if node.kind == dkExpr:
+    result = ""
+    for s in node.sons:
+      result &= s.toString()
+      result &= " "
+    return result
   return case node.kind
   of dkIdentifier: node.id
   of dkPath,
