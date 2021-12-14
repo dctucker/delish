@@ -18,7 +18,7 @@ template benchmark(benchmarkName: string, code: untyped) =
 
 when isMainModule:
 
-  let debug = true
+  let debug = false
 
   if paramCount() < 1:
     echo "usage: delish script.deli"
@@ -43,5 +43,5 @@ when isMainModule:
   var engine: Engine = newEngine(parser)
   benchmark "executing":
     for line in engine.tick():
-      echo "\27[0m"
+      echo "\27[30;1m", filename, ":", line, "\27[0m> "
 

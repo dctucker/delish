@@ -1,4 +1,5 @@
 import std/tables
+import std/lists
 import os
 import deliast
 import strutils
@@ -9,17 +10,31 @@ import deliparser
 
 type
   Engine* = ref object
-    arguments: seq[Argument]
-    variables: Table[string, DeliNode]
-    locals:    Stack[ Table[string, DeliNode] ]
-    envars:    Table[string, string]
-    functions: Table[string, DeliNode]
-    parser:    Parser
-    script:    DeliNode
-    current:   DeliNode
-    fds:       Table[int, File]
+    arguments:  seq[Argument]
+    variables:  Table[string, DeliNode]
+    locals:     Stack[ Table[string, DeliNode] ]
+    envars:     Table[string, string]
+    functions:  Table[string, DeliNode]
+    parser:     Parser
+    script:     DeliNode
+    current:    DeliNode
+    fds:        Table[int, File]
+    statements: SinglyLinkedList[DeliNode]
+    readhead:   SinglyLinkedNode[DeliNode]
+    writehead:  SinglyLinkedNode[DeliNode]
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
+
+proc insertStmt(engine: Engine, node: DeliNode) =
+  if node.kind in @[ dkStatement, dkBlock ]:
+    for s in node.sons:
+      engine.insertStmt(s)
+    return
+  var sw = engine.writehead.next
+  let listnode = newSinglyLinkedNode[DeliNode](node)
+  engine.writehead.next = listnode
+  listnode.next = sw
+  engine.writehead = listnode
 
 proc `+`(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
@@ -67,15 +82,18 @@ proc lineInfo*(engine: Engine, line: int): string =
 
 proc newEngine*(parser: Parser): Engine =
   result = Engine(
-    arguments: newSeq[Argument](),
-    variables: initTable[string, DeliNode](),
-    parser:    parser,
-    script:    parser.getScript()
+    arguments:  newSeq[Argument](),
+    variables:  initTable[string, DeliNode](),
+    parser:     parser,
+    script:     parser.getScript(),
+    statements: @[deliNone()].toSinglyLinkedList
   )
   result.locals.push(initTable[string, DeliNode]())
   result.fds[0] = stdin
   result.fds[1] = stdout
   result.fds[2] = stderr
+  result.readhead  = result.statements.head
+  result.writehead = result.statements.head
 
 proc printSons(node: DeliNode) =
   #stdout.write( ($(node.kind)).substr(2), " " )
@@ -129,6 +147,14 @@ proc printEnvars(engine: Engine) =
   #for k,v in envPairs():
   #  stdout.write(k, " ")
   #stdout.write("\n")
+
+proc printNext(engine: Engine) =
+  echo "== Next: "
+  var head = engine.readhead.next
+  while head != nil:
+    stdout.write(head.value.line, " ")
+    head = head.next
+  stdout.write("\n")
 
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   todo "run and consume output"
@@ -281,7 +307,8 @@ proc doConditional(engine: Engine, condition: DeliNode, code: DeliNode) =
   let ok = engine.isTruthy(eval)
   if not ok: return
   for stmt in code.sons:
-    engine.runStmt(stmt)
+    engine.insertStmt(stmt)
+    engine.printNext()
 
 proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   engine.functions[id.id] = code
@@ -300,8 +327,9 @@ proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
   let code = engine.functions[id.id]
   engine.pushLocals()
   for s in code.sons:
-    engine.runStmt(s)
+    engine.insertStmt(s)
   engine.popLocals()
+  engine.printNext()
 
 proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   var locals = engine.locals.pop()
@@ -366,16 +394,16 @@ proc doForLoop(engine: Engine, node: DeliNode) =
   for thing in things.sons:
     engine.assignLocal(variable, thing)
     for stmt in code.sons:
-      engine.runStmt(stmt)
+      engine.insertStmt(stmt)
+  engine.printNext()
 
 proc runStmt(engine: Engine, s: DeliNode) =
-  engine.current = s
-  if s.kind notin [dkStatement, dkBlock]:
-    echo engine.lineInfo(s.line)
   let nsons = s.sons.len()
   case s.kind
   of dkStatement, dkBlock:
-    engine.runStmt(s.sons[0])
+    for stmt in s.sons:
+      engine.insertStmt(stmt)
+    engine.printNext()
   of dkAssignStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
@@ -439,21 +467,30 @@ proc initArguments(engine: Engine) =
 
   engine.printArguments()
 
-iterator runStatements(engine: Engine, statements: seq[DeliNode]): int =
-  for s in statements:
-    #echo s.kind
-    #printSons(s)
-    #echo "\27[0m"
-    if s.sons.len() > 0:
-      for s2 in s.sons:
-        yield s2.line
-        engine.runStmt(s2)
+proc loadScript(engine: Engine) =
+  for s in engine.script.sons:
+    for s2 in s.sons:
+      engine.insertStmt(s2)
+  echo $(engine.statements)
+  engine.readhead = engine.statements.head.next
+  engine.writehead = engine.readhead
 
 iterator tick*(engine: Engine): int =
-  echo "\nRunning program..."
   engine.initArguments()
-  for line in runStatements(engine, engine.script.sons):
-    yield line
+  engine.loadScript()
+  echo "\nRunning program..."
+  while true:
+    engine.current = engine.readhead.value
+    echo engine.lineInfo(engine.current.line)
+    yield engine.current.line
+    engine.runStmt(engine.current)
+    if engine.readhead.next == nil:
+      break
+    engine.readhead = engine.readhead.next
+    engine.writehead = engine.readhead
+
+  #for line in runStatements(engine, engine.script.sons):
+  #  yield line
 
 
 ### do stuff with environment
