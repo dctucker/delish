@@ -70,7 +70,7 @@ proc parseCapture(node: DeliNode, capture: string) =
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture
   else:
-    todo "capture failed for " & $(node.kind) & " '" & capture & "'"
+    todo "capture failed for ", $(node.kind), " '", capture, "'"
 
 proc parseCapture(parser: Parser, start, length: int, s: string) =
   if length >= 0:
@@ -108,7 +108,7 @@ proc assimilate(inner, outer: DeliNode) =
       of dkStreamErr: 2
       else: -1
 
-import std/marshal
+#import std/marshal
 proc parse*(parser: Parser): int =
   parser.initParser()
   parser.initLineNumbers()

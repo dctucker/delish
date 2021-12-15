@@ -1,14 +1,10 @@
-# This is just an example to get you started. A typical binary package
-# uses this file as the main entry point of the application.
 
-import os
 import times
 import deliparser
+import deliargs
+import deliast
 import deliengine
 import delinteract
-
-#when isMainModule:
-#  import delinpeg
 
 template benchmark(benchmarkName: string, code: untyped) =
   block:
@@ -16,7 +12,6 @@ template benchmark(benchmarkName: string, code: untyped) =
     code
     let elapsed = epochTime() - t0
     echo "CPU Time [", benchmarkName, "] ", elapsed, "s"
-
 
 when isMainModule:
 #  import pegs
@@ -27,22 +22,38 @@ when isMainModule:
 #  #echo grammar_unmarshal.repr
 #
 #when false:
-  let interactive = false
-  let debug = true
-  let breakpoints = @[53]
+  var interactive = false
+  var debug = false
+  var breakpoints = @[54]
+  var filename = ""
 
-  if paramCount() < 1:
-    echo "usage: delish script.deli"
+  initUserArguments()
+
+  while user_args.len() > 0:
+    let arg = shift()
+    #echo arg
+    if arg.isFlag():
+      if arg.short_name == "i":
+        interactive = true
+      if arg.short_name == "d":
+        debug = true
+    else:
+      if not arg.isNone():
+        filename = arg.value.toString()
+        break
+
+  if filename == "":
+    stderr.write("usage: delish script.deli\n")
     quit 2
 
-  let filename = paramStr(1)
   let source = readFile(filename)
   let parser = Parser(source: source, debug: debug)
   var parsed_len = 0
-  benchmark "parsing":
+  if debug:
+    benchmark "parsing":
+      parsed_len = parser.parse()
+  else:
     parsed_len = parser.parse()
-  #parser.printStackTable()
-  #parser.printEntryPoint()
 
   if parsed_len != source.len():
     stderr.write("\n*** ERROR: Stopped parsing at pos ", parsed_len, "/", source.len(), "\n")
@@ -57,15 +68,16 @@ when isMainModule:
 
   proc mainloop() =
     for line in engine.tick():
-      echo engine.lineInfo(line)
+      if debug:
+        echo engine.lineInfo(line)
       if interactive:
         nteract.line = line.abs
-        discard nteract.getUserInput()
+        if line > 0:
+          discard nteract.getUserInput()
 
-  if interactive:
-    mainloop()
-  else:
+  if debug:
     benchmark "executing":
       mainloop()
-
+  else:
+    mainloop()
 

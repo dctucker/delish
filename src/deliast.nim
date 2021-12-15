@@ -5,10 +5,6 @@ import deligrammar
 grammarToEnum(@["None","Ran","Lazy"])
 
 type
-  Argument* = ref object
-    short_name*, long_name* : string
-    value*: DeliNode
-
   DeliNode* = ref object
     case kind*: DeliKind
     of dkNone:         none:        bool
@@ -76,25 +72,7 @@ proc `$`*(node: DeliNode): string =
   else:
     return ($(node.kind)).substr(2) & " " & value
 
-
-proc `$`*(arg: Argument): string =
-  result = ""
-  if arg.short_name != "":
-    result &= " -" & arg.short_name
-  if arg.long_name != "":
-    result &= " --" & arg.long_name
-  #if ( arg.short_name != "" or arg.long_name != "" ) and arg.value != nil:
-  result &= " = "
-  if arg.value != nil:
-    result &= $(arg.value)
-
-proc isNone*(arg: Argument):bool =
-  return arg.short_name == "" and arg.long_name == "" and arg.value.isNone()
-
-proc isFlag*(arg: Argument):bool =
-  return arg.short_name != "" or arg.long_name != ""
-
 import strutils
 proc todo*(msg: varargs[string, `$`]) =
-  stderr.write("\27[33mTODO: ", msg.join(""), "\27[0m\n")
+  stderr.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")
 
