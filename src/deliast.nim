@@ -2,7 +2,7 @@ import std/tables
 import deligrammar
 
 ### AST representation
-grammarToEnum(@["None","Ran"])
+grammarToEnum(@["None","Ran","Lazy"])
 
 type
   Argument* = ref object

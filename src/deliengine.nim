@@ -234,6 +234,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return ran
   of dkExpr:
     return engine.evalExpression(val)
+  of dkLazy:
+    return val.sons[0]
   of dkVarDeref:
     result = engine.evalVarDeref(val)
   of dkArg:
@@ -412,12 +414,13 @@ proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
   result = DeliNode(kind: dkAssignStmt, line: line, sons: @[
     DeliNode(kind: dkVariable, varName: variable),
     DeliNode(kind: dkAssignOp),
-    value
+    DeliNode(kind: dkLazy, sons: @[value])
   ])
 
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0].varName
   let things = engine.evaluate(node.sons[1])
+  #let things = node.sons[1]
   let code = node.sons[2]
   for thing in things.sons:
     engine.insertStmt(deliLocalAssign(variable, thing, -node.line))
