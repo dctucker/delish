@@ -98,7 +98,7 @@ proc echoItems(p: Peg) =
     echo item.kind, item
     echoItems(item)
 
-let grammar = peg(grammar_source)
+let grammar = peg(getGrammar())
 
 proc assimilate(inner, outer: DeliNode) =
   if outer.kind == dkStream:

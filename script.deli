@@ -13,13 +13,13 @@ some documentation
 env $SANDO |= "chicken parm"
 $SANDO = "meatball"
 
-assert = {
-  arg $assertion
-  if not $assertion {
-    echo "Assertion failed: $assertion"
-    exit 1
-  }
-}
+#assert = {
+#  arg $assertion
+#  if not $assertion {
+#    echo "Assertion failed: $assertion"
+#    exit 1
+#  }
+#}
 
 func = {
   local $message
@@ -40,7 +40,7 @@ $input = open < ./input.txt
 $log = open > ./log.txt
 $log.out "hello"
 
-$background = async redir out>$log in<$input run dd if=/dev/random bs=10G of=/dev/null count=1 oflag=dsync
+#$background = async redir in<$input out>$log run dd if=/dev/random bs=10G of=/dev/null count=1 oflag=dsync
 
 
 

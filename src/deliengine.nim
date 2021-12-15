@@ -80,6 +80,9 @@ proc getOneliner(node: DeliNode): string =
   else:
     return $(node.kind) & "?"
 
+proc sourceLine*(engine: Engine, line: int): string =
+  return engine.parser.getLine(line)
+
 proc lineInfo*(engine: Engine, line: int): string =
   let sline = if line > 0:
     engine.parser.getLine(line)

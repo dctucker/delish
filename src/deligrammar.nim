@@ -80,10 +80,9 @@ const grammar_source_0 = static"""
   StreamErr     <- "err"
   Variable      <- '$' { (\w / '-')+ }
   DefaultOp     <- "|="
-""".replace('\n', '\0')
+""".replace('\n','\0')
 
 proc getGrammar*():string = grammar_source_0.replace('\0','\n')
-const grammar_source* = getGrammar()
 
 macro grammarToEnum*(extra: static[seq[string]]) =
   let symbols = getGrammar().splitLines().map(proc(x:string):string =

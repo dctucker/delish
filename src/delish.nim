@@ -5,6 +5,7 @@ import os
 import times
 import deliparser
 import deliengine
+import delinteract
 
 #when isMainModule:
 #  import delinpeg
@@ -18,7 +19,9 @@ template benchmark(benchmarkName: string, code: untyped) =
 
 when isMainModule:
 
+  let interactive = true
   let debug = true
+  let breakpoints = @[53]
 
   if paramCount() < 1:
     echo "usage: delish script.deli"
@@ -41,8 +44,20 @@ when isMainModule:
     quit 1
 
   var engine: Engine = newEngine(parser)
-  benchmark "executing":
+  var nteract = newNteract(engine)
+  nteract.filename = filename
+
+  proc mainloop() =
     for line in engine.tick():
       echo engine.lineInfo(line)
-      echo "\27[30;1m", filename, ":", line.abs, "\27[0m> "
+      if interactive:
+        nteract.line = line
+        discard nteract.getUserInput()
+
+  if interactive:
+    mainloop()
+  else:
+    benchmark "executing":
+      mainloop()
+
 
