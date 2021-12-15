@@ -98,7 +98,7 @@ proc echoItems(p: Peg) =
     echo item.kind, item
     echoItems(item)
 
-let grammar = peg(grammar_source)
+let grammar = peg(getGrammar())
 
 proc assimilate(inner, outer: DeliNode) =
   if outer.kind == dkStream:
@@ -108,19 +108,17 @@ proc assimilate(inner, outer: DeliNode) =
       of dkStreamErr: 2
       else: -1
 
+import std/marshal
 proc parse*(parser: Parser): int =
   parser.initParser()
   parser.initLineNumbers()
-
 
   #echo "=== Grammar ==="
   #echo grammar.repr
   #echo "=== /Grammar ==="
 
   #let serial = $$grammar
-  #let grammar_unmarshal = to[Peg](serial)
-  #echo grammar_unmarshal.repr
-
+  #echo serial
 
   let peg_parser = grammar.eventParser:
     pkCapture:

@@ -5,6 +5,7 @@ import os
 import times
 import deliparser
 import deliengine
+import delinteract
 
 #when isMainModule:
 #  import delinpeg
@@ -16,9 +17,19 @@ template benchmark(benchmarkName: string, code: untyped) =
     let elapsed = epochTime() - t0
     echo "CPU Time [", benchmarkName, "] ", elapsed, "s"
 
-when isMainModule:
 
+when isMainModule:
+#  import pegs
+#  import std/marshal
+#  import std/streams
+#  let serial = newFileStream("./src/deligrammar.json", fmRead).readAll()
+#  let grammar_unmarshal = to[Peg](serial)
+#  #echo grammar_unmarshal.repr
+#
+#when false:
+  let interactive = false
   let debug = true
+  let breakpoints = @[53]
 
   if paramCount() < 1:
     echo "usage: delish script.deli"
@@ -41,8 +52,20 @@ when isMainModule:
     quit 1
 
   var engine: Engine = newEngine(parser)
-  benchmark "executing":
+  var nteract = newNteract(engine)
+  nteract.filename = filename
+
+  proc mainloop() =
     for line in engine.tick():
       echo engine.lineInfo(line)
-      echo "\27[30;1m", filename, ":", line.abs, "\27[0m> "
+      if interactive:
+        nteract.line = line.abs
+        discard nteract.getUserInput()
+
+  if interactive:
+    mainloop()
+  else:
+    benchmark "executing":
+      mainloop()
+
 
