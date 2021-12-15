@@ -239,6 +239,10 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     result = engine.evaluate(arg)
     stdout.write(" = ")
     echo $result
+  of dkArgExpr:
+    let arg = val.sons[0]
+    let aval = engine.evalExpression(val.sons[1])
+    result = DeliNode(kind: dkArray, sons: @[arg, aval])
   of dkEnvDefault:
     return engine.evaluate(val.sons[0])
   else:

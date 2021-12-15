@@ -6,14 +6,20 @@ arg -y --yes     |= false
 arg -n           |= true
 arg -v --verbose |= false
 arg --default
-arg -l
-arg -a
 arg    --help    |= """
 some documentation
 """
 #arg $filename
 env $SANDO |= "chicken parm"
 $SANDO = "meatball"
+
+assert = {
+  arg $assertion
+  if not $assertion {
+    echo "Assertion failed: $assertion"
+    exit 1
+  }
+}
 
 func = {
   local $message
@@ -34,7 +40,7 @@ $input = open < ./input.txt
 $log = open > ./log.txt
 $log.out "hello"
 
-$background = async run dd if=/dev/random bs=10G of=/dev/null count=1 oflag=dsync
+$background = async redir out>$log in<$input run dd if=/dev/random bs=10G of=/dev/null count=1 oflag=dsync
 
 
 
@@ -42,6 +48,7 @@ $flags = []
 $flags += -l
 $flags += -a
 $flags += -h
+$flags += --decode "base64"
 
 for $flag in $flags {
   out $flag

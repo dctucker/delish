@@ -18,7 +18,7 @@ template benchmark(benchmarkName: string, code: untyped) =
 
 when isMainModule:
 
-  let debug = false
+  let debug = true
 
   if paramCount() < 1:
     echo "usage: delish script.deli"

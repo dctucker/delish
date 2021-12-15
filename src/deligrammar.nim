@@ -18,7 +18,7 @@ import macros
 #let Code = sequence( +sequence( *Blank, VLine ), *Blank )
 #echo Code.repr
 
-const grammar_source* = static"""
+const grammar_source_0 = static"""
   Script        <- Code
   Code          <- ( Blank* VLine )+ Blank*
   Blank         <- ("\\" \n) / \9 / " "
@@ -32,7 +32,7 @@ const grammar_source* = static"""
   Subshell      <- "sub"   Blank+          Blank+                         "{" \s* Code* \s* "}" \s*
   Function      <- Identifier Blank* "="   Blank*                         "{" \s* Code* \s* "}" \s*
   Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
-  AssignStmt    <- &'$' Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (Expr / RunStmt)
+  AssignStmt    <- &'$' Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (ArgExpr / Expr / RunStmt)
   AssignOp      <- "="
   AppendOp      <- "+="
   RemoveOp      <- "-="
@@ -53,6 +53,7 @@ const grammar_source* = static"""
   String        <- {\S+}
   EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
   EnvDefault    <- Expr
+  ArgExpr       <- Arg (Blank+ / '=') Expr?
   ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
   ArgNames      <- ( Blank+ Arg )+
   Arg           <- &'-' (ArgLong / ArgShort)
@@ -79,10 +80,13 @@ const grammar_source* = static"""
   StreamErr     <- "err"
   Variable      <- '$' { (\w / '-')+ }
   DefaultOp     <- "|="
-"""
+""".replace('\n', '\0')
+
+proc getGrammar*():string = grammar_source_0.replace('\0','\n')
+const grammar_source* = getGrammar()
 
 macro grammarToEnum*(extra: static[seq[string]]) =
-  let symbols = grammar_source.splitLines().map(proc(x:string):string =
+  let symbols = getGrammar().splitLines().map(proc(x:string):string =
     if x.contains("<-"):
       let split = x.splitWhitespace()
       if split.len() > 0:
