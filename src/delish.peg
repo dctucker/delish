@@ -1,8 +1,8 @@
 Script        <- Code
 Code          <- ( Blank* VLine )+ Blank*
-Blank         <- ("\\" \n) / \9 / " "
+Blank         <- ( "\\" \n ) / "\t" / ' '
 VLine         <- \n / Comment / Block / Statement Comment* \n
-Comment       <- '#' @ \n
+Comment       <- '#' (! \n .)* \n
 Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell
 Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
 Conditional   <- "if"       Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
@@ -37,8 +37,8 @@ Array         <- '[' ( \s* Expr Blank* ','? \s* )* ']'
 Object        <- '[' ( \s* Expr Blank* ':' Blank* Expr Blank* ','? \s* )+ ']'
 Identifier    <- !Keyword { (\w/"-")+ }
 JsonBlock     <- "json" Blank+ StrBlock
-StrBlock      <- (\"\"\") \n @@ (\"\"\")
-StrLiteral    <- ('"' @@ '"') / ('\'' @@ '\'')
+StrBlock      <- "\"\"\"" @@ "\"\"\""
+StrLiteral    <- (["] @@ ["]) / (['] @@ ['])
 String        <- { \S+ }
 Integer       <- { \d+ }
 Path          <- { ("."* "/" \S+ ) / "." }
