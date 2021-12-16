@@ -1,61 +1,75 @@
-Script        <- Code
-Code          <- ( Blank* VLine )+ Blank*
-Blank         <- ("\\\n") / '\t' / ' '
-VLine         <- '\n' / Comment / Block / Statement Comment* '\n'
-Comment       <- '#' [^\n]* '\n'
-Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell
-Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
-Conditional   <- "if"       Blank+ Expr     Blank+                         "{" [ \t\n\r]* Code* [ \t\n\r]* "}" [ \t\n\r]*
-WhileLoop     <- "while"    Blank+ Expr     Blank+                         "{" [ \t\n\r]* Code* [ \t\n\r]* "}" [ \t\n\r]*
-ForLoop       <- "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" [ \t\n\r]* Code* [ \t\n\r]* "}" [ \t\n\r]*
-Function      <- Identifier Blank* "="      Blank*                         "{" [ \t\n\r]* Code* [ \t\n\r]* "}" [ \t\n\r]*
-Subshell      <- "sub"      Blank+          Blank+                         "{" [ \t\n\r]* Code* [ \t\n\r]* "}" [ \t\n\r]*
-OpenStmt      <- &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path
-AssignStmt    <- &'$' Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (ArgExpr / Expr / RunStmt)
-LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
-CloseStmt     <- &'$' Variable ".close"
-ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
-EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
-IncludeStmt   <- "include" Blank+ StrLiteral
-StreamStmt    <- ( Variable "." )? Stream Blank+ ExprList
-RunStmt       <- ( (AsyncFlag / RedirFlag / (AsyncFlag RedirFlag) ) Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
-FunctionStmt  <- Identifier (Blank+ Expr)*
-ArgDefault    <- Expr
-EnvDefault    <- Expr
-ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
-Invocation    <- { \w (\w/"-")* } ( Blank+ (Expr / String) )*
-ArgExpr       <- Arg (Blank+ / '=') Expr?
-Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
-VarDeref      <- &'$' Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
-RedirFlag     <- "redir" (Blank+ (Variable / Path / Stream) Blank* RedirOp Blank* (Variable / Path / Stream))+
-AsyncFlag     <- "async"
-ArgNames      <- ( Blank+ Arg )+
-Arg           <- &'-' (ArgLong / ArgShort)
-ArgShort      <- '-' { \w+ }
-ArgLong       <- "--" { (\w ('-' \w)*)+ }
-Array         <- '[' ( [ \n\r\t]* Expr Blank* ','? [ \n\r\t]* )* ']'
-Object        <- '[' ( [ \n\r\t]* Expr Blank* ':' Blank* Expr Blank* ','? [ \n\r\t]* )+ ']'
-Identifier    <- !Keyword { (\w/"-")+ }
-JsonBlock     <- "json" Blank+ StrBlock
-StrBlock      <- ('"""') '\n' < ( !'"""' . )* > ('"""')
-StrLiteral    <- ('"' <(!'"' .)*> '"') / ('\'' <(!'\'' .)*> '\'')
-String        <- { \S+ }
-Integer       <- { \d+ }
-Path          <- { ("."* "/" \S+ ) / "." }
-Variable      <- '$' { (\w / '-')+ }
-Keyword       <- "sub" / "if" / "white" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
-Boolean       <- { "true" / "false" }
-Stream        <- &[ioe] (StreamIn / StreamOut / StreamErr)
-StreamIn      <- "in"
-StreamOut     <- "out"
-StreamErr     <- "err"
-AssignOp      <- "="
-AppendOp      <- "+="
-RemoveOp      <- "-="
-RedirOp       <- RedirAppendOp / RedirReadOp / RedirWriteOp / RedirDuplexOp
-RedirAppendOp <- ">>"
-RedirReadOp   <- "<"
-RedirWriteOp  <- ">"
-RedirDuplexOp <- "<>"
-DefaultOp     <- "|="
+%{
+#include <string.h>
+%}
 
+Script        = Code { printf("%d Script\n", $$ ); }
+Code          = ( Blank* VLine )+ Blank* { printf("%d Code\n", $$ ); }
+Blank         = ( "\\" "\n" ) | "\t" | ' ' { printf("%d Blank\n", $$ ); }
+VLine         = "\n" | Comment | Block | Statement Comment* "\n" { printf("%d VLine\n", $$ ); }
+Comment       = '#' (! "\n" .)* "\n" { printf("%d Comment\n", $$ ); }
+Block         = !'$' (Conditional | WhileLoop | ForLoop | Function) | Subshell { printf("%d Block\n", $$ ); }
+Statement     = OpenStmt | AssignStmt | LocalStmt | CloseStmt | ArgStmt | EnvStmt | IncludeStmt | StreamStmt | RunStmt | FunctionStmt { printf("%d Statement\n", $$ ); }
+Conditional   = "if"       Blank+ Expr     Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d Conditional\n", $$ ); }
+WhileLoop     = "while"    Blank+ Expr     Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d WhileLoop\n", $$ ); }
+ForLoop       = "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d ForLoop\n", $$ ); }
+Function      = Identifier Blank* "="      Blank*                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d Function\n", $$ ); }
+Subshell      = "sub"      Blank+          Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d Subshell\n", $$ ); }
+OpenStmt      = &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path { printf("%d OpenStmt\n", $$ ); }
+AssignStmt    = &'$' Variable Blank* ( AssignOp | AppendOp | RemoveOp )  Blank* (ArgExpr | Expr | RunStmt) { printf("%d AssignStmt\n", $$ ); }
+LocalStmt     = "local" Blank+ Variable ( Blank* "=" Blank* Expr )? { printf("%d LocalStmt\n", $$ ); }
+CloseStmt     = &'$' Variable ".close" { printf("%d CloseStmt\n", $$ ); }
+ArgStmt       = "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)? { printf("%d ArgStmt\n", $$ ); }
+EnvStmt       = "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)? { printf("%d EnvStmt\n", $$ ); }
+IncludeStmt   = "include" Blank+ StrLiteral { printf("%d IncludeStmt\n", $$ ); }
+StreamStmt    = ( Variable "." )? Stream Blank+ ExprList { printf("%d StreamStmt\n", $$ ); }
+RunStmt       = ( (AsyncFlag | RedirFlag | (AsyncFlag RedirFlag) ) Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )* { printf("%d RunStmt\n", $$ ); }
+FunctionStmt  = Identifier (Blank+ Expr)* { printf("%d FunctionStmt\n", $$ ); }
+ArgDefault    = Expr { printf("%d ArgDefault\n", $$ ); }
+EnvDefault    = Expr { printf("%d EnvDefault\n", $$ ); }
+ExprList      = Expr ( Blank* ',' Blank* Expr Blank* )* { printf("%d ExprList\n", $$ ); }
+Invocation    = < [0-9A-Za-z] ( [0-9A-Za-z] | '-' )* > ( Blank+ (Expr | String) )* { printf("%d Invocation\n", $$ ); }
+ArgExpr       = Arg (Blank+ | '=') Expr? { printf("%d ArgExpr\n", $$ ); }
+Expr          = VarDeref | Arg | Array | Object | StrBlock | StrLiteral | Integer | Boolean | Path | JsonBlock | Stream { printf("%d Expr\n", $$ ); }
+VarDeref      = &'$' Variable ( [.] ( StrLiteral | Integer | Variable | Identifier ) )* { printf("%d VarDeref\n", $$ ); }
+RedirFlag     = "redir" (Blank+ (Variable | Path | Stream) Blank* RedirOp Blank* (Variable | Path | Stream))+ { printf("%d RedirFlag\n", $$ ); }
+AsyncFlag     = "async" { printf("%d AsyncFlag\n", $$ ); }
+ArgNames      = ( Blank+ Arg )+ { printf("%d ArgNames\n", $$ ); }
+Arg           = &'-' (ArgLong | ArgShort) { printf("%d Arg\n", $$ ); }
+ArgShort      = '-' < [0-9A-Za-z]+ > { printf("%d ArgShort\n", $$ ); }
+ArgLong       = "--" < ( [0-9A-Za-z] ('-' [0-9A-Za-z] )*)+ > { printf("%d ArgLong\n", $$ ); }
+Array         = '[' ( [ \n\r\t]* Expr Blank* ','? [ \n\r\t]* )* ']' { printf("%d Array\n", $$ ); }
+Object        = '[' ( [ \n\r\t]* Expr Blank* ':' Blank* Expr Blank* ','? [ \n\r\t]* )+ ']' { printf("%d Object\n", $$ ); }
+Identifier    = !Keyword < ( [0-9A-Za-z] | '-' )+ > { printf("%d Identifier\n", $$ ); }
+JsonBlock     = "json" Blank+ StrBlock { printf("%d JsonBlock\n", $$ ); }
+StrBlock      = "\"\"\"" (!"\"\"\"" .)* "\"\"\"" { printf("%d StrBlock\n", $$ ); }
+StrLiteral    = (["] (!["] .)* ["]) | (['] (!['] .)* [']) { printf("%d StrLiteral\n", $$ ); }
+String        = < [^ \t\n\r]+ > { printf("%d String\n", $$ ); }
+Integer       = < [0-9]+ > { printf("%d Integer\n", $$ ); }
+Path          = < ("."* "/" [^ \t\n\r]+ ) | "." > { printf("%d Path\n", $$ ); }
+Variable      = '$' < ([0-9A-Za-z] | '-')+ > { printf("%d Variable\n", $$ ); }
+Keyword       = "sub" | "if" | "white" | "arg" | "in" | "out" | "err" | "include" | "true" | "false" { printf("%d Keyword\n", $$ ); }
+Boolean       = < "true" | "false" > { printf("%d Boolean\n", $$ ); }
+Stream        = &[ioe] (StreamIn | StreamOut | StreamErr) { printf("%d Stream\n", $$ ); }
+StreamIn      = "in" { printf("%d StreamIn\n", $$ ); }
+StreamOut     = "out" { printf("%d StreamOut\n", $$ ); }
+StreamErr     = "err" { printf("%d StreamErr\n", $$ ); }
+AssignOp      = "=" { printf("%d AssignOp\n", $$ ); }
+AppendOp      = "+=" { printf("%d AppendOp\n", $$ ); }
+RemoveOp      = "-=" { printf("%d RemoveOp\n", $$ ); }
+RedirOp       = RedirAppendOp | RedirReadOp | RedirWriteOp | RedirDuplexOp { printf("%d RedirOp\n", $$ ); }
+RedirAppendOp = ">>" { printf("%d RedirAppendOp\n", $$ ); }
+RedirReadOp   = "<" { printf("%d RedirReadOp\n", $$ ); }
+RedirWriteOp  = ">" { printf("%d RedirWriteOp\n", $$ ); }
+RedirDuplexOp = "<>" { printf("%d RedirDuplexOp\n", $$ ); }
+DefaultOp     = "|=" { printf("%d DefaultOp\n", $$ ); }
+
+%%
+
+
+/*
+int main() {
+	while(yyparse())
+		puts("success\n");
+	return 0;
+}
+*/

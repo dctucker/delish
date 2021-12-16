@@ -33,3 +33,10 @@ macro grammarToEnum*(extra: static[seq[string]]) =
   let stmt = "type DeliKind* = enum " & options.join(", ")
   result = parseStmt(stmt)
 
+{.compile: "delish.yy.c" .}
+proc yyparse*(): cint {.importc.}
+proc matched(str: cstring) {.cdecl.} =
+  #setupForeignThreadGc()
+
+  echo str
+

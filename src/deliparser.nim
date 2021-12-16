@@ -110,6 +110,9 @@ proc assimilate(inner, outer: DeliNode) =
 
 #import std/marshal
 proc parse*(parser: Parser): int =
+  let y = yyparse()
+  echo y
+
   parser.initParser()
   parser.initLineNumbers()
 

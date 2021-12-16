@@ -22,8 +22,8 @@ RunStmt       <- ( (AsyncFlag / RedirFlag / (AsyncFlag RedirFlag) ) Blank+)? "ru
 FunctionStmt  <- Identifier (Blank+ Expr)*
 ArgDefault    <- Expr
 EnvDefault    <- Expr
-ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
-Invocation    <- { \w (\w/"-")* } ( Blank+ (Expr / String) )*
+ExprList      <- Expr ( Blank* ',' Blank* Expr Blank* )*
+Invocation    <- { \w ( \w / '-' )* } ( Blank+ (Expr / String) )*
 ArgExpr       <- Arg (Blank+ / '=') Expr?
 Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
 VarDeref      <- &'$' Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
@@ -32,10 +32,10 @@ AsyncFlag     <- "async"
 ArgNames      <- ( Blank+ Arg )+
 Arg           <- &'-' (ArgLong / ArgShort)
 ArgShort      <- '-' { \w+ }
-ArgLong       <- "--" { (\w ('-' \w)*)+ }
+ArgLong       <- "--" { ( \w ('-' \w )*)+ }
 Array         <- '[' ( \s* Expr Blank* ','? \s* )* ']'
 Object        <- '[' ( \s* Expr Blank* ':' Blank* Expr Blank* ','? \s* )+ ']'
-Identifier    <- !Keyword { (\w/"-")+ }
+Identifier    <- !Keyword { ( \w / '-' )+ }
 JsonBlock     <- "json" Blank+ StrBlock
 StrBlock      <- "\"\"\"" @@ "\"\"\""
 StrLiteral    <- (["] @@ ["]) / (['] @@ ['])
