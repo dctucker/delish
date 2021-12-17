@@ -8,6 +8,7 @@
 
 #include "delikind.h"
 
+#define YY_DEBUG
 
 #undef YY_INPUT
 #define YY_INPUT(b,r,s) readYYInput(b,&r,s)
@@ -41,6 +42,7 @@ void readYYInput( char *buf, int *result, int max_size )
 	yyReadOffset += readable;
 }
 
+/*
 int level = 0;
 void yyenter(enum DeliKind kind)
 {
@@ -58,6 +60,7 @@ void yyleave(enum DeliKind kind)
 	something(kind, "", 0);
 	level--;
 }
+*/
 
 #ifndef YY_MALLOC
 #define YY_MALLOC(C, N)		malloc(N)
@@ -395,8 +398,8 @@ YY_ACTION(void) yy_1_DefaultOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_DefaultOp\n"));
   {
-#line 114
-   __ = something(dkDefaultOp, yytext, yyleng); yyleave(dkDefaultOp); ;
+#line 117
+   __ = something(dkDefaultOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -409,8 +412,8 @@ YY_ACTION(void) yy_1_RedirDuplexOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RedirDuplexOp\n"));
   {
-#line 113
-   __ = something(dkRedirDuplexOp, yytext, yyleng); yyleave(dkRedirDuplexOp); ;
+#line 116
+   __ = something(dkRedirDuplexOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -423,8 +426,8 @@ YY_ACTION(void) yy_1_RedirWriteOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RedirWriteOp\n"));
   {
-#line 112
-   __ = something(dkRedirWriteOp, yytext, yyleng); yyleave(dkRedirWriteOp); ;
+#line 115
+   __ = something(dkRedirWriteOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -437,8 +440,8 @@ YY_ACTION(void) yy_1_RedirReadOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RedirReadOp\n"));
   {
-#line 111
-   __ = something(dkRedirReadOp, yytext, yyleng); yyleave(dkRedirReadOp); ;
+#line 114
+   __ = something(dkRedirReadOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -451,8 +454,8 @@ YY_ACTION(void) yy_1_RedirAppendOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RedirAppendOp\n"));
   {
-#line 110
-   __ = something(dkRedirAppendOp, yytext, yyleng); yyleave(dkRedirAppendOp); ;
+#line 113
+   __ = something(dkRedirAppendOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -465,8 +468,8 @@ YY_ACTION(void) yy_1_RedirOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RedirOp\n"));
   {
-#line 109
-   __ = something(dkRedirOp, yytext, yyleng); yyleave(dkRedirOp); ;
+#line 112
+   __ = something(dkRedirOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -479,8 +482,8 @@ YY_ACTION(void) yy_1_RemoveOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RemoveOp\n"));
   {
-#line 108
-   __ = something(dkRemoveOp, yytext, yyleng); yyleave(dkRemoveOp); ;
+#line 111
+   __ = something(dkRemoveOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -493,8 +496,8 @@ YY_ACTION(void) yy_1_AppendOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_AppendOp\n"));
   {
-#line 107
-   __ = something(dkAppendOp, yytext, yyleng); yyleave(dkAppendOp); ;
+#line 110
+   __ = something(dkAppendOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -507,8 +510,8 @@ YY_ACTION(void) yy_1_AssignOp(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_AssignOp\n"));
   {
-#line 106
-   __ = something(dkAssignOp, yytext, yyleng); yyleave(dkAssignOp); ;
+#line 109
+   __ = something(dkAssignOp, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -521,8 +524,8 @@ YY_ACTION(void) yy_1_StreamErr(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_StreamErr\n"));
   {
-#line 105
-   __ = something(dkStreamErr, yytext, yyleng); yyleave(dkStreamErr); ;
+#line 108
+   __ = something(dkStreamErr, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -535,8 +538,8 @@ YY_ACTION(void) yy_1_StreamOut(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_StreamOut\n"));
   {
-#line 104
-   __ = something(dkStreamOut, yytext, yyleng); yyleave(dkStreamOut); ;
+#line 107
+   __ = something(dkStreamOut, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -549,8 +552,8 @@ YY_ACTION(void) yy_1_StreamIn(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_StreamIn\n"));
   {
-#line 103
-   __ = something(dkStreamIn, yytext, yyleng); yyleave(dkStreamIn); ;
+#line 106
+   __ = something(dkStreamIn, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -563,8 +566,8 @@ YY_ACTION(void) yy_1_Stream(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Stream\n"));
   {
-#line 102
-   __ = something(dkStream, yytext, yyleng); yyleave(dkStream); ;
+#line 105
+   __ = something(dkStream, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -577,8 +580,8 @@ YY_ACTION(void) yy_1_Boolean(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Boolean\n"));
   {
-#line 101
-   __ = something(dkBoolean, yytext, yyleng); yyleave(dkBoolean); ;
+#line 104
+   __ = something(dkBoolean, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -591,8 +594,8 @@ YY_ACTION(void) yy_1_Keyword(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Keyword\n"));
   {
-#line 100
-   __ = something(dkKeyword, yytext, yyleng); yyleave(dkKeyword); ;
+#line 103
+   __ = something(dkKeyword, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -605,8 +608,8 @@ YY_ACTION(void) yy_1_Variable(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Variable\n"));
   {
-#line 99
-   __ = something(dkVariable, yytext, yyleng); yyleave(dkVariable); ;
+#line 102
+   __ = something(dkVariable, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -619,8 +622,8 @@ YY_ACTION(void) yy_1_Path(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Path\n"));
   {
-#line 98
-   __ = something(dkPath, yytext, yyleng); yyleave(dkPath); ;
+#line 101
+   __ = something(dkPath, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -633,8 +636,8 @@ YY_ACTION(void) yy_1_Integer(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Integer\n"));
   {
-#line 97
-   __ = something(dkInteger, yytext, yyleng); yyleave(dkInteger); ;
+#line 100
+   __ = something(dkInteger, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -647,8 +650,8 @@ YY_ACTION(void) yy_1_String(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_String\n"));
   {
-#line 96
-   __ = something(dkString, yytext, yyleng); yyleave(dkString); ;
+#line 99
+   __ = something(dkString, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -661,8 +664,8 @@ YY_ACTION(void) yy_1_StrLiteral(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_StrLiteral\n"));
   {
-#line 95
-   __ = something(dkStrLiteral, yytext, yyleng); yyleave(dkStrLiteral); ;
+#line 98
+   __ = something(dkStrLiteral, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -675,8 +678,8 @@ YY_ACTION(void) yy_1_StrBlock(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_StrBlock\n"));
   {
-#line 94
-   __ = something(dkStrBlock, yytext, yyleng); yyleave(dkStrBlock); ;
+#line 97
+   __ = something(dkStrBlock, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -689,8 +692,8 @@ YY_ACTION(void) yy_1_JsonBlock(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_JsonBlock\n"));
   {
-#line 93
-   __ = something(dkJsonBlock, yytext, yyleng); yyleave(dkJsonBlock); ;
+#line 96
+   __ = something(dkJsonBlock, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -703,8 +706,8 @@ YY_ACTION(void) yy_1_Identifier(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Identifier\n"));
   {
-#line 92
-   __ = something(dkIdentifier, yytext, yyleng); yyleave(dkIdentifier); ;
+#line 95
+   __ = something(dkIdentifier, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -717,8 +720,8 @@ YY_ACTION(void) yy_1_Object(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Object\n"));
   {
-#line 91
-   __ = something(dkObject, yytext, yyleng); yyleave(dkObject); ;
+#line 94
+   __ = something(dkObject, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -731,8 +734,8 @@ YY_ACTION(void) yy_1_Array(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Array\n"));
   {
-#line 90
-   __ = something(dkArray, yytext, yyleng); yyleave(dkArray); ;
+#line 93
+   __ = something(dkArray, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -745,8 +748,8 @@ YY_ACTION(void) yy_1_ArgLong(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ArgLong\n"));
   {
-#line 89
-   __ = something(dkArgLong, yytext, yyleng); yyleave(dkArgLong); ;
+#line 92
+   __ = something(dkArgLong, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -759,8 +762,8 @@ YY_ACTION(void) yy_1_ArgShort(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ArgShort\n"));
   {
-#line 88
-   __ = something(dkArgShort, yytext, yyleng); yyleave(dkArgShort); ;
+#line 91
+   __ = something(dkArgShort, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -773,8 +776,8 @@ YY_ACTION(void) yy_1_Arg(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Arg\n"));
   {
-#line 87
-   __ = something(dkArg, yytext, yyleng); yyleave(dkArg); ;
+#line 90
+   __ = something(dkArg, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -787,8 +790,8 @@ YY_ACTION(void) yy_1_ArgNames(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ArgNames\n"));
   {
-#line 86
-   __ = something(dkArgNames, yytext, yyleng); yyleave(dkArgNames); ;
+#line 89
+   __ = something(dkArgNames, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -801,8 +804,8 @@ YY_ACTION(void) yy_1_AsyncFlag(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_AsyncFlag\n"));
   {
-#line 85
-   __ = something(dkAsyncFlag, yytext, yyleng); yyleave(dkAsyncFlag); ;
+#line 88
+   __ = something(dkAsyncFlag, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -815,8 +818,8 @@ YY_ACTION(void) yy_1_RedirFlag(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RedirFlag\n"));
   {
-#line 84
-   __ = something(dkRedirFlag, yytext, yyleng); yyleave(dkRedirFlag); ;
+#line 87
+   __ = something(dkRedirFlag, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -829,8 +832,8 @@ YY_ACTION(void) yy_1_VarDeref(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_VarDeref\n"));
   {
-#line 83
-   __ = something(dkVarDeref, yytext, yyleng); yyleave(dkVarDeref); ;
+#line 86
+   __ = something(dkVarDeref, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -843,8 +846,8 @@ YY_ACTION(void) yy_1_Expr(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Expr\n"));
   {
-#line 82
-   __ = something(dkExpr, yytext, yyleng); yyleave(dkExpr); ;
+#line 85
+   __ = something(dkExpr, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -857,8 +860,8 @@ YY_ACTION(void) yy_1_ArgExpr(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ArgExpr\n"));
   {
-#line 81
-   __ = something(dkArgExpr, yytext, yyleng); yyleave(dkArgExpr); ;
+#line 84
+   __ = something(dkArgExpr, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -871,8 +874,8 @@ YY_ACTION(void) yy_1_Invocation(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Invocation\n"));
   {
-#line 80
-   __ = something(dkInvocation, yytext, yyleng); yyleave(dkInvocation); ;
+#line 83
+   __ = something(dkInvocation, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -885,8 +888,8 @@ YY_ACTION(void) yy_1_ExprList(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ExprList\n"));
   {
-#line 79
-   __ = something(dkExprList, yytext, yyleng); yyleave(dkExprList); ;
+#line 82
+   __ = something(dkExprList, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -899,8 +902,8 @@ YY_ACTION(void) yy_1_EnvDefault(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_EnvDefault\n"));
   {
-#line 78
-   __ = something(dkEnvDefault, yytext, yyleng); yyleave(dkEnvDefault); ;
+#line 81
+   __ = something(dkEnvDefault, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -913,8 +916,8 @@ YY_ACTION(void) yy_1_ArgDefault(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ArgDefault\n"));
   {
-#line 77
-   __ = something(dkArgDefault, yytext, yyleng); yyleave(dkArgDefault); ;
+#line 80
+   __ = something(dkArgDefault, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -927,8 +930,8 @@ YY_ACTION(void) yy_1_FunctionStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_FunctionStmt\n"));
   {
-#line 76
-   __ = something(dkFunctionStmt, yytext, yyleng); yyleave(dkFunctionStmt); ;
+#line 79
+   __ = something(dkFunctionStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -941,8 +944,8 @@ YY_ACTION(void) yy_1_RunStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_RunStmt\n"));
   {
-#line 75
-   __ = something(dkRunStmt, yytext, yyleng); yyleave(dkRunStmt); ;
+#line 78
+   __ = something(dkRunStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -955,8 +958,8 @@ YY_ACTION(void) yy_1_StreamStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_StreamStmt\n"));
   {
-#line 74
-   __ = something(dkStreamStmt, yytext, yyleng); yyleave(dkStreamStmt); ;
+#line 77
+   __ = something(dkStreamStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -969,8 +972,8 @@ YY_ACTION(void) yy_1_IncludeStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_IncludeStmt\n"));
   {
-#line 73
-   __ = something(dkIncludeStmt, yytext, yyleng); yyleave(dkIncludeStmt); ;
+#line 76
+   __ = something(dkIncludeStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -983,8 +986,8 @@ YY_ACTION(void) yy_1_EnvStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_EnvStmt\n"));
   {
-#line 72
-   __ = something(dkEnvStmt, yytext, yyleng); yyleave(dkEnvStmt); ;
+#line 75
+   __ = something(dkEnvStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -997,8 +1000,8 @@ YY_ACTION(void) yy_1_ArgStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ArgStmt\n"));
   {
-#line 71
-   __ = something(dkArgStmt, yytext, yyleng); yyleave(dkArgStmt); ;
+#line 74
+   __ = something(dkArgStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1011,8 +1014,8 @@ YY_ACTION(void) yy_1_CloseStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_CloseStmt\n"));
   {
-#line 70
-   __ = something(dkCloseStmt, yytext, yyleng); yyleave(dkCloseStmt); ;
+#line 73
+   __ = something(dkCloseStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1025,8 +1028,8 @@ YY_ACTION(void) yy_1_LocalStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_LocalStmt\n"));
   {
-#line 69
-   __ = something(dkLocalStmt, yytext, yyleng); yyleave(dkLocalStmt); ;
+#line 72
+   __ = something(dkLocalStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1039,8 +1042,8 @@ YY_ACTION(void) yy_1_AssignStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_AssignStmt\n"));
   {
-#line 68
-   __ = something(dkAssignStmt, yytext, yyleng); yyleave(dkAssignStmt); ;
+#line 71
+   __ = something(dkAssignStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1053,8 +1056,8 @@ YY_ACTION(void) yy_1_OpenStmt(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_OpenStmt\n"));
   {
-#line 67
-   __ = something(dkOpenStmt, yytext, yyleng); yyleave(dkOpenStmt); ;
+#line 70
+   __ = something(dkOpenStmt, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1067,8 +1070,8 @@ YY_ACTION(void) yy_1_Subshell(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Subshell\n"));
   {
-#line 66
-   __ = something(dkSubshell, yytext, yyleng); yyleave(dkSubshell); ;
+#line 69
+   __ = something(dkSubshell, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1081,8 +1084,8 @@ YY_ACTION(void) yy_1_Function(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Function\n"));
   {
-#line 65
-   __ = something(dkFunction, yytext, yyleng); yyleave(dkFunction); ;
+#line 68
+   __ = something(dkFunction, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1095,8 +1098,8 @@ YY_ACTION(void) yy_1_ForLoop(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_ForLoop\n"));
   {
-#line 64
-   __ = something(dkForLoop, yytext, yyleng); yyleave(dkForLoop); ;
+#line 67
+   __ = something(dkForLoop, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1109,8 +1112,8 @@ YY_ACTION(void) yy_1_WhileLoop(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_WhileLoop\n"));
   {
-#line 63
-   __ = something(dkWhileLoop, yytext, yyleng); yyleave(dkWhileLoop); ;
+#line 66
+   __ = something(dkWhileLoop, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1123,8 +1126,8 @@ YY_ACTION(void) yy_1_Conditional(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Conditional\n"));
   {
-#line 62
-   __ = something(dkConditional, yytext, yyleng); yyleave(dkConditional); ;
+#line 65
+   __ = something(dkConditional, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1137,8 +1140,8 @@ YY_ACTION(void) yy_1_Statement(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Statement\n"));
   {
-#line 61
-   __ = something(dkStatement, yytext, yyleng); yyleave(dkStatement); ;
+#line 64
+   __ = something(dkStatement, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1151,8 +1154,8 @@ YY_ACTION(void) yy_1_Block(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Block\n"));
   {
-#line 60
-   __ = something(dkBlock, yytext, yyleng); yyleave(dkBlock); ;
+#line 63
+   __ = something(dkBlock, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1165,8 +1168,8 @@ YY_ACTION(void) yy_1_Code(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Code\n"));
   {
-#line 56
-   __ = something(dkCode, yytext, yyleng); yyleave(dkCode); ;
+#line 59
+   __ = something(dkCode, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -1179,8 +1182,8 @@ YY_ACTION(void) yy_1_Script(yycontext *yy, char *yytext, int yyleng)
 #define yythunkpos yy->__thunkpos
   yyprintf((stderr, "do yy_1_Script\n"));
   {
-#line 55
-   __ = something(dkScript, yytext, yyleng); yyleave(dkScript); ;
+#line 58
+   __ = something(dkScript, yytext, yyleng); printf("%d", yy->__val - yy->__vals); ;
   }
 #undef yythunkpos
 #undef yypos
@@ -3338,7 +3341,7 @@ YY_PARSE(yycontext *) YYRELEASE(yycontext *yyctx)
 }
 
 #endif
-#line 115 "./src/delish.leg"
+#line 118 "./src/delish.leg"
 
 
 /*

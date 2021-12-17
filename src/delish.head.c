@@ -1,5 +1,6 @@
 #include "delikind.h"
 
+#define YY_DEBUG
 
 #undef YY_INPUT
 #define YY_INPUT(b,r,s) readYYInput(b,&r,s)
@@ -33,6 +34,7 @@ void readYYInput( char *buf, int *result, int max_size )
 	yyReadOffset += readable;
 }
 
+/*
 int level = 0;
 void yyenter(enum DeliKind kind)
 {
@@ -50,3 +52,4 @@ void yyleave(enum DeliKind kind)
 	something(kind, "", 0);
 	level--;
 }
+*/

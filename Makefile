@@ -16,7 +16,7 @@ src/delish.leg: Makefile src/delish.peg src/delish.head.c src/delish.tail.c
 		| sed 's@\\w@[0-9A-Za-z]@g' \
 		| sed 's@\\S@[^ \\t\\n\\r]@g' \
 		| sed 's@\\d@[0-9]@g' \
-		| sed 's@^\([^ ]*\) *<- *\([^#]*\)$$@\1 = \@{ yyenter(dk\1); } ( ( \2 ) ~{ yyleave(dk\1); } ) { $$$$ = something(dk\1, yytext, yyleng); yyleave(dk\1); }@g' \
+		| sed 's@^\([^ ]*\) *<- *\([^#]*\)$$@\1 = \@{ yyenter(dk\1); } ( \2 ) ~{ yyleave(dk\1); } { $$$$ = something(dk\1, yytext, yyleng); printf("%d ", yy->__val - yy->__vals); }@g' \
 		| sed 's@ / @ | @g' \
 		| sed 's@ <- @ = @g' \
 		>> ${LEG}
@@ -32,7 +32,7 @@ yyparse: src/delish.yy.c
 	gcc ./src/delish.yy.c -o yyparse
 
 debug: src/delish.yy.c
-	nimble build
+	nimble build -d:YY_DEBUG=1
 
 release:
 	nimble build -d:release --passC:-ffast-math --opt:size

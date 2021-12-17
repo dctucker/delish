@@ -1,5 +1,6 @@
 import std/tables
 import strutils
+import stacks
 import deligrammar
 
 ### AST representation
@@ -10,6 +11,28 @@ proc something*(kind: cint, str: cstring, len: cint): cint {.exportc.} =
   result = kind
   let k = DeliKind(kind)
   echo $k, " ", str
+
+var level = 0
+var kindstack = Stack[DeliKind]()
+proc yyenter(kind: cint) {.exportc.} =
+  let k = DeliKind(kind)
+  #let level = kindstack.len
+  level += 1
+  echo level, "> ", $k
+  #kindstack.push(k)
+
+proc yyleave(kind: cint) {.exportc.} =
+  let k = DeliKind(kind)
+  #while kindstack.len > 0:
+  #  let k2 = kindstack.pop()
+  #  #let level = kindstack.len
+  #  level -= 1
+  #  echo level, "< ", $k2
+  #  if k2 == k:
+  #    break
+  #let level = kindstack.len
+  level -= 1
+  echo level, "< ", $k
 
 {.compile: "delish.yy.c" .}
 proc yyparse*(): cint {.importc.}
