@@ -1,3 +1,4 @@
+import system/io
 import strutils
 import sequtils
 import macros
@@ -33,10 +34,13 @@ macro grammarToEnum*(extra: static[seq[string]]) =
   let stmt = "type DeliKind* = enum " & options.join(", ")
   result = parseStmt(stmt)
 
-{.compile: "delish.yy.c" .}
-proc yyparse*(): cint {.importc.}
-proc matched(str: cstring) {.cdecl.} =
-  #setupForeignThreadGc()
-
-  echo str
-
+macro grammarToCEnum*(extra: static[seq[string]]) =
+  let symbols = getGrammar().splitLines().map(proc(x:string):string =
+    if x.contains("<-"):
+      let split = x.splitWhitespace()
+      if split.len() > 0:
+        return "dk" & split[0]
+  ).filter(proc(x:string):bool = x.len() > 0)
+  let options = concat(symbols, extra.map(proc(x:string):string = "dk" & x))
+  let stmt = "enum DeliKind {\n\t" & options.join(",\n\t") & "\n};\n";
+  "src/delikind.h".writeFile(stmt)

@@ -3,7 +3,7 @@ import std/deques
 import macros
 import strutils
 import stacks
-import pegs
+#import pegs
 import deliast
 import deligrammar
 
@@ -93,12 +93,12 @@ proc initLineNumbers(parser: Parser) =
   #parser.debug parser.line_numbers
 
 
-proc echoItems(p: Peg) =
-  for item in p.items():
-    echo item.kind, item
-    echoItems(item)
+#proc echoItems(p: Peg) =
+#  for item in p.items():
+#    echo item.kind, item
+#    echoItems(item)
 
-let grammar = peg(getGrammar())
+#let grammar = peg(getGrammar())
 
 proc assimilate(inner, outer: DeliNode) =
   if outer.kind == dkStream:
@@ -110,6 +110,8 @@ proc assimilate(inner, outer: DeliNode) =
 
 #import std/marshal
 proc parse*(parser: Parser): int =
+  var cstr: cstring = parser.source
+  yySetScript(cstr)
   let y = yyparse()
   echo y
 
@@ -123,43 +125,43 @@ proc parse*(parser: Parser): int =
   #let serial = $$grammar
   #echo serial
 
-  let peg_parser = grammar.eventParser:
-    pkCapture:
-      leave:
-        parser.parseCapture(start, length, s)
-    pkCapturedSearch:
-      leave:
-        case parser.symbol_stack.peek()
-        of "StrBlock":
-          parser.parseCapture(start, length-3, s)
-        else:
-          parser.parseCapture(start, length-1, s)
-    pkNonTerminal:
-      enter:
-        if p.nt.name notin ["Blank", "VLine", "Comment"]:
-          let k = parseEnum[DeliKind]("dk" & p.nt.name)
-          parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(start)))
-          debug parser, "\27[1;30m", parser.indent("> "), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
-          parser.symbol_stack.push(p.nt.name)
-      leave:
-        if p.nt.name notin ["Blank", "VLine", "Comment"]:
-          let inner_node = parser.node_stack.pop()
-          discard parser.symbol_stack.pop()
-          if length > 0:
-            let matchStr = s.substr(start, start+length-1)
-            debug parser, parser.indent("\27[1m< "), $p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
+  #let peg_parser = grammar.eventParser:
+  #  pkCapture:
+  #    leave:
+  #      parser.parseCapture(start, length, s)
+  #  pkCapturedSearch:
+  #    leave:
+  #      case parser.symbol_stack.peek()
+  #      of "StrBlock":
+  #        parser.parseCapture(start, length-3, s)
+  #      else:
+  #        parser.parseCapture(start, length-1, s)
+  #  pkNonTerminal:
+  #    enter:
+  #      if p.nt.name notin ["Blank", "VLine", "Comment"]:
+  #        let k = parseEnum[DeliKind]("dk" & p.nt.name)
+  #        parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(start)))
+  #        debug parser, "\27[1;30m", parser.indent("> "), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
+  #        parser.symbol_stack.push(p.nt.name)
+  #    leave:
+  #      if p.nt.name notin ["Blank", "VLine", "Comment"]:
+  #        let inner_node = parser.node_stack.pop()
+  #        discard parser.symbol_stack.pop()
+  #        if length > 0:
+  #          let matchStr = s.substr(start, start+length-1)
+  #          debug parser, parser.indent("\27[1m< "), $p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
 
-            if parser.node_stack.len() > 0:
-              var outer_node = parser.node_stack.pop()
-              outer_node.sons.add( inner_node )
-              assimilate(inner_node, outer_node)
-              parser.entry_point = outer_node
-              parser.node_stack.push(outer_node)
+  #          if parser.node_stack.len() > 0:
+  #            var outer_node = parser.node_stack.pop()
+  #            outer_node.sons.add( inner_node )
+  #            assimilate(inner_node, outer_node)
+  #            parser.entry_point = outer_node
+  #            parser.node_stack.push(outer_node)
 
-            #let line = parser.line_number(start)
-            ##debug start, " :",  line
+  #          #let line = parser.line_number(start)
+  #          ##debug start, " :",  line
 
-  parser.parsed_len = peg_parser(parser.source)
+  #parser.parsed_len = peg_parser(parser.source)
   return parser.parsed_len
 
 proc getLine*(parser: Parser, line: int): string =

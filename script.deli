@@ -1,7 +1,5 @@
 #!/usr/bin/deli
 
-$found = run find . -name "disk*" | grep "sdb"
-
 arg -y --yes     |= false
 arg -n           |= true
 arg -v --verbose |= false
@@ -12,6 +10,9 @@ some documentation
 #arg $filename
 env $SANDO |= "chicken parm"
 $SANDO = "meatball"
+
+$found = run find . -name "disk*" | grep "sdb"
+
 
 #assert = {
 #  arg $assertion

@@ -1,70 +1,118 @@
 %{
-#include <string.h>
+#include "delikind.h"
+
+
+#undef YY_INPUT
+#define YY_INPUT(b,r,s) readYYInput(b,&r,s)
+
+const char *yyDeliScript;
+size_t yyReadOffset;
+int yyDeliScriptLen;
+
+void yySetScript( char *cstr )
+{
+	yyDeliScript = cstr;
+	yyDeliScriptLen = strlen(cstr);
+	printf("received cstr len %d\n", yyDeliScriptLen);
+	yyReadOffset = 0;
+}
+
+void readYYInput( char *buf, int *result, int max_size )
+{
+    int readable = max_size;
+    int remaining = yyDeliScriptLen - yyReadOffset;
+
+	if( readable > remaining )
+		readable = remaining;
+	for( int i=0; i < readable; i++ )
+	{
+		buf[i] = yyDeliScript[yyReadOffset + i];
+	}
+	//printf("Reading %c of %d\n", yyDeliScript[yyReadOffset], max_size);
+
+	*result = readable;
+	yyReadOffset += readable;
+}
+
+int level = 0;
+void yyenter(enum DeliKind kind)
+{
+	level++;
+	for(int i=0; i < level; i++)
+		printf(" ");
+	printf("> ");
+	something(kind, "", 0);
+}
+void yyleave(enum DeliKind kind)
+{
+	for(int i=0; i < level; i++)
+		printf(" ");
+	printf("< ");
+	something(kind, "", 0);
+	level--;
+}
 %}
-
-Script        = Code { printf("%d Script\n", $$ ); }
-Code          = ( Blank* VLine )+ Blank* { printf("%d Code\n", $$ ); }
-Blank         = ( "\\" "\n" ) | "\t" | ' ' { printf("%d Blank\n", $$ ); }
-VLine         = "\n" | Comment | Block | Statement Comment* "\n" { printf("%d VLine\n", $$ ); }
-Comment       = '#' (! "\n" .)* "\n" { printf("%d Comment\n", $$ ); }
-Block         = !'$' (Conditional | WhileLoop | ForLoop | Function) | Subshell { printf("%d Block\n", $$ ); }
-Statement     = OpenStmt | AssignStmt | LocalStmt | CloseStmt | ArgStmt | EnvStmt | IncludeStmt | StreamStmt | RunStmt | FunctionStmt { printf("%d Statement\n", $$ ); }
-Conditional   = "if"       Blank+ Expr     Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d Conditional\n", $$ ); }
-WhileLoop     = "while"    Blank+ Expr     Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d WhileLoop\n", $$ ); }
-ForLoop       = "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d ForLoop\n", $$ ); }
-Function      = Identifier Blank* "="      Blank*                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d Function\n", $$ ); }
-Subshell      = "sub"      Blank+          Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* { printf("%d Subshell\n", $$ ); }
-OpenStmt      = &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path { printf("%d OpenStmt\n", $$ ); }
-AssignStmt    = &'$' Variable Blank* ( AssignOp | AppendOp | RemoveOp )  Blank* (ArgExpr | Expr | RunStmt) { printf("%d AssignStmt\n", $$ ); }
-LocalStmt     = "local" Blank+ Variable ( Blank* "=" Blank* Expr )? { printf("%d LocalStmt\n", $$ ); }
-CloseStmt     = &'$' Variable ".close" { printf("%d CloseStmt\n", $$ ); }
-ArgStmt       = "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)? { printf("%d ArgStmt\n", $$ ); }
-EnvStmt       = "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)? { printf("%d EnvStmt\n", $$ ); }
-IncludeStmt   = "include" Blank+ StrLiteral { printf("%d IncludeStmt\n", $$ ); }
-StreamStmt    = ( Variable "." )? Stream Blank+ ExprList { printf("%d StreamStmt\n", $$ ); }
-RunStmt       = ( (AsyncFlag | RedirFlag | (AsyncFlag RedirFlag) ) Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )* { printf("%d RunStmt\n", $$ ); }
-FunctionStmt  = Identifier (Blank+ Expr)* { printf("%d FunctionStmt\n", $$ ); }
-ArgDefault    = Expr { printf("%d ArgDefault\n", $$ ); }
-EnvDefault    = Expr { printf("%d EnvDefault\n", $$ ); }
-ExprList      = Expr ( Blank* ',' Blank* Expr Blank* )* { printf("%d ExprList\n", $$ ); }
-Invocation    = < [0-9A-Za-z] ( [0-9A-Za-z] | '-' )* > ( Blank+ (Expr | String) )* { printf("%d Invocation\n", $$ ); }
-ArgExpr       = Arg (Blank+ | '=') Expr? { printf("%d ArgExpr\n", $$ ); }
-Expr          = VarDeref | Arg | Array | Object | StrBlock | StrLiteral | Integer | Boolean | Path | JsonBlock | Stream { printf("%d Expr\n", $$ ); }
-VarDeref      = &'$' Variable ( [.] ( StrLiteral | Integer | Variable | Identifier ) )* { printf("%d VarDeref\n", $$ ); }
-RedirFlag     = "redir" (Blank+ (Variable | Path | Stream) Blank* RedirOp Blank* (Variable | Path | Stream))+ { printf("%d RedirFlag\n", $$ ); }
-AsyncFlag     = "async" { printf("%d AsyncFlag\n", $$ ); }
-ArgNames      = ( Blank+ Arg )+ { printf("%d ArgNames\n", $$ ); }
-Arg           = &'-' (ArgLong | ArgShort) { printf("%d Arg\n", $$ ); }
-ArgShort      = '-' < [0-9A-Za-z]+ > { printf("%d ArgShort\n", $$ ); }
-ArgLong       = "--" < ( [0-9A-Za-z] ('-' [0-9A-Za-z] )*)+ > { printf("%d ArgLong\n", $$ ); }
-Array         = '[' ( [ \n\r\t]* Expr Blank* ','? [ \n\r\t]* )* ']' { printf("%d Array\n", $$ ); }
-Object        = '[' ( [ \n\r\t]* Expr Blank* ':' Blank* Expr Blank* ','? [ \n\r\t]* )+ ']' { printf("%d Object\n", $$ ); }
-Identifier    = !Keyword < ( [0-9A-Za-z] | '-' )+ > { printf("%d Identifier\n", $$ ); }
-JsonBlock     = "json" Blank+ StrBlock { printf("%d JsonBlock\n", $$ ); }
-StrBlock      = "\"\"\"" (!"\"\"\"" .)* "\"\"\"" { printf("%d StrBlock\n", $$ ); }
-StrLiteral    = (["] (!["] .)* ["]) | (['] (!['] .)* [']) { printf("%d StrLiteral\n", $$ ); }
-String        = < [^ \t\n\r]+ > { printf("%d String\n", $$ ); }
-Integer       = < [0-9]+ > { printf("%d Integer\n", $$ ); }
-Path          = < ("."* "/" [^ \t\n\r]+ ) | "." > { printf("%d Path\n", $$ ); }
-Variable      = '$' < ([0-9A-Za-z] | '-')+ > { printf("%d Variable\n", $$ ); }
-Keyword       = "sub" | "if" | "white" | "arg" | "in" | "out" | "err" | "include" | "true" | "false" { printf("%d Keyword\n", $$ ); }
-Boolean       = < "true" | "false" > { printf("%d Boolean\n", $$ ); }
-Stream        = &[ioe] (StreamIn | StreamOut | StreamErr) { printf("%d Stream\n", $$ ); }
-StreamIn      = "in" { printf("%d StreamIn\n", $$ ); }
-StreamOut     = "out" { printf("%d StreamOut\n", $$ ); }
-StreamErr     = "err" { printf("%d StreamErr\n", $$ ); }
-AssignOp      = "=" { printf("%d AssignOp\n", $$ ); }
-AppendOp      = "+=" { printf("%d AppendOp\n", $$ ); }
-RemoveOp      = "-=" { printf("%d RemoveOp\n", $$ ); }
-RedirOp       = RedirAppendOp | RedirReadOp | RedirWriteOp | RedirDuplexOp { printf("%d RedirOp\n", $$ ); }
-RedirAppendOp = ">>" { printf("%d RedirAppendOp\n", $$ ); }
-RedirReadOp   = "<" { printf("%d RedirReadOp\n", $$ ); }
-RedirWriteOp  = ">" { printf("%d RedirWriteOp\n", $$ ); }
-RedirDuplexOp = "<>" { printf("%d RedirDuplexOp\n", $$ ); }
-DefaultOp     = "|=" { printf("%d DefaultOp\n", $$ ); }
-
+Script = @{ yyenter(dkScript); } ( ( Code ) ~{ yyleave(dkScript); } ) { $$ = something(dkScript, yytext, yyleng); yyleave(dkScript); }
+Code = @{ yyenter(dkCode); } ( ( ( Blank* VLine )+ Blank* ) ~{ yyleave(dkCode); } ) { $$ = something(dkCode, yytext, yyleng); yyleave(dkCode); }
+Blank         = ( "\\" "\n" ) | "\t" | ' '  #
+VLine         = "\n" | Comment | Block | Statement Comment* "\n"  #
+Comment       = '#' (! "\n" .)* "\n"  #
+Block = @{ yyenter(dkBlock); } ( ( !'$' (Conditional | WhileLoop | ForLoop | Function) | Subshell ) ~{ yyleave(dkBlock); } ) { $$ = something(dkBlock, yytext, yyleng); yyleave(dkBlock); }
+Statement = @{ yyenter(dkStatement); } ( ( OpenStmt | AssignStmt | LocalStmt | CloseStmt | ArgStmt | EnvStmt | IncludeStmt | StreamStmt | RunStmt | FunctionStmt ) ~{ yyleave(dkStatement); } ) { $$ = something(dkStatement, yytext, yyleng); yyleave(dkStatement); }
+Conditional = @{ yyenter(dkConditional); } ( ( "if"       Blank+ Expr     Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* ) ~{ yyleave(dkConditional); } ) { $$ = something(dkConditional, yytext, yyleng); yyleave(dkConditional); }
+WhileLoop = @{ yyenter(dkWhileLoop); } ( ( "while"    Blank+ Expr     Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* ) ~{ yyleave(dkWhileLoop); } ) { $$ = something(dkWhileLoop, yytext, yyleng); yyleave(dkWhileLoop); }
+ForLoop = @{ yyenter(dkForLoop); } ( ( "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* ) ~{ yyleave(dkForLoop); } ) { $$ = something(dkForLoop, yytext, yyleng); yyleave(dkForLoop); }
+Function = @{ yyenter(dkFunction); } ( ( Identifier Blank* "="      Blank*                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* ) ~{ yyleave(dkFunction); } ) { $$ = something(dkFunction, yytext, yyleng); yyleave(dkFunction); }
+Subshell = @{ yyenter(dkSubshell); } ( ( "sub"      Blank+          Blank+                         "{" [ \n\r\t]* Code* [ \n\r\t]* "}" [ \n\r\t]* ) ~{ yyleave(dkSubshell); } ) { $$ = something(dkSubshell, yytext, yyleng); yyleave(dkSubshell); }
+OpenStmt = @{ yyenter(dkOpenStmt); } ( ( &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path ) ~{ yyleave(dkOpenStmt); } ) { $$ = something(dkOpenStmt, yytext, yyleng); yyleave(dkOpenStmt); }
+AssignStmt = @{ yyenter(dkAssignStmt); } ( ( &'$' Variable Blank* ( AssignOp | AppendOp | RemoveOp )  Blank* (ArgExpr | Expr | RunStmt) ) ~{ yyleave(dkAssignStmt); } ) { $$ = something(dkAssignStmt, yytext, yyleng); yyleave(dkAssignStmt); }
+LocalStmt = @{ yyenter(dkLocalStmt); } ( ( "local" Blank+ Variable ( Blank* "=" Blank* Expr )? ) ~{ yyleave(dkLocalStmt); } ) { $$ = something(dkLocalStmt, yytext, yyleng); yyleave(dkLocalStmt); }
+CloseStmt = @{ yyenter(dkCloseStmt); } ( ( &'$' Variable ".close" ) ~{ yyleave(dkCloseStmt); } ) { $$ = something(dkCloseStmt, yytext, yyleng); yyleave(dkCloseStmt); }
+ArgStmt = @{ yyenter(dkArgStmt); } ( ( "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)? ) ~{ yyleave(dkArgStmt); } ) { $$ = something(dkArgStmt, yytext, yyleng); yyleave(dkArgStmt); }
+EnvStmt = @{ yyenter(dkEnvStmt); } ( ( "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)? ) ~{ yyleave(dkEnvStmt); } ) { $$ = something(dkEnvStmt, yytext, yyleng); yyleave(dkEnvStmt); }
+IncludeStmt = @{ yyenter(dkIncludeStmt); } ( ( "include" Blank+ StrLiteral ) ~{ yyleave(dkIncludeStmt); } ) { $$ = something(dkIncludeStmt, yytext, yyleng); yyleave(dkIncludeStmt); }
+StreamStmt = @{ yyenter(dkStreamStmt); } ( ( ( Variable "." )? Stream Blank+ ExprList ) ~{ yyleave(dkStreamStmt); } ) { $$ = something(dkStreamStmt, yytext, yyleng); yyleave(dkStreamStmt); }
+RunStmt = @{ yyenter(dkRunStmt); } ( ( ( (AsyncFlag | RedirFlag | (AsyncFlag RedirFlag) ) Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )* ) ~{ yyleave(dkRunStmt); } ) { $$ = something(dkRunStmt, yytext, yyleng); yyleave(dkRunStmt); }
+FunctionStmt = @{ yyenter(dkFunctionStmt); } ( ( Identifier (Blank+ Expr)* ) ~{ yyleave(dkFunctionStmt); } ) { $$ = something(dkFunctionStmt, yytext, yyleng); yyleave(dkFunctionStmt); }
+ArgDefault = @{ yyenter(dkArgDefault); } ( ( Expr ) ~{ yyleave(dkArgDefault); } ) { $$ = something(dkArgDefault, yytext, yyleng); yyleave(dkArgDefault); }
+EnvDefault = @{ yyenter(dkEnvDefault); } ( ( Expr ) ~{ yyleave(dkEnvDefault); } ) { $$ = something(dkEnvDefault, yytext, yyleng); yyleave(dkEnvDefault); }
+ExprList = @{ yyenter(dkExprList); } ( ( Expr ( Blank* ',' Blank* Expr Blank* )* ) ~{ yyleave(dkExprList); } ) { $$ = something(dkExprList, yytext, yyleng); yyleave(dkExprList); }
+Invocation = @{ yyenter(dkInvocation); } ( ( < [0-9A-Za-z] ( [0-9A-Za-z] | '-' )* > ( Blank+ (Expr | String) )* ) ~{ yyleave(dkInvocation); } ) { $$ = something(dkInvocation, yytext, yyleng); yyleave(dkInvocation); }
+ArgExpr = @{ yyenter(dkArgExpr); } ( ( Arg (Blank+ | '=') Expr? ) ~{ yyleave(dkArgExpr); } ) { $$ = something(dkArgExpr, yytext, yyleng); yyleave(dkArgExpr); }
+Expr = @{ yyenter(dkExpr); } ( ( VarDeref | Arg | Array | Object | StrBlock | StrLiteral | Integer | Boolean | Path | JsonBlock | Stream ) ~{ yyleave(dkExpr); } ) { $$ = something(dkExpr, yytext, yyleng); yyleave(dkExpr); }
+VarDeref = @{ yyenter(dkVarDeref); } ( ( &'$' Variable ( [.] ( StrLiteral | Integer | Variable | Identifier ) )* ) ~{ yyleave(dkVarDeref); } ) { $$ = something(dkVarDeref, yytext, yyleng); yyleave(dkVarDeref); }
+RedirFlag = @{ yyenter(dkRedirFlag); } ( ( "redir" (Blank+ (Variable | Path | Stream) Blank* RedirOp Blank* (Variable | Path | Stream))+ ) ~{ yyleave(dkRedirFlag); } ) { $$ = something(dkRedirFlag, yytext, yyleng); yyleave(dkRedirFlag); }
+AsyncFlag = @{ yyenter(dkAsyncFlag); } ( ( "async" ) ~{ yyleave(dkAsyncFlag); } ) { $$ = something(dkAsyncFlag, yytext, yyleng); yyleave(dkAsyncFlag); }
+ArgNames = @{ yyenter(dkArgNames); } ( ( ( Blank+ Arg )+ ) ~{ yyleave(dkArgNames); } ) { $$ = something(dkArgNames, yytext, yyleng); yyleave(dkArgNames); }
+Arg = @{ yyenter(dkArg); } ( ( &'-' (ArgLong | ArgShort) ) ~{ yyleave(dkArg); } ) { $$ = something(dkArg, yytext, yyleng); yyleave(dkArg); }
+ArgShort = @{ yyenter(dkArgShort); } ( ( '-' < [0-9A-Za-z]+ > ) ~{ yyleave(dkArgShort); } ) { $$ = something(dkArgShort, yytext, yyleng); yyleave(dkArgShort); }
+ArgLong = @{ yyenter(dkArgLong); } ( ( "--" < ( [0-9A-Za-z] ('-' [0-9A-Za-z] )*)+ > ) ~{ yyleave(dkArgLong); } ) { $$ = something(dkArgLong, yytext, yyleng); yyleave(dkArgLong); }
+Array = @{ yyenter(dkArray); } ( ( '[' ( [ \n\r\t]* Expr Blank* ','? [ \n\r\t]* )* ']' ) ~{ yyleave(dkArray); } ) { $$ = something(dkArray, yytext, yyleng); yyleave(dkArray); }
+Object = @{ yyenter(dkObject); } ( ( '[' ( [ \n\r\t]* Expr Blank* ':' Blank* Expr Blank* ','? [ \n\r\t]* )+ ']' ) ~{ yyleave(dkObject); } ) { $$ = something(dkObject, yytext, yyleng); yyleave(dkObject); }
+Identifier = @{ yyenter(dkIdentifier); } ( ( < ( [0-9A-Za-z] | '-' )+ > ) ~{ yyleave(dkIdentifier); } ) { $$ = something(dkIdentifier, yytext, yyleng); yyleave(dkIdentifier); }
+JsonBlock = @{ yyenter(dkJsonBlock); } ( ( "json" Blank+ StrBlock ) ~{ yyleave(dkJsonBlock); } ) { $$ = something(dkJsonBlock, yytext, yyleng); yyleave(dkJsonBlock); }
+StrBlock = @{ yyenter(dkStrBlock); } ( ( "\"\"\"" (!"\"\"\"" .)* "\"\"\"" ) ~{ yyleave(dkStrBlock); } ) { $$ = something(dkStrBlock, yytext, yyleng); yyleave(dkStrBlock); }
+StrLiteral = @{ yyenter(dkStrLiteral); } ( ( (["] (!["] .)* ["]) | (['] (!['] .)* [']) ) ~{ yyleave(dkStrLiteral); } ) { $$ = something(dkStrLiteral, yytext, yyleng); yyleave(dkStrLiteral); }
+String = @{ yyenter(dkString); } ( ( < [^ \t\n\r]+ > ) ~{ yyleave(dkString); } ) { $$ = something(dkString, yytext, yyleng); yyleave(dkString); }
+Integer = @{ yyenter(dkInteger); } ( ( < [0-9]+ > ) ~{ yyleave(dkInteger); } ) { $$ = something(dkInteger, yytext, yyleng); yyleave(dkInteger); }
+Path = @{ yyenter(dkPath); } ( ( < ("."* "/" [^ \t\n\r]+ ) | "." > ) ~{ yyleave(dkPath); } ) { $$ = something(dkPath, yytext, yyleng); yyleave(dkPath); }
+Variable = @{ yyenter(dkVariable); } ( ( '$' < ([0-9A-Za-z] | '-')+ > ) ~{ yyleave(dkVariable); } ) { $$ = something(dkVariable, yytext, yyleng); yyleave(dkVariable); }
+Keyword = @{ yyenter(dkKeyword); } ( ( "sub" | "if" | "while" | "arg" | "in" | "out" | "err" | "include" | "true" | "false" ) ~{ yyleave(dkKeyword); } ) { $$ = something(dkKeyword, yytext, yyleng); yyleave(dkKeyword); }
+Boolean = @{ yyenter(dkBoolean); } ( ( < "true" | "false" > ) ~{ yyleave(dkBoolean); } ) { $$ = something(dkBoolean, yytext, yyleng); yyleave(dkBoolean); }
+Stream = @{ yyenter(dkStream); } ( ( &[ioe] (StreamIn | StreamOut | StreamErr) ) ~{ yyleave(dkStream); } ) { $$ = something(dkStream, yytext, yyleng); yyleave(dkStream); }
+StreamIn = @{ yyenter(dkStreamIn); } ( ( "in" ) ~{ yyleave(dkStreamIn); } ) { $$ = something(dkStreamIn, yytext, yyleng); yyleave(dkStreamIn); }
+StreamOut = @{ yyenter(dkStreamOut); } ( ( "out" ) ~{ yyleave(dkStreamOut); } ) { $$ = something(dkStreamOut, yytext, yyleng); yyleave(dkStreamOut); }
+StreamErr = @{ yyenter(dkStreamErr); } ( ( "err" ) ~{ yyleave(dkStreamErr); } ) { $$ = something(dkStreamErr, yytext, yyleng); yyleave(dkStreamErr); }
+AssignOp = @{ yyenter(dkAssignOp); } ( ( "=" ) ~{ yyleave(dkAssignOp); } ) { $$ = something(dkAssignOp, yytext, yyleng); yyleave(dkAssignOp); }
+AppendOp = @{ yyenter(dkAppendOp); } ( ( "+=" ) ~{ yyleave(dkAppendOp); } ) { $$ = something(dkAppendOp, yytext, yyleng); yyleave(dkAppendOp); }
+RemoveOp = @{ yyenter(dkRemoveOp); } ( ( "-=" ) ~{ yyleave(dkRemoveOp); } ) { $$ = something(dkRemoveOp, yytext, yyleng); yyleave(dkRemoveOp); }
+RedirOp = @{ yyenter(dkRedirOp); } ( ( RedirAppendOp | RedirReadOp | RedirWriteOp | RedirDuplexOp ) ~{ yyleave(dkRedirOp); } ) { $$ = something(dkRedirOp, yytext, yyleng); yyleave(dkRedirOp); }
+RedirAppendOp = @{ yyenter(dkRedirAppendOp); } ( ( ">>" ) ~{ yyleave(dkRedirAppendOp); } ) { $$ = something(dkRedirAppendOp, yytext, yyleng); yyleave(dkRedirAppendOp); }
+RedirReadOp = @{ yyenter(dkRedirReadOp); } ( ( "<" ) ~{ yyleave(dkRedirReadOp); } ) { $$ = something(dkRedirReadOp, yytext, yyleng); yyleave(dkRedirReadOp); }
+RedirWriteOp = @{ yyenter(dkRedirWriteOp); } ( ( ">" ) ~{ yyleave(dkRedirWriteOp); } ) { $$ = something(dkRedirWriteOp, yytext, yyleng); yyleave(dkRedirWriteOp); }
+RedirDuplexOp = @{ yyenter(dkRedirDuplexOp); } ( ( "<>" ) ~{ yyleave(dkRedirDuplexOp); } ) { $$ = something(dkRedirDuplexOp, yytext, yyleng); yyleave(dkRedirDuplexOp); }
+DefaultOp = @{ yyenter(dkDefaultOp); } ( ( "|=" ) ~{ yyleave(dkDefaultOp); } ) { $$ = something(dkDefaultOp, yytext, yyleng); yyleave(dkDefaultOp); }
 %%
-
 
 /*
 int main() {

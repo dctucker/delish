@@ -1,8 +1,24 @@
 import std/tables
+import strutils
 import deligrammar
 
 ### AST representation
 grammarToEnum(@["None","Ran","Lazy"])
+grammarToCEnum(@["None","Ran","Lazy"])
+
+proc something*(kind: cint, str: cstring, len: cint): cint {.exportc.} =
+  result = kind
+  let k = DeliKind(kind)
+  echo $k, " ", str
+
+{.compile: "delish.yy.c" .}
+proc yyparse*(): cint {.importc.}
+proc yySetScript*(str: cstring) {.importc.}
+proc matched(str: cstring) {.cdecl.} =
+  #setupForeignThreadGc()
+  echo str
+
+
 
 type
   DeliNode* = ref object

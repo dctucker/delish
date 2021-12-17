@@ -1,8 +1,8 @@
 Script        <- Code
 Code          <- ( Blank* VLine )+ Blank*
-Blank         <- ( "\\" \n ) / "\t" / ' '
-VLine         <- \n / Comment / Block / Statement Comment* \n
-Comment       <- '#' (! \n .)* \n
+Blank         <- ( "\\" \n ) / "\t" / ' '  #
+VLine         <- \n / Comment / Block / Statement Comment* \n  #
+Comment       <- '#' (! \n .)* \n  #
 Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell
 Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
 Conditional   <- "if"       Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
@@ -35,7 +35,7 @@ ArgShort      <- '-' { \w+ }
 ArgLong       <- "--" { ( \w ('-' \w )*)+ }
 Array         <- '[' ( \s* Expr Blank* ','? \s* )* ']'
 Object        <- '[' ( \s* Expr Blank* ':' Blank* Expr Blank* ','? \s* )+ ']'
-Identifier    <- !Keyword { ( \w / '-' )+ }
+Identifier    <- { ( \w / '-' )+ }
 JsonBlock     <- "json" Blank+ StrBlock
 StrBlock      <- "\"\"\"" @@ "\"\"\""
 StrLiteral    <- (["] @@ ["]) / (['] @@ ['])
@@ -43,7 +43,7 @@ String        <- { \S+ }
 Integer       <- { \d+ }
 Path          <- { ("."* "/" \S+ ) / "." }
 Variable      <- '$' { (\w / '-')+ }
-Keyword       <- "sub" / "if" / "white" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
+Keyword       <- "sub" / "if" / "while" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
 Boolean       <- { "true" / "false" }
 Stream        <- &[ioe] (StreamIn / StreamOut / StreamErr)
 StreamIn      <- "in"
