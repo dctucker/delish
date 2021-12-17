@@ -1,0 +1,116 @@
+%prefix "deli"
+
+%auxil "struct deli_t *"
+
+%header {
+	#include "delikind.h"
+	struct deli_t {
+		const char *input;
+		size_t offset;
+		size_t length;
+	};
+}
+
+%source {
+	#define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) deli_event(auxil, event, dk##rule, level, pos, buffer, length)
+	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
+	#define PCC_BUFFERSIZE 1024
+
+	int deli_get_character( struct deli_t *auxil )
+	{
+		if( auxil->offset >= auxil->length )
+			return -1;
+		return (auxil)->input[ auxil->offset++ ];
+	}
+
+}
+Script        <- Code
+Code          <- ( Blank* VLine )+ Blank*
+Blank         <- ( "\\" "\n" ) / "\t" / ' '
+VLine         <- "\n" / Comment / Block / Statement Comment* "\n"
+Comment       <- '#' (! "\n" .)* "\n"
+Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell
+Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
+Conditional   <- "if"       Blank+ Expr     Blank+                         "{" _ Code* _ "}" _
+WhileLoop     <- "while"    Blank+ Expr     Blank+                         "{" _ Code* _ "}" _
+ForLoop       <- "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" _ Code* _ "}" _
+Function      <- Identifier Blank* "="      Blank*                         "{" _ Code* _ "}" _
+Subshell      <- "sub"      Blank+          Blank+                         "{" _ Code* _ "}" _
+OpenStmt      <- &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path
+AssignStmt    <- &'$' Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (ArgExpr / Expr / RunStmt)
+LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
+CloseStmt     <- &'$' Variable ".close"
+ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
+EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
+IncludeStmt   <- "include" Blank+ StrLiteral
+StreamStmt    <- ( Variable "." )? Stream Blank+ ExprList
+RunStmt       <- ( (AsyncFlag / RedirFlag / (AsyncFlag RedirFlag) ) Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
+FunctionStmt  <- Identifier (Blank+ Expr)*
+ArgDefault    <- Expr
+EnvDefault    <- Expr
+ExprList      <- Expr ( Blank* ',' Blank* Expr Blank* )*
+Invocation    <- Command ( Blank+ (Expr / String) )*
+Command       <- < W ( W / '-' )* >
+ArgExpr       <- Arg (Blank+ / '=') Expr?
+Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
+VarDeref      <- &'$' Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
+RedirFlag     <- "redir" (Blank+ (Variable / Path / Stream) Blank* RedirOp Blank* (Variable / Path / Stream))+
+AsyncFlag     <- "async"
+ArgNames      <- ( Blank+ Arg )+
+Arg           <- &'-' (ArgLong / ArgShort)
+ArgShort      <- '-' < W+ >
+ArgLong       <- "--" < ( W ('-' W )*)+ >
+Array         <- '[' ( _ Expr Blank* ','? _ )* ']'
+Object        <- '[' ( _ Expr Blank* ':' Blank* Expr Blank* ','? _ )+ ']'
+Identifier    <- < ( W / '-' )+ >
+JsonBlock     <- "json" Blank+ StrBlock
+StrBlock      <- "\"\"\"" ( !"\"\"\"" . )* "\"\"\""
+StrLiteral    <- (["] < [^"]* > ["]) / (['] < [^']* > ['])
+String        <- < S+ >
+Integer       <- < [0-9]+ >
+Path          <- < ("."* "/" S+ ) / "." >
+Variable      <- '$' < (W / '-')+ >
+#Keyword       <- "sub" / "if" / "while" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
+Boolean       <- < "true" / "false" >
+Stream        <- &[ioe] (StreamIn / StreamOut / StreamErr)
+StreamIn      <- "in"
+StreamOut     <- "out"
+StreamErr     <- "err"
+AssignOp      <- "="
+AppendOp      <- "+="
+RemoveOp      <- "-="
+RedirOp       <- RedirAppendOp / RedirReadOp / RedirWriteOp / RedirDuplexOp
+RedirAppendOp <- ">>"
+RedirReadOp   <- "<"
+RedirWriteOp  <- ">"
+RedirDuplexOp <- "<>"
+DefaultOp     <- "|="
+S             <- [^ \n\r\t]
+W             <- [A-Za-z0-9-]
+_             <- [ \n\r\t]*
+
+%%
+
+int packcc_main(const char *input, int len)
+{
+	struct deli_t auxil = {
+		input: input,
+		offset: 0,
+		length: len,
+	};
+	deli_context_t *ctx = deli_create(&auxil);
+	while (deli_parse(ctx, NULL));
+	deli_destroy(ctx);
+	return 0;
+}
+
+/*
+int packcc_main() {
+	deli_context_t *ctx = deli_create(NULL);
+	while (deli_parse(ctx, NULL));
+	deli_destroy(ctx);
+	return 0;
+}
+int main(){ return packcc_main(); }
+*/
+

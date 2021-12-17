@@ -4,39 +4,41 @@ import stacks
 import deligrammar
 
 ### AST representation
-grammarToEnum(@["None","Ran","Lazy"])
-grammarToCEnum(@["None","Ran","Lazy"])
+grammarToEnum(@["None","Ran","Lazy","S","W","U"])
+grammarToCEnum(@["None","Ran","Lazy","S","W","_"])
 
 proc something*(kind: cint, str: cstring, len: cint): cint {.exportc.} =
   result = kind
   let k = DeliKind(kind)
   echo $k, " ", str
 
-var level = 0
-var kindstack = Stack[DeliKind]()
-proc yyenter(kind: cint) {.exportc.} =
-  let k = DeliKind(kind)
-  #let level = kindstack.len
-  level += 1
-  echo level, "> ", $k
-  #kindstack.push(k)
+proc deli_event(auxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
+  let k = DeliKind(rule.int)
+  case k
+  of dkS, dkW, dkU, dkBlank, dkVLine, dkComment:
+    return
+  else:
+    discard
+  var e = ""
+  var capture = ""
+  case event
+    of 0:
+      e = "> "
+    of 1:
+      e = "\27[1m< "
+      capture = newString(length)
+      if length > 0:
+        for i in 0 .. length - 1:
+          capture[i] = buffer[i].char
+    of 2:
+      e = "< "
+    else:
+      e = "  "
+  echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
 
-proc yyleave(kind: cint) {.exportc.} =
-  let k = DeliKind(kind)
-  #while kindstack.len > 0:
-  #  let k2 = kindstack.pop()
-  #  #let level = kindstack.len
-  #  level -= 1
-  #  echo level, "< ", $k2
-  #  if k2 == k:
-  #    break
-  #let level = kindstack.len
-  level -= 1
-  echo level, "< ", $k
+{.compile: "packcc.c" .}
+proc packcc_main*(input: cstring, len: cint): cint {.importc.}
 
-{.compile: "delish.yy.c" .}
-proc yyparse*(): cint {.importc.}
-proc yySetScript*(str: cstring) {.importc.}
 proc matched(str: cstring) {.cdecl.} =
   #setupForeignThreadGc()
   echo str

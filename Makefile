@@ -31,8 +31,12 @@ yyparse: src/delish.yy.c
 	#gcc -DYY_DEBUG=1 ./src/delish.yy.c -o yyparse
 	gcc ./src/delish.yy.c -o yyparse
 
-debug: src/delish.yy.c
-	nimble build -d:YY_DEBUG=1
+
+src/packcc.c: src/packcc.h src/delish.packcc
+	cd src ; packcc -o packcc delish.packcc ; cd ..
+
+debug: src/packcc.c #src/delish.yy.c
+	nimble build
 
 release:
 	nimble build -d:release --passC:-ffast-math --opt:size
@@ -40,3 +44,7 @@ release:
 strip: release
 	strip --strip-all -R .note -R .comment -R .eh_frame -R .eh_frame_hdr delish
 	sstrip -z delish
+
+packdeli: src/packcc.c Makefile
+	cd src ; packcc -o packcc delish.packcc ; cd ..
+	gcc -Og src/packcc.c -o packdeli

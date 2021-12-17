@@ -23,7 +23,8 @@ FunctionStmt  <- Identifier (Blank+ Expr)*
 ArgDefault    <- Expr
 EnvDefault    <- Expr
 ExprList      <- Expr ( Blank* ',' Blank* Expr Blank* )*
-Invocation    <- { \w ( \w / '-' )* } ( Blank+ (Expr / String) )*
+Invocation    <- Command ( Blank+ (Expr / String) )*
+Command       <- < W ( W / '-' )* >
 ArgExpr       <- Arg (Blank+ / '=') Expr?
 Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
 VarDeref      <- &'$' Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*

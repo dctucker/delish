@@ -111,8 +111,7 @@ proc assimilate(inner, outer: DeliNode) =
 #import std/marshal
 proc parse*(parser: Parser): int =
   var cstr: cstring = parser.source
-  yySetScript(cstr)
-  let y = yyparse()
+  let y = packcc_main(cstr, parser.source.len.cint)
   echo y
 
   parser.initParser()

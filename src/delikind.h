@@ -25,6 +25,7 @@ enum DeliKind {
 	dkEnvDefault,
 	dkExprList,
 	dkInvocation,
+	dkCommand,
 	dkArgExpr,
 	dkExpr,
 	dkVarDeref,
@@ -61,5 +62,8 @@ enum DeliKind {
 	dkDefaultOp,
 	dkNone,
 	dkRan,
-	dkLazy
+	dkLazy,
+	dkS,
+	dkW,
+	dk_
 };
