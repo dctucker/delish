@@ -1,13 +1,12 @@
-import std/tables
-import std/deques
-import macros
+#import std/tables
+#import std/deques
+#import macros
 import strutils
 import stacks
 #import pegs
 import deliast
 import deligrammar
 
-proc packcc_main*(input: cstring, len: cint, parser: pointer): cint {.importc.}
 
 type Parser* = ref object
   source*:      string
@@ -18,6 +17,8 @@ type Parser* = ref object
   entry_point:  DeliNode
   line_numbers: seq[int]
   parsed_len:   int
+
+proc packcc_main*(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
 proc debug(parser: Parser, msg: varargs[string]) =
   if not parser.debug:
@@ -112,12 +113,11 @@ proc assimilate(inner, outer: DeliNode) =
 
 #import std/marshal
 proc parse*(parser: Parser): int =
-  var cstr: cstring = parser.source
-  let y = packcc_main(cstr, parser.source.len.cint, cast[pointer](parser))
-  echo y
-
   parser.initParser()
   parser.initLineNumbers()
+
+  var cstr = parser.source.cstring
+  let y = packcc_main(cstr, parser.source.len.cint, parser)
 
   #echo "=== Grammar ==="
   #echo grammar.repr
@@ -130,13 +130,11 @@ proc parse*(parser: Parser): int =
   return parser.parsed_len
 
 proc enter*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
-  echo "enter"
   parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(pos)))
   debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
   parser.symbol_stack.push($k)
 
 proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
-  echo "leave"
   let inner_node = parser.node_stack.pop()
   discard parser.symbol_stack.pop()
   if matchStr.len > 0:
@@ -236,13 +234,12 @@ proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csiz
 
   var aux = cast[ptr DeliT](pauxil)
   var parser = aux.parser
-  echo parser.parsed_len.int
-  parser.parsed_len = pos.int
+
+  parser.parsed_len = max(parser.parsed_len, pos.int)
 
   case event
     of peEvaluate.ord:
       e = "> "
-      debug parser, "evaluate"
       parser.enter( DeliKind(rule), pos.int, capture )
     of peMatch.ord:
       e = "\27[1m< "
@@ -250,15 +247,13 @@ proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csiz
       if length > 0:
         for i in 0 .. length - 1:
           capture[i] = buffer[i].char
-      debug parser, "match"
       parser.leave( DeliKind(rule), pos.int, capture )
     of peNoMatch.ord:
       e = "< "
-      debug parser, "no match"
       parser.leave( DeliKind(rule), pos.int, capture )
     else: e = "  "
 
-  let k = DeliKind(rule)
-  echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
+  #let k = DeliKind(rule)
+  #echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
 
 {.compile: "packcc.c" .}

@@ -1,6 +1,6 @@
 import std/tables
 import strutils
-import stacks
+#import stacks
 import deligrammar
 
 ### AST representation

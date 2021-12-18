@@ -102,19 +102,9 @@ int packcc_main(const char *input, int len, void *p)
 		length: len,
 		parser: p,
 	};
+	printf("%x", p);
 	deli_context_t *ctx = deli_create(&auxil);
-	while (deli_parse(ctx, NULL));
+	while(deli_parse(ctx, NULL));
 	deli_destroy(ctx);
 	return 0;
 }
-
-/*
-int packcc_main() {
-	deli_context_t *ctx = deli_create(NULL);
-	while (deli_parse(ctx, NULL));
-	deli_destroy(ctx);
-	return 0;
-}
-int main(){ return packcc_main(); }
-*/
-
