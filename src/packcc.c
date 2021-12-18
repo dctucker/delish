@@ -23,7 +23,9 @@ static size_t pcc_strnlen(const char *str, size_t maxlen) {
 
 #include "packcc.h"
 
-#define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) deli_event(auxil, event, dk##rule, level, pos, buffer, length)
+#define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) \
+        if( !( dk##rule == dkComment || dk##rule == dkVLine || dk##rule >= dkDefaultOp ) ) \
+                deli_event(auxil, event, dk##rule, level, pos, buffer, length)
 #define PCC_GETCHAR(auxil) deli_get_character( auxil )
 #define PCC_BUFFERSIZE 1024
 
@@ -2980,19 +2982,31 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Invocation(deli_context_t *ctx) {
             }
             {
                 const size_t p = ctx->cur;
-                const size_t n = chunk->thunks.len;
-                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_Expr, &chunk->thunks, NULL)) goto L0004;
-                goto L0003;
-            L0004:;
+                if (
+                    pcc_refill_buffer(ctx, 1) < 1 ||
+                    ctx->buffer.buf[ctx->cur] != '|'
+                ) goto L0003;
+                ctx->cur++;
                 ctx->cur = p;
-                pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
-                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_String, &chunk->thunks, NULL)) goto L0005;
-                goto L0003;
+                goto L0001;
+            L0003:;
+                ctx->cur = p;
+            }
+            {
+                const size_t p = ctx->cur;
+                const size_t n = chunk->thunks.len;
+                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_Expr, &chunk->thunks, NULL)) goto L0005;
+                goto L0004;
             L0005:;
                 ctx->cur = p;
                 pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_String, &chunk->thunks, NULL)) goto L0006;
+                goto L0004;
+            L0006:;
+                ctx->cur = p;
+                pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
                 goto L0001;
-            L0003:;
+            L0004:;
             }
             if (ctx->cur == p) break;
             continue;
@@ -4945,12 +4959,13 @@ void deli_destroy(deli_context_t *ctx) {
 }
 
 
-int packcc_main(const char *input, int len)
+int packcc_main(const char *input, int len, void *p)
 {
 	struct deli_t auxil = {
 		input: input,
 		offset: 0,
 		length: len,
+		parser: p,
 	};
 	deli_context_t *ctx = deli_create(&auxil);
 	while (deli_parse(ctx, NULL));

@@ -8,6 +8,7 @@ struct deli_t {
         const char *input;
         size_t offset;
         size_t length;
+        void *parser;
 };
 #ifdef __cplusplus
 extern "C" {

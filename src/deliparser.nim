@@ -7,6 +7,8 @@ import stacks
 import deliast
 import deligrammar
 
+proc packcc_main*(input: cstring, len: cint, parser: pointer): cint {.importc.}
+
 type Parser* = ref object
   source*:      string
   debug*:       bool
@@ -111,7 +113,7 @@ proc assimilate(inner, outer: DeliNode) =
 #import std/marshal
 proc parse*(parser: Parser): int =
   var cstr: cstring = parser.source
-  let y = packcc_main(cstr, parser.source.len.cint)
+  let y = packcc_main(cstr, parser.source.len.cint, cast[pointer](parser))
   echo y
 
   parser.initParser()
@@ -123,6 +125,33 @@ proc parse*(parser: Parser): int =
 
   #let serial = $$grammar
   #echo serial
+
+  #parser.parsed_len = peg_parser(parser.source)
+  return parser.parsed_len
+
+proc enter*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
+  echo "enter"
+  parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(pos)))
+  debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
+  parser.symbol_stack.push($k)
+
+proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
+  echo "leave"
+  let inner_node = parser.node_stack.pop()
+  discard parser.symbol_stack.pop()
+  if matchStr.len > 0:
+    debug parser, parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
+
+    if parser.node_stack.len() > 0:
+      var outer_node = parser.node_stack.pop()
+      outer_node.sons.add( inner_node )
+      assimilate(inner_node, outer_node)
+      parser.entry_point = outer_node
+      parser.node_stack.push(outer_node)
+
+
+    #let line = parser.line_number(start)
+    ##debug start, " :",  line
 
   #let peg_parser = grammar.eventParser:
   #  pkCapture:
@@ -160,8 +189,6 @@ proc parse*(parser: Parser): int =
   #          #let line = parser.line_number(start)
   #          ##debug start, " :",  line
 
-  #parser.parsed_len = peg_parser(parser.source)
-  return parser.parsed_len
 
 proc getLine*(parser: Parser, line: int): string =
   let start = parser.line_numbers[line]
@@ -180,3 +207,58 @@ proc printEntryPoint*(parser: Parser) =
   echo "\n== Node Stack =="
   printSons(parser.entry_point, 0)
 
+
+
+
+## PackCC integration stuff
+
+type PackEvent = enum
+  peEvaluate, peMatch, peNoMatch
+
+proc something*(kind: cint, str: cstring, len: cint): cint {.exportc.} =
+  result = kind
+  let k = DeliKind(kind)
+  echo $k, " ", str
+
+type DeliT = object
+  input: cstring
+  offset: csize_t
+  length: csize_t
+  parser: Parser
+
+proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
+  case rule
+  of dkS.ord, dkW.ord, dkU.ord, dkBlank.ord, dkVLine.ord, dkComment.ord: return
+  else: discard
+
+  var e = ""
+  var capture = ""
+
+  var aux = cast[ptr DeliT](pauxil)
+  var parser = aux.parser
+  echo parser.parsed_len.int
+  parser.parsed_len = pos.int
+
+  case event
+    of peEvaluate.ord:
+      e = "> "
+      debug parser, "evaluate"
+      parser.enter( DeliKind(rule), pos.int, capture )
+    of peMatch.ord:
+      e = "\27[1m< "
+      capture = newString(length)
+      if length > 0:
+        for i in 0 .. length - 1:
+          capture[i] = buffer[i].char
+      debug parser, "match"
+      parser.leave( DeliKind(rule), pos.int, capture )
+    of peNoMatch.ord:
+      e = "< "
+      debug parser, "no match"
+      parser.leave( DeliKind(rule), pos.int, capture )
+    else: e = "  "
+
+  let k = DeliKind(rule)
+  echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
+
+{.compile: "packcc.c" .}

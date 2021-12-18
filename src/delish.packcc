@@ -8,11 +8,14 @@
 		const char *input;
 		size_t offset;
 		size_t length;
+		void *parser;
 	};
 }
 
 %source {
-	#define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) deli_event(auxil, event, dk##rule, level, pos, buffer, length)
+	#define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) \
+		if( !( dk##rule == dkComment || dk##rule == dkVLine || dk##rule >= dkDefaultOp ) ) \
+			deli_event(auxil, event, dk##rule, level, pos, buffer, length)
 	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
 	#define PCC_BUFFERSIZE 1024
 
@@ -22,8 +25,8 @@
 			return -1;
 		return (auxil)->input[ auxil->offset++ ];
 	}
-
 }
+
 Script        <- Code
 Code          <- ( Blank* VLine )+ Blank*
 Blank         <- ( "\\" "\n" ) / "\t" / ' '
@@ -49,7 +52,7 @@ FunctionStmt  <- Identifier (Blank+ Expr)*
 ArgDefault    <- Expr
 EnvDefault    <- Expr
 ExprList      <- Expr ( Blank* ',' Blank* Expr Blank* )*
-Invocation    <- Command ( Blank+ (Expr / String) )*
+Invocation    <- Command ( Blank+ !'|' (Expr / String) )*
 Command       <- < W ( W / '-' )* >
 ArgExpr       <- Arg (Blank+ / '=') Expr?
 Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
@@ -91,12 +94,13 @@ _             <- [ \n\r\t]*
 
 %%
 
-int packcc_main(const char *input, int len)
+int packcc_main(const char *input, int len, void *p)
 {
 	struct deli_t auxil = {
 		input: input,
 		offset: 0,
 		length: len,
+		parser: p,
 	};
 	deli_context_t *ctx = deli_create(&auxil);
 	while (deli_parse(ctx, NULL));
