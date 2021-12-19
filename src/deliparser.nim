@@ -133,6 +133,7 @@ proc enter*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
   parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(pos)))
   debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
   parser.symbol_stack.push($k)
+  echo "\27[31m", $parser.node_stack, "\27[0m"
 
 proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
   let inner_node = parser.node_stack.pop()
@@ -146,10 +147,14 @@ proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
       assimilate(inner_node, outer_node)
       parser.entry_point = outer_node
       parser.node_stack.push(outer_node)
+  else:
+    debug parser, parser.indent("\27[30;1m< "), $k, "\27[0m"
+
+  echo "\27[31m", $parser.node_stack, "\27[0m"
 
 
-    #let line = parser.line_number(start)
-    ##debug start, " :",  line
+  #let line = parser.line_number(start)
+  ##debug start, " :",  line
 
   #let peg_parser = grammar.eventParser:
   #  pkCapture:
@@ -223,6 +228,15 @@ type DeliT = object
   offset: csize_t
   length: csize_t
   parser: Parser
+
+proc parseCapture(parser: Parser, rstart, rend: csize_t, buffer: cstring) {.exportc.} =
+  let length = rend - rstart
+  var capture = newString(length)
+  if length > 0:
+    for i in 0 .. length - 1:
+      capture[i] = buffer[i].char
+  echo "CAPTURE ", capture
+  parser.parseCapture(rstart.int, length.int, capture)
 
 proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule

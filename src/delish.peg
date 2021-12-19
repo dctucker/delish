@@ -4,16 +4,19 @@ Blank         <- ( "\\" \n ) / "\t" / ' '  #
 VLine         <- \n / Comment / Block / Statement Comment* \n  #
 Comment       <- '#' (! \n .)* \n  #
 Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell
-Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
+Statement     <- VariableStmt / LocalStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
 Conditional   <- "if"       Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
 WhileLoop     <- "while"    Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
 ForLoop       <- "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
 Function      <- Identifier Blank* "="      Blank*                         "{" \s* Code* \s* "}" \s*
 Subshell      <- "sub"      Blank+          Blank+                         "{" \s* Code* \s* "}" \s*
-OpenStmt      <- &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path
-AssignStmt    <- &'$' Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (ArgExpr / Expr / RunStmt)
+VariableStmt  <- &'$' Variable Blank*
+               ( AssignOp Blank* (OpenExpr / ArgExpr / Expr / RunStmt)
+               / AppendOp Blank* (ArgExpr / Expr / RunStmt)
+               / RemoveOp Blank* (ArgExpr / Expr / RunStmt)
+               )
+OpenExpr      <- "open" (Blank+ RedirOp)? Blank+ Path
 LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
-CloseStmt     <- &'$' Variable ".close"
 ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
 EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
 IncludeStmt   <- "include" Blank+ StrLiteral

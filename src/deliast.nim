@@ -59,10 +59,17 @@ proc toString*(node: DeliNode):string =
      dkInteger:    $(node.intVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
-  of dkArgDefault: $(node.sons[0])
+  of dkArgDefault:
+    if node.sons.len > 0:
+      $(node.sons[0])
+    else:
+      ""
   of dkInvocation: node.cmd
   of dkArg:
-    node.sons[0].toString()
+    if node.sons.len > 0:
+      node.sons[0].toString()
+    else:
+      ""
   of dkArgShort, dkArgLong:
     $(node.argName)
   of dkObject:     $(node.table)

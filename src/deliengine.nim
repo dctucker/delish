@@ -88,7 +88,7 @@ proc repr(node: DeliNode): string =
 
 proc getOneliner(node: DeliNode): string =
   case node.kind
-  of dkAssignStmt:
+  of dkVariableStmt:
     return "$" & node.sons[0].varName & " <- " & node.sons[2].toString()
   else:
     return $(node.kind) & "?"
@@ -438,7 +438,7 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]) =
   todo "open file and assign file descriptor"
 
 proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
-  result = DeliNode(kind: dkAssignStmt, line: line, sons: @[
+  result = DeliNode(kind: dkVariableStmt, line: line, sons: @[
     DeliNode(kind: dkVariable, varName: variable),
     DeliNode(kind: dkAssignOp),
     DeliNode(kind: dkLazy, sons: @[value])
@@ -462,7 +462,7 @@ proc runStmt(engine: Engine, s: DeliNode) =
     for stmt in s.sons:
       engine.insertStmt(stmt)
     engine.debugNext()
-  of dkAssignStmt:
+  of dkVariableStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
     if nsons > 1:
@@ -489,8 +489,8 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.doFunctionCall(s.sons[0], s.sons[1 .. ^1])
   of dkStreamStmt:
     engine.doStream(s.sons)
-  of dkOpenStmt:
-    engine.doOpen(s.sons)
+  #of dkOpenStmt:
+  #  engine.doOpen(s.sons)
   else:
     todo "run ", s.kind
 

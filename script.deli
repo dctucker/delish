@@ -9,7 +9,9 @@ some documentation
 """
 #arg $filename
 env $SANDO |= "chicken parm"
+out $SANDO
 $SANDO = "meatball"
+out $SANDO
 
 $found = run find . -name "disk*" | grep "sdb"
 
