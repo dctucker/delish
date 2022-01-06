@@ -37,7 +37,7 @@ Statement     <- VariableStmt / LocalStmt / ArgStmt / EnvStmt / IncludeStmt / St
 Conditional   <- "if"       Blank+ Expr     Blank+                         "{" _ Code* _ "}" _
 WhileLoop     <- "while"    Blank+ Expr     Blank+                         "{" _ Code* _ "}" _
 ForLoop       <- "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" _ Code* _ "}" _
-Function      <- !Keyword Identifier Blank* "="      Blank*                         "{" _ Code* _ "}" _
+Function      <- !Keyword Identifier Blank* "="      Blank*                "{" _ Code* _ "}" _
 Subshell      <- "sub"      Blank+          Blank+                         "{" _ Code* _ "}" _
 VariableStmt  <- &'$' Variable Blank*
                ( AssignOp Blank* (OpenExpr / ArgExpr / Expr / RunStmt)
@@ -46,13 +46,14 @@ VariableStmt  <- &'$' Variable Blank*
                )
 OpenExpr      <- "open" (Blank+ RedirOp)? Blank+ Path
 LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
-ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
+ArgStmt       <- "arg" a:ArgNames (Blank* DefaultOp Blank* d:ArgDefault)?
+                 { $$ = createNode2( auxil->parser, dkArgStmt, a, d); }
 EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
 IncludeStmt   <- "include" Blank+ StrLiteral
 StreamStmt    <- ( Variable "." )? Stream Blank+ ExprList
 RunStmt       <- ( (AsyncFlag / RedirFlag / (AsyncFlag RedirFlag) ) Blank+)? "run" Blank+ Invocation ( Blank* "|" Blank* Invocation )*
 FunctionStmt  <- Identifier (Blank+ Expr)*
-ArgDefault    <- Expr
+ArgDefault    <- e:Expr                                         { $$ = createNode1( auxil->parser, dkArgDefault, e ); }
 EnvDefault    <- Expr
 ExprList      <- Expr ( Blank* ',' Blank* Expr Blank* )*
 Invocation    <- Command ( Blank+ !'|' (Expr / String) )*
@@ -61,23 +62,26 @@ Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integ
 VarDeref      <- &'$' Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
 RedirFlag     <- "redir" (Blank+ (Variable / Path / Stream) Blank* RedirOp Blank* (Variable / Path / Stream))+
 AsyncFlag     <- "async"
-ArgNames      <- ( Blank+ Arg )+
-Arg           <- &'-' (ArgLong / ArgShort)
+ArgNames      <- ( Blank+ a:Arg )+                              { $$ = createNode1( auxil->parser, dkArgNames, a); }
+Arg           <- &'-'
+               ( l:ArgLong   { $$ = createNode1( auxil->parser, dkArg, l ); }
+               / s:ArgShort  { $$ = createNode1( auxil->parser, dkArg, s ); }
+               )
 Array         <- '[' ( _ Expr Blank* ','? _ )* ']'
 Object        <- '[' ( _ Expr Blank* ':' Blank* Expr Blank* ','? _ )+ ']'
 JsonBlock     <- "json" Blank+ StrBlock
 Keyword       <- "json" / "sub" / "if" / "while" / "arg" / "in" / "out" / "err" / "include" / "true" / "false" / "env"
-StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""         { parseCapture( auxil->parser, $1s, $1e, $1); }
-StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )  { parseCapture( auxil->parser, $1s, $1e, $1); }
-Command       <- < W ( W / '-' )* >                             { parseCapture( auxil->parser, $1s, $1e, $1); }
-Identifier    <- !Keyword < ( W / '-' )+ >                      { parseCapture( auxil->parser, $1s, $1e, $1); }
-ArgShort      <- '-' < W+ >                                     { parseCapture( auxil->parser, $1s, $1e, $1); }
-ArgLong       <- "--" < ( W ('-' W )*)+ >                       { parseCapture( auxil->parser, $1s, $1e, $1); }
-String        <- < S+ >                                         { parseCapture( auxil->parser, $1s, $1e, $1); }
-Integer       <- < [0-9]+ >                                     { parseCapture( auxil->parser, $1s, $1e, $1); }
-Path          <- < ("."* "/" S+ ) / "." >                       { parseCapture( auxil->parser, $1s, $1e, $1); }
-Variable      <- '$' < (W / '-')+ >                             { parseCapture( auxil->parser, $1s, $1e, $1); }
-Boolean       <- < "true" / "false" >                           { parseCapture( auxil->parser, $1s, $1e, $1); }
+StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""         { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )  { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+Command       <- < W ( W / '-' )* >                             { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+Identifier    <- !Keyword < ( W / '-' )+ >                      { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+ArgShort      <- '-' < W+ >                                     { $$ = createNode( auxil->parser, dkArgShort, $1s, $1e, $1); }
+ArgLong       <- "--" < ( W ('-' W )*)+ >                       { $$ = createNode( auxil->parser, dkArgLong , $1s, $1e, $1); }
+String        <- < S+ >                                         { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+Integer       <- < [0-9]+ >                                     { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+Path          <- < ("."* "/" S+ ) / "." >                       { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+Variable      <- '$' < (W / '-')+ >                             { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
+Boolean       <- < "true" / "false" >                           { $$ = parseCapture( auxil->parser, $1s, $1e, $1); }
 Stream        <- &[ioe] (StreamIn / StreamOut / StreamErr)
 StreamIn      <- "in"
 StreamOut     <- "out"

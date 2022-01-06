@@ -32,8 +32,8 @@ yyparse: src/delish.yy.c
 	gcc ./src/delish.yy.c -o yyparse
 
 
-src/packcc.c: src/delish.packcc src/packcc.h 
-	cd src ; packcc -o packcc delish.packcc ; cd ..
+src/packcc.c: src/delish.packcc src/packcc.h
+	cd src && packcc -o packcc delish.packcc && cd ..
 
 debug: src/packcc.c #src/delish.yy.c
 	nimble build

@@ -15,6 +15,7 @@ type Parser* = ref object
   symbol_stack: Stack[string]
   node_stack:   Stack[DeliNode]
   entry_point:  DeliNode
+  nodes:        seq[DeliNode]
   line_numbers: seq[int]
   parsed_len:   int
 
@@ -229,14 +230,36 @@ type DeliT = object
   length: csize_t
   parser: Parser
 
-proc parseCapture(parser: Parser, rstart, rend: csize_t, buffer: cstring) {.exportc.} =
+proc parseCapture(parser: Parser, rstart, rend: csize_t, buffer: cstring): DeliNode {.exportc.} =
   let length = rend - rstart
   var capture = newString(length)
   if length > 0:
     for i in 0 .. length - 1:
       capture[i] = buffer[i].char
   echo "CAPTURE ", capture
-  parser.parseCapture(rstart.int, length.int, capture)
+  #parser.parseCapture(rstart.int, length.int, capture)
+
+proc createNode(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: cstring): cint {.exportc.} =
+  echo "createNode ", $kind
+  result = parser.nodes.len.cint
+  parser.nodes.add(DeliNode(kind: kind))
+
+proc createNode1(parser: Parser, kind: DeliKind, s: cint): cint {.exportc.} =
+  echo "createNode1 ", $kind
+  let son = parser.nodes[s.int]
+  result = parser.nodes.len.cint
+  parser.nodes.add(DeliNode(kind: kind, sons: @[son]))
+
+proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.} =
+  echo "createNode2 ", $kind
+  let son1 = parser.nodes[s1.int]
+  var node = DeliNode(kind: kind, sons: @[son1])
+
+  if s2.int >= 0:
+    let son2 = parser.nodes[s2.int]
+    node.sons.add(son2)
+  result = parser.nodes.len.cint
+  parser.nodes.add(node)
 
 proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule

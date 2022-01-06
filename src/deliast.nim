@@ -8,7 +8,7 @@ grammarToEnum(@["None","Ran","Lazy","S","W","U"])
 grammarToCEnum(@["None","Ran","Lazy","S","W","_"])
 
 type
-  DeliNode* = ref object
+  DeliNodeObj* = object
     case kind*: DeliKind
     of dkNone:         none:        bool
     of dkIdentifier:   id*:         string
@@ -32,6 +32,7 @@ type
       discard
     sons*: seq[DeliNode]
     line*: int
+  DeliNode* = ref DeliNodeObj
 
 proc isNone*(node: DeliNode):bool =
   if node.kind == dkNone:
