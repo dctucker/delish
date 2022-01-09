@@ -1167,7 +1167,7 @@ static void pcc_action_VLine_4(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in,
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    if( __ >= 0 ) ;
+    if( __ >= 0 ) SL(__);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1199,7 +1199,7 @@ static void pcc_action_Statement_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    CN1( Statement, a ); SL(a);
+    CN1( Statement  , a ); SL(a);
 #undef _0e
 #undef _0s
 #undef _0

@@ -45,7 +45,7 @@ VLine         <- ( "\n"                                              { $$ = -1; 
                  / Comment                                           { $$ = -1; }
                  / a:Block                                           { $$ = a; }
                  / a:Statement Comment* "\n"                         { $$ = a; }
-                 )                                                   { if( $$ >= 0 ) ; }
+                 )                                                   { if( $$ >= 0 ) SL($$); }
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <- ( !'$'
                ( a:Conditional / a:WhileLoop / a:ForLoop / a:Function
@@ -54,7 +54,7 @@ Block         <- ( !'$'
 Statement     <-
               (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
               /  a:EnvStmt      /  a:IncludeStmt  /  a:StreamStmt
-              /  a:RunStmt      /  a:FunctionStmt )                  { CN1( Statement, a ); SL(a); }
+              /  a:RunStmt      /  a:FunctionStmt )                  { CN1( Statement  , a ); SL(a); }
 Conditional   <- "if" Blank+ e:Expr
                  Blank+ "{" _ c:Code? _ "}" _                        { CN2( Conditional, e, c ); }
 WhileLoop     <- "while" Blank+ e:Expr

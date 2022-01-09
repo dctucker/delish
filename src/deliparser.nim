@@ -155,47 +155,6 @@ proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
 
   #echo "\27[31m", $parser.node_stack, "\27[0m"
 
-
-  #let line = parser.line_number(start)
-  ##debug start, " :",  line
-
-  #let peg_parser = grammar.eventParser:
-  #  pkCapture:
-  #    leave:
-  #      parser.parseCapture(start, length, s)
-  #  pkCapturedSearch:
-  #    leave:
-  #      case parser.symbol_stack.peek()
-  #      of "StrBlock":
-  #        parser.parseCapture(start, length-3, s)
-  #      else:
-  #        parser.parseCapture(start, length-1, s)
-  #  pkNonTerminal:
-  #    enter:
-  #      if p.nt.name notin ["Blank", "VLine", "Comment"]:
-  #        let k = parseEnum[DeliKind]("dk" & p.nt.name)
-  #        parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(start)))
-  #        debug parser, "\27[1;30m", parser.indent("> "), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
-  #        parser.symbol_stack.push(p.nt.name)
-  #    leave:
-  #      if p.nt.name notin ["Blank", "VLine", "Comment"]:
-  #        let inner_node = parser.node_stack.pop()
-  #        discard parser.symbol_stack.pop()
-  #        if length > 0:
-  #          let matchStr = s.substr(start, start+length-1)
-  #          debug parser, parser.indent("\27[1m< "), $p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
-
-  #          if parser.node_stack.len() > 0:
-  #            var outer_node = parser.node_stack.pop()
-  #            outer_node.sons.add( inner_node )
-  #            assimilate(inner_node, outer_node)
-  #            parser.entry_point = outer_node
-  #            parser.node_stack.push(outer_node)
-
-  #          #let line = parser.line_number(start)
-  #          ##debug start, " :",  line
-
-
 proc getLine*(parser: Parser, line: int): string =
   let start = parser.line_numbers[line]
   let endl  = parser.line_numbers[line+1]
@@ -212,8 +171,6 @@ proc printSons(node: DeliNode, level: int) =
 proc printEntryPoint*(parser: Parser) =
   echo "\n== Node Stack =="
   printSons(parser.entry_point, 0)
-
-
 
 
 ## PackCC integration stuff
@@ -238,7 +195,7 @@ proc parseCapture(parser: Parser, rstart, rend: csize_t, buffer: cstring): DeliN
   if length > 0:
     for i in 0 .. length - 1:
       capture[i] = buffer[i].char
-  echo "CAPTURE ", capture
+  debug parser, "CAPTURE ", capture
   #parser.parseCapture(rstart.int, length.int, capture)
 
 proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: cstring): cint {.exportc.} =
@@ -251,7 +208,7 @@ proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: c
     for i in 0 .. length - 1:
       capture[i] = buffer[i].char
 
-  echo result, " nodeString ", $kind, " \"", capture, '"'
+  debug parser, $result, " nodeString ", $kind, " \"", capture, "\""
   node.parseCapture(capture)
 
   parser.nodes.add(node)
@@ -259,27 +216,25 @@ proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: c
 proc getNode(parser: Parser, i: cint): DeliNode =
   result = if i.int <= 0: deliNone() else: parser.nodes[i.int]
 
-proc createNode(parser: Parser, kind: DeliKind, ints: varargs[cint]): cint {.exportc.} =
-  result = parser.nodes.len.cint
-  echo "createNode ", $kind
-  let node = DeliNode(kind: kind, sons: @[])
-
-  echo ints.len
-  for i in ints:
-    echo i
-    let son = parser.getNode(i)
-    node.sons.add(son)
-  parser.nodes.add(node)
+#proc createNode(parser: Parser, kind: DeliKind, ints: varargs[cint]): cint {.exportc.} =
+#  result = parser.nodes.len.cint
+#  debug parser, "createNode ", $kind
+#  let node = DeliNode(kind: kind, sons: @[])
+#
+#  for i in ints:
+#    let son = parser.getNode(i)
+#    node.sons.add(son)
+#  parser.nodes.add(node)
 
 proc createNode0(parser: Parser, kind: DeliKind): cint {.exportc.} =
   result = parser.nodes.len.cint
-  echo result, " createNode0 ", $kind
+  debug parser, $result, " createNode0 ", $kind
   let node = DeliNode(kind: kind)
   parser.nodes.add(node)
 
 proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
-  echo result, " createNode1 ", $kind, " ", s1
+  debug parser, $result, " createNode1 ", $kind, " ", $s1
   let node = DeliNode(kind: kind, sons: @[])
 
   let son1 = parser.getNode(s1)
@@ -289,7 +244,7 @@ proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
 
 proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
-  echo result, " createNode2 ", $kind, " ", s1, " ", s2
+  debug parser, $result, " createNode2 ", $kind, " ", $s1, " ", $s2
   var node = DeliNode(kind: kind, sons: @[])
 
   let son1 = parser.getNode(s1)
@@ -301,7 +256,7 @@ proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.}
 
 proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
-  echo result, " createNode3 ", $kind, " ", s1, " ", s2, " ", s3
+  debug parser, $result, " createNode3 ", $kind, " ", $s1, " ", $s2, " ", $s3
   var node = DeliNode(kind: kind, sons: @[])
 
   let son1 = parser.getNode(s1)
@@ -315,12 +270,12 @@ proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.expor
 
 proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   let son = parser.getNode(s)
-  echo p, " nodeAppend ", $son.kind, " ", s
+  debug parser, $p, " nodeAppend ", $son.kind, " ", $s
   parser.getNode(p).sons.add(son)
   result = p
 
 proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
-  echo n, " setLine ", l
+  debug parser, $n, " setLine ", $l
   var node = parser.getNode(n)
   node.line = parser.line_number(l.int)
   parser.nodes[n] = node
