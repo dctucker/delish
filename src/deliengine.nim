@@ -414,12 +414,18 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
     expr_pos = 2
   elif first_node.kind == dkStream:
     fd = engine.evaluateStream(first_node)
+  elif first_node.kind == dkVarDeref:
+    todo "Stream VarDeref"
+    fd = engine.fds[2]
+
+  #for k in engine.fds.keys:
+  #  echo k
 
   for expr in nodes[expr_pos].sons:
     let eval = engine.evaluate(expr)
     let str = eval.toString()
-    echo "> ", fd.repr, ": ", str
-    #fd.write(str, "\n")
+    #echo "> ", fd.repr, ": ", str
+    fd.write(str, "\n")
 
 proc getRedirOpenMode(node: DeliNode): FileMode =
   case node.kind
