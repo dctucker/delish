@@ -227,10 +227,10 @@ proc getVariable(engine: Engine, name: string): DeliNode =
     raise newException( Exception, "Unknown variable: $" & name )
 
 proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
-  echo "evalVarDeref ", vard.repr
+  #echo "evalVarDeref ", vard.repr
   let variable = vard.sons[0]
   result = engine.getVariable(variable.varName)
-  echo result
+  #echo result
   for son in vard.sons[1 .. ^1]:
     case result.kind
     of dkObject:
@@ -246,7 +246,7 @@ proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
   result = expr
   while result.kind == dkExpr:
     let s = result.sons[0]
-    echo s.kind
+    #echo s.kind
     result = engine.evaluate(s)
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =

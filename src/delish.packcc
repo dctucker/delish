@@ -19,6 +19,15 @@
 	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
 	#define PCC_BUFFERSIZE 1024
 
+	#define CN(N, K, ...) __ = createNode##N( auxil->parser, K, __VA_ARGS__ )
+	#define CN0(K) __ = createNode0( auxil->parser, K )
+	#define CN1(K, ...) CN(1, K, __VA_ARGS__ )
+	#define CN2(K, ...) CN(2, K, __VA_ARGS__ )
+	#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
+	#define NS(K)       __ = nodeString( auxil->parser, K   , _1s, _1e, _1)
+	#define NA(P,S)     nodeAppend( auxil->parser, P, S )
+	#define SL(X)       setLine( auxil->parser, X, _0s )
+
 	int deli_get_character( struct deli_t *auxil )
 	{
 		if( auxil->offset >= auxil->length )
@@ -27,125 +36,132 @@
 	}
 }
 
-Script        <- c:Code                                              { $$ = createNode1( auxil->parser, dkScript, c ); }
-Code          <-                                                     { $$ = createNode0( auxil->parser, dkCode ); }
-              (  Blank* l:VLine                                      { if( l >= 0 ) nodeAppend( auxil->parser, $$, l ); }
+Script        <- c:Code                                              { CN1( dkScript, c ); }
+Code          <-                                                     { CN0( dkCode ); }
+              (  Blank* l:VLine                                      { if( l >= 0 ) NA( $$, l ); }
               )+ Blank*
 Blank         <- ( "\\" "\n" ) / "\t" / ' '
 VLine         <- ( "\n"                                              { $$ = -1; }
                  / Comment                                           { $$ = -1; }
                  / a:Block                                           { $$ = a; }
                  / a:Statement Comment* "\n"                         { $$ = a; }
-                 )                                                   { if( $$ >= 0 ) setLine( auxil->parser, $$, $0s ); }
+                 )                                                   { if( $$ >= 0 ) ; }
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <- ( !'$'
-              (  a:Conditional / a:WhileLoop / a:ForLoop / a:Function
-              )  / a:Subshell )                                      { $$ = createNode1( auxil->parser, dkBlock    , a ); setLine( auxil->parser, a, $0s ); }
+               ( a:Conditional / a:WhileLoop / a:ForLoop / a:Function
+               ) / a:Subshell
+              )                                                      { CN1( dkBlock    , a ); SL(a); }
 Statement     <-
               (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
               /  a:EnvStmt      /  a:IncludeStmt  /  a:StreamStmt
-              /  a:RunStmt      /  a:FunctionStmt )                  { $$ = createNode1( auxil->parser, dkStatement, a); setLine( auxil->parser, a, $0s ); }
-Conditional   <- "if"       Blank+ e:Expr
-                 Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode2( auxil->parser, dkConditional, e, c ); }
-WhileLoop     <- "while"    Blank+ e:Expr
-                 Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode2( auxil->parser, dkWhileLoop  , e, c ); }
-ForLoop       <- "for"      Blank+ v:Variable Blank+ "in" Blank+ e:Expr
-                 Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode3( auxil->parser, dkForLoop    , v, e, c ); }
+              /  a:RunStmt      /  a:FunctionStmt )                  { CN1( dkStatement, a ); SL(a); }
+Conditional   <- "if" Blank+ e:Expr
+                 Blank+ "{" _ c:Code? _ "}" _                        { CN2( dkConditional, e, c ); }
+WhileLoop     <- "while" Blank+ e:Expr
+                 Blank+ "{" _ c:Code? _ "}" _                        { CN2( dkWhileLoop  , e, c ); }
+ForLoop       <- "for" Blank+ v:Variable Blank+ "in" Blank+ e:Expr
+                 Blank+ "{" _ c:Code? _ "}" _                        { CN3( dkForLoop    , v, e, c ); }
 Function      <- !Keyword i:Identifier Blank*        "="
-                 Blank* "{" _ c:Code? _ "}" _                        { $$ = createNode2( auxil->parser, dkFunction   , i, c ); }
-Subshell      <- "sub"      Blank+          Blank+
-                 "{" _ c:Code? _ "}" _                               { $$ = createNode1( auxil->parser, dkSubshell   , c ); }
+                 Blank* "{" _ c:Code? _ "}" _                        { CN2( dkFunction   , i, c ); }
+Subshell      <- "sub" Blank+ "{" _ c:Code? _ "}" _                  { CN1( dkSubshell   , c ); }
 VariableStmt  <- &'$' v:Variable Blank*
               (  o:AssignOp Blank* (e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt)
               /  o:AppendOp Blank* (e:ArgExpr / e:Expr / e:RunStmt)
               /  o:RemoveOp Blank* (e:ArgExpr / e:Expr / e:RunStmt)
-              )                                                      { $$ = createNode3( auxil->parser, dkVariableStmt, v, o, e ); }
-OpenExpr      <- "open" (Blank+ o:RedirOp)? Blank+ p:Path            { $$ = createNode2( auxil->parser, dkOpenExpr, p, o); }
-LocalStmt     <- "local" Blank+ v:Variable                           { $$ = createNode1( auxil->parser, dkLocalStmt, v ); }
-              (  Blank* "=" Blank* e:Expr                            { nodeAppend( auxil->parser, $$, e ); }
+              )                                                      { CN3( dkVariableStmt, v, o, e ); }
+OpenExpr      <- "open" (Blank+ o:RedirOp)? Blank+ p:Path            { CN2( dkOpenExpr, p, o); }
+LocalStmt     <- "local" Blank+ v:Variable                           { CN1( dkLocalStmt, v ); }
+              (  Blank* "=" Blank* e:Expr                            { NA( $$, e ); }
               )?
 ArgStmt       <- "arg"
-                 ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { $$ = createNode3( auxil->parser, dkArgStmt, a, o, d); }
-                 / a:ArgNames                                        { $$ = createNode1( auxil->parser, dkArgStmt, a); }
+                 ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { CN3( dkArgStmt, a, o, d); }
+                 / a:ArgNames                                        { CN1( dkArgStmt, a); }
                  )
-EnvStmt       <- "env" Blank+ v:Variable                             { $$ = createNode1( auxil->parser, dkEnvStmt, v ); }
-                 (Blank* o:DefaultOp Blank* e:EnvDefault             { nodeAppend( auxil->parser, $$, o ); nodeAppend( auxil->parser, $$, e ); }
+EnvStmt       <- "env" Blank+ v:Variable                             { CN1( dkEnvStmt, v ); }
+                 (Blank* o:DefaultOp Blank* e:EnvDefault             { NA( $$, o ); NA( $$, e ); }
                  )?
-IncludeStmt   <- "include" Blank+ s:StrLiteral                       { $$ = createNode1( auxil->parser, dkIncludeStmt, s ); }
-StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { $$ = createNode2( auxil->parser, dkStreamStmt,  createNode2( auxil->parser, dkVarDeref, v, s ), l ); }
-              /                   s:Stream Blank+ l:ExprList         { $$ = createNode2( auxil->parser, dkStreamStmt,  s, l ); }
+IncludeStmt   <- "include" Blank+ s:StrLiteral                       { CN1( dkIncludeStmt, s ); }
+StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { CN2( dkStreamStmt,  CN2( dkVarDeref, v, s ), l ); }
+              /                   s:Stream Blank+ l:ExprList         { CN2( dkStreamStmt,  s, l ); }
               )
 RunStmt       <- (
-              (
-                 f1:AsyncFlag / f2:RedirFlag / (f1:AsyncFlag f2:RedirFlag)
-              )  Blank+
-              )? "run" Blank+ i:Invocation                           { $$ = createNode1( auxil->parser, dkRunStmt, i ); }
-              (  Blank* "|" Blank* i:Invocation                      { nodeAppend( auxil->parser, $$, i ); }
+               ( f1:AsyncFlag / f2:RedirFlag
+               / (f1:AsyncFlag f2:RedirFlag)
+               ) Blank+
+              )? "run" Blank+ i:Invocation                           { CN1( dkRunStmt, i ); }
+              (  Blank* "|" Blank* i:Invocation                      { NA( $$, i ); }
               )*
-FunctionStmt  <- i:Identifier                                        { $$ = createNode1( auxil->parser, dkFunctionStmt, i ); }
-               ( Blank+ e:Expr                                       { nodeAppend( auxil->parser, $$, e ); }
+FunctionStmt  <- i:Identifier                                        { CN1( dkFunctionStmt, i ); }
+               ( Blank+ e:Expr                                       { NA( $$, e ); }
                )*
-ArgDefault    <- e:Expr                                              { $$ = createNode1( auxil->parser, dkArgDefault, e ); }
-EnvDefault    <- e:Expr                                              { $$ = createNode1( auxil->parser, dkEnvDefault, e ); }
-ExprList      <- e:Expr                                              { $$ = createNode1( auxil->parser, dkExprList, e ); }
-               ( Blank* ',' Blank* e:Expr Blank*                     { nodeAppend( auxil->parser, $$, e ); }
+ArgDefault    <- e:Expr                                              { CN1( dkArgDefault, e ); }
+EnvDefault    <- e:Expr                                              { CN1( dkEnvDefault, e ); }
+ExprList      <- e:Expr                                              { CN1( dkExprList, e ); }
+               ( Blank* ',' Blank* e:Expr Blank*                     { NA( $$, e ); }
                )*
-Invocation    <- c:Command                                           { $$ = createNode1( auxil->parser, dkInvocation, c ); }
-              (  Blank+ !'|' (e:Expr / e:String)                     { nodeAppend( auxil->parser, $$, e ); }
+Invocation    <- c:Command                                           { CN1( dkInvocation, c ); }
+              (  Blank+ !'|' (e:Expr / e:String)                     { NA( $$, e ); }
               )*
-ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { $$ = createNode2( auxil->parser, dkArgExpr, a, e ); }
+ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { CN2( dkArgExpr, a, e ); }
 Expr          <-
                ( s:VarDeref / s:Arg        / s:Array   / s:Object
                / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
-               / s:Path     / s:JsonBlock  / s:Stream             )  { $$ = createNode1( auxil->parser, dkExpr, s); }
-VarDeref      <- &'$' n:Variable                                     { $$ = createNode1( auxil->parser, dkVarDeref, n ); }
+               / s:Path     / s:JsonBlock  / s:Stream             )  { CN1( dkExpr, s); }
+VarDeref      <- &'$' n:Variable                                     { CN1( dkVarDeref, n ); }
               (  [.]
-              (  s:StrLiteral / s:Integer / s:Variable / s:Identifier )   { nodeAppend( auxil->parser, $$, s ); }
+               ( s:StrLiteral / s:Integer
+               / s:Variable   / s:Identifier  )                      { NA( $$, s ); }
               )*
-RedirFlag     <- "redir" (Blank+ (Variable / Path / Stream) Blank* RedirOp Blank* (Variable / Path / Stream))+
+RedirFlag     <- "redir"
+              (  Blank+
+               ( Variable / Path / Stream ) Blank*
+                 RedirOp Blank*
+               ( Variable / Path / Stream )
+              )+
 AsyncFlag     <- "async"
-ArgNames      <- ( Blank+ a:Arg )+                                   { $$ = createNode1( auxil->parser, dkArgNames, a); }
+ArgNames      <- ( Blank+ a:Arg )+                                   { CN1( dkArgNames, a); }
 Arg           <- &'-'
-              (  l:ArgLong                                           { $$ = createNode1( auxil->parser, dkArg, l ); }
-              /  s:ArgShort                                          { $$ = createNode1( auxil->parser, dkArg, s ); }
+              (  l:ArgLong                                           { CN1( dkArg, l ); }
+              /  s:ArgShort                                          { CN1( dkArg, s ); }
               )
-Array         <- '['                                                 { $$ = createNode0( auxil->parser, dkArray ); }
-              (  _ e:Expr                                            { nodeAppend( auxil->parser, $$, e ); }
+Array         <- '['                                                 { CN0( dkArray ); }
+              (  _ e:Expr                                            { NA( $$, e ); }
                  Blank* ','? _
               )* ']'
-Object        <- '['                                                 { $$ = createNode0( auxil->parser, dkObject ); }
-              (  _ p:Pair                                            { nodeAppend( auxil->parser, $$, p ); }
+Object        <- '['                                                 { CN0( dkObject ); }
+              (  _ p:Pair                                            { NA( $$, p ); }
                  Blank* ','? _
               )+ ']'
-Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { $$ = createNode2( auxil->parser, dkPair, k, v ); }
-JsonBlock     <- "json" Blank+ s:StrBlock                            { $$ = createNode1( auxil->parser, dkJsonBlock, s ); }
-Keyword       <- "json" / "sub" / "if" / "while" / "arg" / "in"
-              /  "out" / "err" / "include" / "true" / "false" / "env"
-StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { $$ = nodeString( auxil->parser, dkString    , $1s, $1e, $1); }
-StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { $$ = nodeString( auxil->parser, dkString    , $1s, $1e, $1); }
-Command       <- < W ( W / '-' )* >                                  { $$ = nodeString( auxil->parser, dkCommand   , $1s, $1e, $1); }
-Identifier    <- !Keyword < ( W / '-' )+ >                           { $$ = nodeString( auxil->parser, dkIdentifier, $1s, $1e, $1); }
-ArgShort      <- '-' < W+ >                                          { $$ = nodeString( auxil->parser, dkArgShort  , $1s, $1e, $1); }
-ArgLong       <- "--" < ( W ('-' W )*)+ >                            { $$ = nodeString( auxil->parser, dkArgLong   , $1s, $1e, $1); }
-String        <- < S+ >                                              { $$ = nodeString( auxil->parser, dkString    , $1s, $1e, $1); }
-Integer       <- < [0-9]+ >                                          { $$ = nodeString( auxil->parser, dkInteger   , $1s, $1e, $1); }
-Path          <- < ("."* "/" S+ ) / "." >                            { $$ = nodeString( auxil->parser, dkPath      , $1s, $1e, $1); }
-Variable      <- '$' < (W / '-')+ >                                  { $$ = nodeString( auxil->parser, dkVariable  , $1s, $1e, $1); }
-Boolean       <- < "true" / "false" >                                { $$ = nodeString( auxil->parser, dkBoolean   , $1s, $1e, $1); }
+Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { CN2( dkPair, k, v ); }
+JsonBlock     <- "json" Blank+ s:StrBlock                            { CN1( dkJsonBlock, s ); }
+Keyword       <- "json" / "sub"   / "if"  / "while"  / "arg"
+               / "in"   / "out"   / "err" / "include"
+               / "true" / "false" / "env"
+StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( dkString    ); }
+StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( dkString    ); }
+Command       <- < W ( W / '-' )* >                                  { NS( dkCommand   ); }
+Identifier    <- !Keyword < ( W / '-' )+ >                           { NS( dkIdentifier); }
+ArgShort      <- '-' < W+ >                                          { NS( dkArgShort  ); }
+ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( dkArgLong   ); }
+String        <- < S+ >                                              { NS( dkString    ); }
+Integer       <- < [0-9]+ >                                          { NS( dkInteger   ); }
+Path          <- < ("."* "/" S+ ) / "." >                            { NS( dkPath      ); }
+Variable      <- '$' < (W / '-')+ >                                  { NS( dkVariable  ); }
+Boolean       <- < "true" / "false" >                                { NS( dkBoolean   ); }
 Stream        <- &[ioe] ( s:StreamIn / s:StreamOut / s:StreamErr )   { $$ = s; }
-StreamIn      <- "in"                                                { $$ = createNode0( auxil->parser, dkStreamIn ); }
-StreamOut     <- "out"                                               { $$ = createNode0( auxil->parser, dkStreamOut ); }
-StreamErr     <- "err"                                               { $$ = createNode0( auxil->parser, dkStreamErr ); }
-AssignOp      <- "="                                                 { $$ = createNode0( auxil->parser, dkAssignOp ); }
-AppendOp      <- "+="                                                { $$ = createNode0( auxil->parser, dkAppendOp ); }
-RemoveOp      <- "-="                                                { $$ = createNode0( auxil->parser, dkRemoveOp ); }
+StreamIn      <- "in"                                                { CN0( dkStreamIn ); }
+StreamOut     <- "out"                                               { CN0( dkStreamOut ); }
+StreamErr     <- "err"                                               { CN0( dkStreamErr ); }
+AssignOp      <- "="                                                 { CN0( dkAssignOp ); }
+AppendOp      <- "+="                                                { CN0( dkAppendOp ); }
+RemoveOp      <- "-="                                                { CN0( dkRemoveOp ); }
 RedirOp       <- ( o:RedirAppendOp / o:RedirReadOp
                / o:RedirWriteOp / o:RedirDuplexOp )                  { $$ = o; }
-RedirAppendOp <- ">>"                                                { $$ = createNode0( auxil->parser, dkRedirAppendOp ); }
-RedirReadOp   <- "<"                                                 { $$ = createNode0( auxil->parser, dkRedirReadOp ); }
-RedirWriteOp  <- ">"                                                 { $$ = createNode0( auxil->parser, dkRedirWriteOp ); }
-RedirDuplexOp <- "<>"                                                { $$ = createNode0( auxil->parser, dkRedirDuplexOp ); }
-DefaultOp     <- "|="                                                { $$ = createNode0( auxil->parser, dkDefaultOp ); }
+RedirAppendOp <- ">>"                                                { CN0( dkRedirAppendOp ); }
+RedirReadOp   <- "<"                                                 { CN0( dkRedirReadOp ); }
+RedirWriteOp  <- ">"                                                 { CN0( dkRedirWriteOp ); }
+RedirDuplexOp <- "<>"                                                { CN0( dkRedirDuplexOp ); }
+DefaultOp     <- "|="                                                { CN0( dkDefaultOp ); }
 S             <- [^ \n\r\t]
 W             <- [A-Za-z0-9-]
 _             <- [ \n\r\t]*

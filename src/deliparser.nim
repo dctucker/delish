@@ -259,16 +259,17 @@ proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: c
 proc getNode(parser: Parser, i: cint): DeliNode =
   result = if i.int <= 0: deliNone() else: parser.nodes[i.int]
 
-#proc createNode(parser: Parser, kind: DeliKind, ints: varargs[cint]): cint {.exportc.} =
-#  echo "createNode ", $kind
-#  let node = DeliNode(kind: kind, sons: @[])
-#
-#  for i in ints:
-#    let son = parser.getNode(i)
-#    node.sons.add(son)
-#
-#  result = parser.nodes.len.cint
-#  parser.nodes.add(node)
+proc createNode(parser: Parser, kind: DeliKind, ints: varargs[cint]): cint {.exportc.} =
+  result = parser.nodes.len.cint
+  echo "createNode ", $kind
+  let node = DeliNode(kind: kind, sons: @[])
+
+  echo ints.len
+  for i in ints:
+    echo i
+    let son = parser.getNode(i)
+    node.sons.add(son)
+  parser.nodes.add(node)
 
 proc createNode0(parser: Parser, kind: DeliKind): cint {.exportc.} =
   result = parser.nodes.len.cint

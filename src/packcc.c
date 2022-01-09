@@ -29,6 +29,15 @@ static size_t pcc_strnlen(const char *str, size_t maxlen) {
 #define PCC_GETCHAR(auxil) deli_get_character( auxil )
 #define PCC_BUFFERSIZE 1024
 
+#define CN(N, K, ...) __ = createNode##N( auxil->parser, K, __VA_ARGS__ )
+#define CN0(K) __ = createNode0( auxil->parser, K )
+#define CN1(K, ...) CN(1, K, __VA_ARGS__ )
+#define CN2(K, ...) CN(2, K, __VA_ARGS__ )
+#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
+#define NS(K)       __ = nodeString( auxil->parser, K   , _1s, _1e, _1)
+#define NA(P,S)     nodeAppend( auxil->parser, P, S )
+#define SL(X)       setLine( auxil->parser, X, _0s )
+
 int deli_get_character( struct deli_t *auxil )
 {
         if( auxil->offset >= auxil->length )
@@ -1052,7 +1061,7 @@ static void pcc_action_Script_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkScript, c );
+    CN1( dkScript, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1067,7 +1076,7 @@ static void pcc_action_Code_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, 
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkCode );
+    CN0( dkCode );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1082,7 +1091,7 @@ static void pcc_action_Code_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, 
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    if( l >= 0 ) nodeAppend( auxil->parser, __, l );
+    if( l >= 0 ) NA( __, l );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1158,7 +1167,7 @@ static void pcc_action_VLine_4(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in,
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    if( __ >= 0 ) setLine( auxil->parser, __, _0s );
+    if( __ >= 0 ) ;
 #undef _0e
 #undef _0s
 #undef _0
@@ -1174,7 +1183,7 @@ static void pcc_action_Block_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in,
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkBlock    , a ); setLine( auxil->parser, a, _0s );
+    CN1( dkBlock    , a ); SL(a);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1190,7 +1199,7 @@ static void pcc_action_Statement_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkStatement, a); setLine( auxil->parser, a, _0s );
+    CN1( dkStatement, a ); SL(a);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1207,7 +1216,7 @@ static void pcc_action_Conditional_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__p
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkConditional, e, c );
+    CN2( dkConditional, e, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1225,7 +1234,7 @@ static void pcc_action_WhileLoop_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkWhileLoop  , e, c );
+    CN2( dkWhileLoop  , e, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1244,7 +1253,7 @@ static void pcc_action_ForLoop_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode3( auxil->parser, dkForLoop    , v, e, c );
+    CN3( dkForLoop    , v, e, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1263,7 +1272,7 @@ static void pcc_action_Function_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkFunction   , i, c );
+    CN2( dkFunction   , i, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1280,7 +1289,7 @@ static void pcc_action_Subshell_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkSubshell   , c );
+    CN1( dkSubshell   , c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1298,7 +1307,7 @@ static void pcc_action_VariableStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode3( auxil->parser, dkVariableStmt, v, o, e );
+    CN3( dkVariableStmt, v, o, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1317,7 +1326,7 @@ static void pcc_action_OpenExpr_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkOpenExpr, p, o);
+    CN2( dkOpenExpr, p, o);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1334,7 +1343,7 @@ static void pcc_action_LocalStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkLocalStmt, v );
+    CN1( dkLocalStmt, v );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1351,7 +1360,7 @@ static void pcc_action_LocalStmt_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, e );
+    NA( __, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1370,7 +1379,7 @@ static void pcc_action_ArgStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode3( auxil->parser, dkArgStmt, a, o, d);
+    CN3( dkArgStmt, a, o, d);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1388,7 +1397,7 @@ static void pcc_action_ArgStmt_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkArgStmt, a);
+    CN1( dkArgStmt, a);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1404,7 +1413,7 @@ static void pcc_action_EnvStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkEnvStmt, v );
+    CN1( dkEnvStmt, v );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1422,7 +1431,7 @@ static void pcc_action_EnvStmt_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, o ); nodeAppend( auxil->parser, __, e );
+    NA( __, o ); NA( __, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1440,7 +1449,7 @@ static void pcc_action_IncludeStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__p
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkIncludeStmt, s );
+    CN1( dkIncludeStmt, s );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1458,7 +1467,7 @@ static void pcc_action_StreamStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkStreamStmt,  createNode2( auxil->parser, dkVarDeref, v, s ), l );
+    CN2( dkStreamStmt,  CN2( dkVarDeref, v, s ), l );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1477,7 +1486,7 @@ static void pcc_action_StreamStmt_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkStreamStmt,  s, l );
+    CN2( dkStreamStmt,  s, l );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1496,7 +1505,7 @@ static void pcc_action_RunStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkRunStmt, i );
+    CN1( dkRunStmt, i );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1516,7 +1525,7 @@ static void pcc_action_RunStmt_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, i );
+    NA( __, i );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1534,7 +1543,7 @@ static void pcc_action_FunctionStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkFunctionStmt, i );
+    CN1( dkFunctionStmt, i );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1551,7 +1560,7 @@ static void pcc_action_FunctionStmt_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, e );
+    NA( __, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1568,7 +1577,7 @@ static void pcc_action_ArgDefault_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkArgDefault, e );
+    CN1( dkArgDefault, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1584,7 +1593,7 @@ static void pcc_action_EnvDefault_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkEnvDefault, e );
+    CN1( dkEnvDefault, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1600,7 +1609,7 @@ static void pcc_action_ExprList_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkExprList, e );
+    CN1( dkExprList, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1616,7 +1625,7 @@ static void pcc_action_ExprList_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, e );
+    NA( __, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1632,7 +1641,7 @@ static void pcc_action_Invocation_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkInvocation, c );
+    CN1( dkInvocation, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1649,7 +1658,7 @@ static void pcc_action_Invocation_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, e );
+    NA( __, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1667,7 +1676,7 @@ static void pcc_action_ArgExpr_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkArgExpr, a, e );
+    CN2( dkArgExpr, a, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1684,7 +1693,7 @@ static void pcc_action_Expr_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, 
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkExpr, s);
+    CN1( dkExpr, s);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1700,7 +1709,7 @@ static void pcc_action_VarDeref_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkVarDeref, n );
+    CN1( dkVarDeref, n );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1717,7 +1726,7 @@ static void pcc_action_VarDeref_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, s );
+    NA( __, s );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1734,7 +1743,7 @@ static void pcc_action_ArgNames_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkArgNames, a);
+    CN1( dkArgNames, a);
 #undef _0e
 #undef _0s
 #undef _0
@@ -1750,7 +1759,7 @@ static void pcc_action_Arg_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, p
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkArg, l );
+    CN1( dkArg, l );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1766,7 +1775,7 @@ static void pcc_action_Arg_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, p
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkArg, s );
+    CN1( dkArg, s );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1781,7 +1790,7 @@ static void pcc_action_Array_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in,
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkArray );
+    CN0( dkArray );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1796,7 +1805,7 @@ static void pcc_action_Array_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in,
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, e );
+    NA( __, e );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1811,7 +1820,7 @@ static void pcc_action_Object_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkObject );
+    CN0( dkObject );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1826,7 +1835,7 @@ static void pcc_action_Object_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    nodeAppend( auxil->parser, __, p );
+    NA( __, p );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1843,7 +1852,7 @@ static void pcc_action_Pair_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, 
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode2( auxil->parser, dkPair, k, v );
+    CN2( dkPair, k, v );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1860,7 +1869,7 @@ static void pcc_action_JsonBlock_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkJsonBlock, s );
+    CN1( dkJsonBlock, s );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1878,7 +1887,7 @@ static void pcc_action_StrBlock_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkString    , _1s, _1e, _1);
+    NS( dkString    );
 #undef _1e
 #undef _1s
 #undef _1
@@ -1901,7 +1910,7 @@ static void pcc_action_StrLiteral_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _2 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[1])
 #define _2s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[1]->range.start))
 #define _2e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[1]->range.end))
-    __ = nodeString( auxil->parser, dkString    , _1s, _1e, _1);
+    NS( dkString    );
 #undef _2e
 #undef _2s
 #undef _2
@@ -1924,7 +1933,7 @@ static void pcc_action_Command_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkCommand   , _1s, _1e, _1);
+    NS( dkCommand   );
 #undef _1e
 #undef _1s
 #undef _1
@@ -1944,7 +1953,7 @@ static void pcc_action_Identifier_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkIdentifier, _1s, _1e, _1);
+    NS( dkIdentifier);
 #undef _1e
 #undef _1s
 #undef _1
@@ -1964,7 +1973,7 @@ static void pcc_action_ArgShort_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkArgShort  , _1s, _1e, _1);
+    NS( dkArgShort  );
 #undef _1e
 #undef _1s
 #undef _1
@@ -1984,7 +1993,7 @@ static void pcc_action_ArgLong_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkArgLong   , _1s, _1e, _1);
+    NS( dkArgLong   );
 #undef _1e
 #undef _1s
 #undef _1
@@ -2004,7 +2013,7 @@ static void pcc_action_String_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkString    , _1s, _1e, _1);
+    NS( dkString    );
 #undef _1e
 #undef _1s
 #undef _1
@@ -2024,7 +2033,7 @@ static void pcc_action_Integer_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkInteger   , _1s, _1e, _1);
+    NS( dkInteger   );
 #undef _1e
 #undef _1s
 #undef _1
@@ -2044,7 +2053,7 @@ static void pcc_action_Path_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, 
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkPath      , _1s, _1e, _1);
+    NS( dkPath      );
 #undef _1e
 #undef _1s
 #undef _1
@@ -2064,7 +2073,7 @@ static void pcc_action_Variable_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkVariable  , _1s, _1e, _1);
+    NS( dkVariable  );
 #undef _1e
 #undef _1s
 #undef _1
@@ -2084,7 +2093,7 @@ static void pcc_action_Boolean_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    __ = nodeString( auxil->parser, dkBoolean   , _1s, _1e, _1);
+    NS( dkBoolean   );
 #undef _1e
 #undef _1s
 #undef _1
@@ -2117,7 +2126,7 @@ static void pcc_action_StreamIn_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkStreamIn );
+    CN0( dkStreamIn );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2131,7 +2140,7 @@ static void pcc_action_StreamOut_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkStreamOut );
+    CN0( dkStreamOut );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2145,7 +2154,7 @@ static void pcc_action_StreamErr_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkStreamErr );
+    CN0( dkStreamErr );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2159,7 +2168,7 @@ static void pcc_action_AssignOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkAssignOp );
+    CN0( dkAssignOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2173,7 +2182,7 @@ static void pcc_action_AppendOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkAppendOp );
+    CN0( dkAppendOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2187,7 +2196,7 @@ static void pcc_action_RemoveOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkRemoveOp );
+    CN0( dkRemoveOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2217,7 +2226,7 @@ static void pcc_action_RedirAppendOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkRedirAppendOp );
+    CN0( dkRedirAppendOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2231,7 +2240,7 @@ static void pcc_action_RedirReadOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__p
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkRedirReadOp );
+    CN0( dkRedirReadOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2245,7 +2254,7 @@ static void pcc_action_RedirWriteOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkRedirWriteOp );
+    CN0( dkRedirWriteOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2259,7 +2268,7 @@ static void pcc_action_RedirDuplexOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkRedirDuplexOp );
+    CN0( dkRedirDuplexOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2273,7 +2282,7 @@ static void pcc_action_DefaultOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode0( auxil->parser, dkDefaultOp );
+    CN0( dkDefaultOp );
 #undef _0e
 #undef _0s
 #undef _0
@@ -3279,27 +3288,6 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Subshell(deli_context_t *ctx) {
             goto L0000;
         }
     }
-    {
-        const size_t p0 = ctx->cur;
-        const size_t n0 = chunk->thunks.len;
-        int i;
-        for (i = 0;; i++) {
-            const size_t p = ctx->cur;
-            const size_t n = chunk->thunks.len;
-            if (!pcc_apply_rule(ctx, pcc_evaluate_rule_Blank, &chunk->thunks, NULL)) goto L0002;
-            if (ctx->cur == p) break;
-            continue;
-        L0002:;
-            ctx->cur = p;
-            pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
-            break;
-        }
-        if (i < 1) {
-            ctx->cur = p0;
-            pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n0);
-            goto L0000;
-        }
-    }
     if (
         pcc_refill_buffer(ctx, 1) < 1 ||
         ctx->buffer.buf[ctx->cur] != '{'
@@ -3309,12 +3297,12 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Subshell(deli_context_t *ctx) {
     {
         const size_t p = ctx->cur;
         const size_t n = chunk->thunks.len;
-        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_Code, &chunk->thunks, &(chunk->values.buf[0]))) goto L0003;
-        goto L0004;
-    L0003:;
+        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_Code, &chunk->thunks, &(chunk->values.buf[0]))) goto L0002;
+        goto L0003;
+    L0002:;
         ctx->cur = p;
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
-    L0004:;
+    L0003:;
     }
     if (!pcc_apply_rule(ctx, pcc_evaluate_rule__, &chunk->thunks, NULL)) goto L0000;
     if (
