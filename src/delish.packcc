@@ -36,21 +36,15 @@ VLine         <- ( "\n"                                              { $$ = -1; 
                  / Comment                                           { $$ = -1; }
                  / a:Block                                           { $$ = a; }
                  / a:Statement Comment* "\n"                         { $$ = a; }
-                 )
+                 )                                                   { if( $$ >= 0 ) setLine( auxil->parser, $$, $0s ); }
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <- ( !'$'
               (  a:Conditional / a:WhileLoop / a:ForLoop / a:Function
               )  / a:Subshell )                                      { $$ = createNode1( auxil->parser, dkBlock    , a ); }
 Statement     <-
-              (  a:VariableStmt
-              /  a:LocalStmt   
-              /  a:ArgStmt     
-              /  a:EnvStmt     
-              /  a:IncludeStmt 
-              /  a:StreamStmt  
-              /  a:RunStmt     
-              /  a:FunctionStmt
-              )                                                      { $$ = createNode1( auxil->parser, dkStatement, a); }
+              (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
+              /  a:EnvStmt      /  a:IncludeStmt  /  a:StreamStmt
+              /  a:RunStmt      /  a:FunctionStmt )                  { $$ = createNode1( auxil->parser, dkStatement, a); setLine( auxil->parser, a, $0s ); }
 Conditional   <- "if"       Blank+ e:Expr
                  Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode1( auxil->parser, dkConditional, e, c ); }
 WhileLoop     <- "while"    Blank+ e:Expr
@@ -71,11 +65,11 @@ LocalStmt     <- "local" Blank+ v:Variable                           { $$ = crea
               (  Blank* "=" Blank* e:Expr                            { nodeAppend( auxil->parser, $$, e ); }
               )?
 ArgStmt       <- "arg"
-                 ( a:ArgNames Blank* DefaultOp Blank* d:ArgDefault   { $$ = createNode2( auxil->parser, dkArgStmt, a, d); }
+                 ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { $$ = createNode3( auxil->parser, dkArgStmt, a, o, d); }
                  / a:ArgNames                                        { $$ = createNode1( auxil->parser, dkArgStmt, a); }
                  )
 EnvStmt       <- "env" Blank+ v:Variable                             { $$ = createNode1( auxil->parser, dkEnvStmt, v ); }
-                 (Blank* DefaultOp Blank* e:EnvDefault               { nodeAppend( auxil->parser, $$, e ); }
+                 (Blank* o:DefaultOp Blank* e:EnvDefault             { nodeAppend( auxil->parser, $$, o ); nodeAppend( auxil->parser, $$, e ); }
                  )?
 IncludeStmt   <- "include" Blank+ s:StrLiteral                       { $$ = createNode1( auxil->parser, dkIncludeStmt, s ); }
 StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { $$ = createNode3( auxil->parser, dkStreamStmt,  v, s, l ); }
@@ -96,21 +90,14 @@ EnvDefault    <- e:Expr                                              { $$ = crea
 ExprList      <- e:Expr                                              { $$ = createNode1( auxil->parser, dkExprList, e ); }
                ( Blank* ',' Blank* e:Expr Blank*                     { nodeAppend( auxil->parser, $$, e ); }
                )*
-Invocation    <- Command ( Blank+ !'|' (Expr / String) )*
+Invocation    <- c:Command                                           { $$ = createNode1( auxil->parser, dkInvocation, c ); }
+              (  Blank+ !'|' (e:Expr / e:String)                     { nodeAppend( auxil->parser, $$, e ); }
+              )*
 ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { $$ = createNode2( auxil->parser, dkArgExpr, a, e ); }
 Expr          <-
-               ( s:VarDeref  
-               / s:Arg       
-               / s:Array     
-               / s:Object    
-               / s:StrBlock  
-               / s:StrLiteral
-               / s:Integer   
-               / s:Boolean   
-               / s:Path      
-               / s:JsonBlock 
-               / s:Stream    
-               )                                                     { $$ = createNode1( auxil->parser, dkExpr, s); }
+               ( s:VarDeref / s:Arg        / s:Array   / s:Object
+               / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
+               / s:Path     / s:JsonBlock  / s:Stream             )  { $$ = createNode1( auxil->parser, dkExpr, s); }
 VarDeref      <- &'$' n:Variable                                     { $$ = createNode1( auxil->parser, dkVarDeref, n ); }
               (  [.]
               (  s:StrLiteral / s:Integer / s:Variable / s:Identifier )   { nodeAppend( auxil->parser, $$, s ); }
@@ -132,7 +119,8 @@ Object        <- '['                                                 { $$ = crea
               )+ ']'
 Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { $$ = createNode2( auxil->parser, dkPair, k, v ); }
 JsonBlock     <- "json" Blank+ s:StrBlock                            { $$ = createNode1( auxil->parser, dkJsonBlock, s ); }
-Keyword       <- "json" / "sub" / "if" / "while" / "arg" / "in" / "out" / "err" / "include" / "true" / "false" / "env"
+Keyword       <- "json" / "sub" / "if" / "while" / "arg" / "in"
+              /  "out" / "err" / "include" / "true" / "false" / "env"
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { $$ = nodeString( auxil->parser, dkString    , $1s, $1e, $1); }
 StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { $$ = nodeString( auxil->parser, dkString    , $1s, $1e, $1); }
 Command       <- < W ( W / '-' )* >                                  { $$ = nodeString( auxil->parser, dkCommand   , $1s, $1e, $1); }

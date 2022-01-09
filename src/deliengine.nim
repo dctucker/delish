@@ -221,10 +221,16 @@ proc getVariable(engine: Engine, name: string): DeliNode =
     return locals[name]
   elif engine.variables.contains(name):
     return engine.variables[name]
+  elif engine.envars.contains(name):
+    return DeliNode(kind: dkString, strVal: engine.envars[name])
+  else:
+    raise newException( Exception, "Unknown variable: $" & name )
 
 proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
+  echo "evalVarDeref ", vard.repr
   let variable = vard.sons[0]
   result = engine.getVariable(variable.varName)
+  echo result
   for son in vard.sons[1 .. ^1]:
     case result.kind
     of dkObject:
@@ -239,7 +245,9 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
 proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
   result = expr
   while result.kind == dkExpr:
-    result = engine.evaluate(result.sons[0])
+    let s = result.sons[0]
+    echo s.kind
+    result = engine.evaluate(s)
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
@@ -263,7 +271,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   of dkLazy:
     return val.sons[0]
   of dkVarDeref:
-    result = engine.evalVarDeref(val)
+    return engine.evalVarDeref(val)
   of dkArg:
     debugn engine, "  dereference ", val.sons[0]
     let arg = engine.getArgument(val.sons[0])
@@ -398,16 +406,20 @@ proc evaluateStream(engine: Engine, stream: DeliNode): File =
 proc doStream(engine: Engine, nodes: seq[DeliNode]) =
   var expr_pos = 1
   var fd: File
-  if nodes[0].kind == dkVariable:
-    let num = engine.variables[nodes[0].varName].intVal
+  let first_node = nodes[0]
+  if first_node.kind == dkVariable:
+    let num = engine.variables[first_node.varName].intVal
     if engine.fds.contains(num):
       fd = engine.fds[num]
     expr_pos = 2
-  elif nodes[0].kind == dkStream:
-    fd = engine.evaluateStream(nodes[0])
+  elif first_node.kind == dkStream:
+    fd = engine.evaluateStream(first_node)
 
   for expr in nodes[expr_pos].sons:
-    fd.write(engine.evaluate(expr).toString(), "\n")
+    let eval = engine.evaluate(expr)
+    let str = eval.toString()
+    echo "> ", fd.repr, ": ", str
+    #fd.write(str, "\n")
 
 proc getRedirOpenMode(node: DeliNode): FileMode =
   case node.kind

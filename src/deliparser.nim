@@ -120,6 +120,7 @@ proc parse*(parser: Parser): int =
   var cstr = parser.source.cstring
   parser.nodes = @[deliNone()]
   let y = packcc_main(cstr, parser.source.len.cint, parser)
+  parser.entry_point = parser.nodes[^1]
 
   #echo "=== Grammar ==="
   #echo grammar.repr
@@ -316,6 +317,12 @@ proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   echo p, " nodeAppend ", $son.kind, " ", s
   parser.getNode(p).sons.add(son)
   result = p
+
+proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
+  echo n, " setLine ", l
+  var node = parser.getNode(n)
+  node.line = parser.line_number(l.int)
+  parser.nodes[n] = node
 
 proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule
