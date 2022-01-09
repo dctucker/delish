@@ -38,7 +38,8 @@ Arg           <- &'-' (ArgLong / ArgShort)
 ArgShort      <- '-' { \w+ }
 ArgLong       <- "--" { ( \w ('-' \w )*)+ }
 Array         <- '[' ( \s* Expr Blank* ','? \s* )* ']'
-Object        <- '[' ( \s* Expr Blank* ':' Blank* Expr Blank* ','? \s* )+ ']'
+Object        <- '[' ( \s* Pair Blank* ','? \s* )+ ']'
+Pair          <- Expr Blank* ':' Blank* Expr
 Identifier    <- { ( \w / '-' )+ }
 JsonBlock     <- "json" Blank+ StrBlock
 StrBlock      <- "\"\"\"" @@ "\"\"\""

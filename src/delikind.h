@@ -36,6 +36,7 @@ enum DeliKind {
 	dkArgLong,
 	dkArray,
 	dkObject,
+	dkPair,
 	dkIdentifier,
 	dkJsonBlock,
 	dkStrBlock,

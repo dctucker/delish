@@ -469,6 +469,7 @@ proc runStmt(engine: Engine, s: DeliNode) =
       engine.doArg(s.sons[0].sons, s.sons[2].sons[0])
     else:
       engine.doArg(s.sons[0].sons, deliNone())
+    engine.printVariables()
   of dkEnvStmt:
     if nsons > 1:
       engine.doEnv(s.sons[0], s.sons[2])
