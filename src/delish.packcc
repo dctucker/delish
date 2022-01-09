@@ -40,19 +40,19 @@ VLine         <- ( "\n"                                              { $$ = -1; 
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <- ( !'$'
               (  a:Conditional / a:WhileLoop / a:ForLoop / a:Function
-              )  / a:Subshell )                                      { $$ = createNode1( auxil->parser, dkBlock    , a ); }
+              )  / a:Subshell )                                      { $$ = createNode1( auxil->parser, dkBlock    , a ); setLine( auxil->parser, a, $0s ); }
 Statement     <-
               (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
               /  a:EnvStmt      /  a:IncludeStmt  /  a:StreamStmt
               /  a:RunStmt      /  a:FunctionStmt )                  { $$ = createNode1( auxil->parser, dkStatement, a); setLine( auxil->parser, a, $0s ); }
 Conditional   <- "if"       Blank+ e:Expr
-                 Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode1( auxil->parser, dkConditional, e, c ); }
+                 Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode2( auxil->parser, dkConditional, e, c ); }
 WhileLoop     <- "while"    Blank+ e:Expr
-                 Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode1( auxil->parser, dkWhileLoop  , e, c ); }
+                 Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode2( auxil->parser, dkWhileLoop  , e, c ); }
 ForLoop       <- "for"      Blank+ v:Variable Blank+ "in" Blank+ e:Expr
                  Blank+ "{" _ c:Code? _ "}" _                        { $$ = createNode3( auxil->parser, dkForLoop    , v, e, c ); }
 Function      <- !Keyword i:Identifier Blank*        "="
-                 Blank* "{" _ c:Code? _ "}" _                        { $$ = createNode1( auxil->parser, dkFunction   , i, c ); }
+                 Blank* "{" _ c:Code? _ "}" _                        { $$ = createNode2( auxil->parser, dkFunction   , i, c ); }
 Subshell      <- "sub"      Blank+          Blank+
                  "{" _ c:Code? _ "}" _                               { $$ = createNode1( auxil->parser, dkSubshell   , c ); }
 VariableStmt  <- &'$' v:Variable Blank*
@@ -72,7 +72,7 @@ EnvStmt       <- "env" Blank+ v:Variable                             { $$ = crea
                  (Blank* o:DefaultOp Blank* e:EnvDefault             { nodeAppend( auxil->parser, $$, o ); nodeAppend( auxil->parser, $$, e ); }
                  )?
 IncludeStmt   <- "include" Blank+ s:StrLiteral                       { $$ = createNode1( auxil->parser, dkIncludeStmt, s ); }
-StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { $$ = createNode3( auxil->parser, dkStreamStmt,  v, s, l ); }
+StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { $$ = createNode2( auxil->parser, dkStreamStmt,  createNode2( auxil->parser, dkVarDeref, v, s ), l ); }
               /                   s:Stream Blank+ l:ExprList         { $$ = createNode2( auxil->parser, dkStreamStmt,  s, l ); }
               )
 RunStmt       <- (

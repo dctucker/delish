@@ -1174,7 +1174,7 @@ static void pcc_action_Block_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in,
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkBlock    , a );
+    __ = createNode1( auxil->parser, dkBlock    , a ); setLine( auxil->parser, a, _0s );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1207,7 +1207,7 @@ static void pcc_action_Conditional_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__p
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkConditional, e, c );
+    __ = createNode2( auxil->parser, dkConditional, e, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1225,7 +1225,7 @@ static void pcc_action_WhileLoop_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkWhileLoop  , e, c );
+    __ = createNode2( auxil->parser, dkWhileLoop  , e, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1263,7 +1263,7 @@ static void pcc_action_Function_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode1( auxil->parser, dkFunction   , i, c );
+    __ = createNode2( auxil->parser, dkFunction   , i, c );
 #undef _0e
 #undef _0s
 #undef _0
@@ -1458,7 +1458,7 @@ static void pcc_action_StreamStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = createNode3( auxil->parser, dkStreamStmt,  v, s, l );
+    __ = createNode2( auxil->parser, dkStreamStmt,  createNode2( auxil->parser, dkVarDeref, v, s ), l );
 #undef _0e
 #undef _0s
 #undef _0
