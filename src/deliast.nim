@@ -21,7 +21,8 @@ type
     of dkBoolean:      boolVal*:    bool
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
-    of dkObject:       table*:      Table[string, DeliNode]
+    of dkObject,
+       dkRan:          table*:      Table[string, DeliNode]
     of dkArgShort,
        dkArgLong,
        dkArg:          argName*:    string

@@ -9,13 +9,14 @@ import deliargs
 import deliparser
 
 type
+  DeliTable = Table[string, DeliNode]
   Engine* = ref object
     debug*:     bool
     arguments:  seq[Argument]
-    variables:  Table[string, DeliNode]
-    locals:     Stack[ Table[string, DeliNode] ]
+    variables:  DeliTable
+    locals:     Stack[ DeliTable ]
     envars:     Table[string, string]
-    functions:  Table[string, DeliNode]
+    functions:  DeliTable
     parser:     Parser
     script:     DeliNode
     current:    DeliNode
@@ -195,16 +196,21 @@ proc debugNext(engine: Engine) =
     head = head.next
   stdout.write("\27[0m\n")
 
+proc DK(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
+  var sons: seq[DeliNode] = @[]
+  for node in nodes:
+    sons.add(node)
+  return DeliNode(kind: kind, sons: sons)
+
+proc DeliObject(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
+  return DeliNode(kind: dkObject, table: table.toTable)
+
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   todo "run and consume output"
-  return DeliNode(kind: dkRan, sons: @[
-    DeliNode(kind: dkObject, table: {
-      "out": DeliNode(kind: dkStream, intVal: 1, sons: @[
-      ]),
-      "err": DeliNode(kind: dkStream, intVal: 2, sons: @[
-      ])
-    }.toTable())
-  ])
+  return DeliNode(kind: dkRan, table: {
+    "out": DeliNode(kind: dkStream, intVal: 1),
+    "err": DeliNode(kind: dkStream, intVal: 2),
+  }.toTable)
 
 proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
   case arg.kind
@@ -311,7 +317,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   of dkArgExpr:
     let arg = val.sons[0]
     let aval = engine.evalExpression(val.sons[1])
-    result = DeliNode(kind: dkArray, sons: @[arg, aval])
+    result = DK(dkArray, arg, aval)
   of dkEnvDefault:
     return engine.evaluate(val.sons[0])
   of dkOpenExpr:
@@ -453,11 +459,12 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
     fd.write(str, "\n")
 
 proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
-  result = DeliNode(kind: dkVariableStmt, line: line, sons: @[
+  result = DK(dkVariableStmt,
     DeliNode(kind: dkVariable, varName: variable),
     DeliNode(kind: dkAssignOp),
-    DeliNode(kind: dkLazy, sons: @[value])
-  ])
+    DK(dkLazy, value)
+  )
+  result.line = line
 
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0].varName
