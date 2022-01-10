@@ -1467,7 +1467,7 @@ static void pcc_action_StreamStmt_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pc
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    CN2( StreamStmt,  CN2( VarDeref, v, s ), l );
+    CN3( StreamStmt,  v, s, l );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2211,7 +2211,7 @@ static void pcc_action_RedirOp_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    __ = o;
+    CN1( RedirOp, o );
 #undef _0e
 #undef _0s
 #undef _0

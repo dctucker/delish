@@ -84,7 +84,7 @@ EnvStmt       <- "env" Blank+ v:Variable                             { CN1( EnvS
                  (Blank* o:DefaultOp Blank* e:EnvDefault             { NA( $$, o ); NA( $$, e ); }
                  )?
 IncludeStmt   <- "include" Blank+ s:StrLiteral                       { CN1( IncludeStmt, s ); }
-StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { CN2( StreamStmt,  CN2( VarDeref, v, s ), l ); }
+StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { CN3( StreamStmt,  v, s, l ); }
               /                   s:Stream Blank+ l:ExprList         { CN2( StreamStmt,  s, l ); }
               )
 RunStmt       <- (
@@ -159,7 +159,7 @@ AssignOp      <- "="                                                 { CN0( Assi
 AppendOp      <- "+="                                                { CN0( AppendOp ); }
 RemoveOp      <- "-="                                                { CN0( RemoveOp ); }
 RedirOp       <- ( o:RedirAppendOp / o:RedirReadOp
-               / o:RedirWriteOp / o:RedirDuplexOp )                  { $$ = o; }
+               / o:RedirWriteOp / o:RedirDuplexOp )                  { CN1( RedirOp, o ); }
 RedirAppendOp <- ">>"                                                { CN0( RedirAppendOp ); }
 RedirReadOp   <- "<"                                                 { CN0( RedirReadOp ); }
 RedirWriteOp  <- ">"                                                 { CN0( RedirWriteOp ); }

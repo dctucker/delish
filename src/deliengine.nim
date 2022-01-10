@@ -249,6 +249,37 @@ proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
     #echo s.kind
     result = engine.evaluate(s)
 
+proc getRedirOpenMode(node: DeliNode): FileMode =
+  case node.kind
+  of dkRedirReadOp:
+    return fmRead
+  of dkRedirWriteOp:
+    return fmWrite
+  of dkRedirAppendOp:
+    return fmAppend
+  of dkRedirDuplexOp:
+    return fmReadWrite
+  else:
+    todo "redir open mode ", node.kind
+
+proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
+  var variable: string
+  var mode = fmReadWrite
+  var path: string
+  for node in nodes[0 .. ^1]:
+    case node.kind
+    of dkVariable:
+      variable = node.varName
+    of dkPath:
+      path = node.strVal
+    of dkRedirOp:
+      mode = getRedirOpenMode(node.sons[0])
+    else:
+      todo "open ", node.kind
+  todo "open file and assign file descriptor"
+  result = DeliNode(kind: dkStream, intVal: 1)
+  engine.variables[variable] = result
+
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
   of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkNone:
@@ -283,6 +314,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     result = DeliNode(kind: dkArray, sons: @[arg, aval])
   of dkEnvDefault:
     return engine.evaluate(val.sons[0])
+  of dkOpenExpr:
+    return engine.doOpen(val.sons)
   else:
     todo "evaluate ", val.kind
     return deliNone()
@@ -404,56 +437,20 @@ proc evaluateStream(engine: Engine, stream: DeliNode): File =
     return engine.fds[num]
 
 proc doStream(engine: Engine, nodes: seq[DeliNode]) =
-  var expr_pos = 1
   var fd: File
   let first_node = nodes[0]
   if first_node.kind == dkVariable:
     let num = engine.variables[first_node.varName].intVal
     if engine.fds.contains(num):
       fd = engine.fds[num]
-    expr_pos = 2
   elif first_node.kind == dkStream:
     fd = engine.evaluateStream(first_node)
-  elif first_node.kind == dkVarDeref:
-    todo "Stream VarDeref"
-    fd = engine.fds[2]
 
-  #for k in engine.fds.keys:
-  #  echo k
-
-  for expr in nodes[expr_pos].sons:
+  let last_node = nodes[^1]
+  for expr in last_node.sons:
     let eval = engine.evaluate(expr)
     let str = eval.toString()
-    #echo "> ", fd.repr, ": ", str
     fd.write(str, "\n")
-
-proc getRedirOpenMode(node: DeliNode): FileMode =
-  case node.kind
-  of dkRedirReadOp:
-    return fmRead
-  of dkRedirWriteOp:
-    return fmWrite
-  of dkRedirAppendOp:
-    return fmAppend
-  of dkRedirDuplexOp:
-    return fmReadWrite
-  else:
-    todo "redir open mode ", node.kind
-
-proc doOpen(engine: Engine, nodes: seq[DeliNode]) =
-  let variable = nodes[0]
-  var mode = fmReadWrite
-  var path: string
-  for node in nodes[1 .. ^1]:
-    case node.kind
-    of dkPath:
-      path = node.strVal
-    of dkRedirOp:
-      mode = getRedirOpenMode(node.sons[0])
-    else:
-      todo "open ", node.kind
-  engine.variables[variable.varName] = DeliNode(kind: dkStream, intVal: 1)
-  todo "open file and assign file descriptor"
 
 proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
   result = DeliNode(kind: dkVariableStmt, line: line, sons: @[
@@ -508,8 +505,6 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.doFunctionCall(s.sons[0], s.sons[1 .. ^1])
   of dkStreamStmt:
     engine.doStream(s.sons)
-  #of dkOpenStmt:
-  #  engine.doOpen(s.sons)
   else:
     todo "run ", s.kind
 
@@ -519,6 +514,9 @@ proc runArgStmts(engine: Engine, node: DeliNode) =
     engine.runArgStmts(node.sons[0])
   of dkArgStmt:
     engine.runStmt(node)
+  of dkCode:
+    for son in node.sons:
+      engine.runArgStmts(son)
   else:
     discard
 
@@ -527,11 +525,11 @@ proc initArguments(engine: Engine) =
   for stmt in engine.script.sons:
     engine.runArgStmts(stmt)
 
-  #engine.printArguments()
-  #debug "checking user arguments"
+  engine.printArguments()
+  debug engine, "checking user arguments"
 
   for arg in user_args:
-    #debug arg
+    debug engine, arg
     if arg.isFlag():
       let f = findArgument(engine.arguments, arg)
       if f.isNone():
