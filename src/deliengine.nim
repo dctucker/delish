@@ -9,7 +9,6 @@ import deliargs
 import deliparser
 
 type
-  DeliTable = Table[string, DeliNode]
   Engine* = ref object
     debug*:     bool
     arguments:  seq[Argument]
@@ -21,9 +20,10 @@ type
     script:     DeliNode
     current:    DeliNode
     fds:        Table[int, File]
-    statements: SinglyLinkedList[DeliNode]
-    readhead:   SinglyLinkedNode[DeliNode]
-    writehead:  SinglyLinkedNode[DeliNode]
+    statements: DeliList
+    readhead:   DeliListNode
+    writehead:  DeliListNode
+    returns:    Stack[ DeliListNode ]
 
 proc debugn(engine: Engine, msg: varargs[string, `$`]) =
   if not engine.debug:
@@ -36,6 +36,11 @@ proc debug(engine: Engine, msg: varargs[string, `$`]) =
     return
   debugn engine, msg
   stdout.write("\n\27[0m")
+
+proc setHeads(engine: Engine, list: DeliListNode) =
+  engine.readhead = list
+  engine.writehead = engine.readhead
+
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
 
@@ -468,6 +473,24 @@ proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
 
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0].varName
+  let top = engine.readhead
+  let after = engine.readhead.next
+  let repeat = DeliNode(kind: dkJump, node: top)
+  let next_value = deliNone()
+  let begin = DK(dkCode,
+    DK(dkVariableStmt,
+      DeliNode(kind: dkVariable, varName: variable),
+      DK(dkAssignOp),
+      DK(dkLazy, next_value)
+    ),
+    DK(dkConditional,
+      DK(dkExpr,
+        DK(dkComparison, DK(dkCompNe), DeliNode(kind: dkVariable, varName: variable), deliNone())
+      ),
+      DeliNode(kind: dkJump, node: top)
+    )
+  )
+  #let repeat = 
   let things = engine.evaluate(node.sons[1])
   #let things = node.sons[1]
   let code = node.sons[2]
@@ -484,6 +507,8 @@ proc runStmt(engine: Engine, s: DeliNode) =
     for stmt in s.sons:
       engine.insertStmt(stmt)
     engine.debugNext()
+  of dkJump:
+    engine.setHeads(s.node)
   of dkVariableStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
@@ -553,8 +578,7 @@ proc loadScript(engine: Engine) =
     for s2 in s.sons:
       engine.insertStmt(s2)
   debug engine, engine.statements
-  engine.readhead = engine.statements.head.next
-  engine.writehead = engine.readhead
+  engine.setHeads(engine.statements.head.next)
 
 iterator tick*(engine: Engine): int =
   engine.initArguments()
@@ -564,10 +588,9 @@ iterator tick*(engine: Engine): int =
     engine.current = engine.readhead.value
     yield engine.current.line
     engine.runStmt(engine.current)
-    if engine.readhead.next == nil:
+    if engine.readhead == nil or engine.readhead.next == nil:
       break
-    engine.readhead = engine.readhead.next
-    engine.writehead = engine.readhead
+    engine.setHeads(engine.readhead.next)
 
   #for line in runStatements(engine, engine.script.sons):
   #  yield line

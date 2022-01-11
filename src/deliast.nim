@@ -1,13 +1,20 @@
 import std/tables
+import std/lists
+import std/tables
 import strutils
 #import stacks
 import deligrammar
 
 ### AST representation
-grammarToEnum(@["None","Ran","Lazy","S","W","U"])
-grammarToCEnum(@["None","Ran","Lazy","S","W","_"])
+grammarToEnum(@["None","Ran","Jump","Lazy","S","W","U"])
+grammarToCEnum(@["None","Ran","Jump","Lazy","S","W","_"])
 
 type
+  DeliNode* = ref DeliNodeObj
+  DeliList* = SinglyLinkedList[DeliNode]
+  DeliListNode* = SinglyLinkedNode[DeliNode]
+  DeliTable* = Table[string, DeliNode]
+
   DeliNodeObj* = object
     case kind*: DeliKind
     of dkNone:         none:        bool
@@ -21,6 +28,7 @@ type
     of dkBoolean:      boolVal*:    bool
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
+    of dkJump:         node*:       DeliListNode
     of dkObject,
        dkRan:          table*:      Table[string, DeliNode]
     of dkArgShort,
@@ -33,7 +41,6 @@ type
       discard
     sons*: seq[DeliNode]
     line*: int
-  DeliNode* = ref DeliNodeObj
 
 proc isNone*(node: DeliNode):bool =
   if node.kind == dkNone:

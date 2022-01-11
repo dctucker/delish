@@ -109,7 +109,24 @@ ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { CN2( ArgE
 Expr          <-
                ( s:VarDeref / s:Arg        / s:Array   / s:Object
                / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
-               / s:Path     / s:JsonBlock  / s:Stream  )             { CN1( Expr, s); }
+               / s:Path     / s:JsonBlock  / s:Stream  / s:BoolExpr
+               )                                                     { CN1( Expr, s); }
+BoolExpr      <- c:Comparison                                        { CN1( BoolExpr, c ); }
+              (  o:BoolOp c:Comparison                               { CN3( BoolExpr, o, $$, c ); }
+              )*
+BoolOp        <- o:BoolOr / o:BoolAnd                                { CN1( BoolOp, o ); }
+BoolOr        <- "or"                                                { CN0( BoolOr ); }
+BoolAnd       <- "and"                                               { CN0( BoolAnd ); }
+Comparison    <- e1:Expr o:Comparator e2:Expr                        { CN3( Comparison, o, e1, e2 ); }
+Comparator    <- ( o:CompGe / o:CompGt
+               /   o:CompLe / o:CompLt
+               /   o:CompEq / o:CompNe )                             { $$ = o; }
+CompGe        <- ">="                                                { CN0( CompGe ); }
+CompGt        <- ">"                                                 { CN0( CompGt ); }
+CompLe        <- "<="                                                { CN0( CompLe ); }
+CompLt        <- "<"                                                 { CN0( CompLt ); }
+CompEq        <- "=="                                                { CN0( CompEq ); }
+CompNe        <- "!="                                                { CN0( CompNe ); }
 VarDeref      <- &'$' n:Variable                                     { CN1( VarDeref, n ); }
               (  [.]
                ( s:StrLiteral / s:Integer
