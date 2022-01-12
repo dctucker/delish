@@ -78,6 +78,7 @@ enum DeliKind {
 	dkRedirDuplexOp,
 	dkDefaultOp,
 	dkNone,
+	dkInner,
 	dkRan,
 	dkJump,
 	dkLazy,

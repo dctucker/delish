@@ -483,7 +483,7 @@ proc doForLoop(engine: Engine, node: DeliNode) =
     DK(dkExpr,
       DK( dkComparison, DK(dkCompEq), deliNone(), DeliNode(kind: dkVariable, varName: variable) )
     ),
-    DK(dkCode, break_stmt)
+    DK(dkCode, DK(dkInner, break_stmt))
   )
   var increment = DK(dkVariableStmt,
     DeliNode(kind: dkVariable, varName: node.counter),
@@ -496,25 +496,24 @@ proc doForLoop(engine: Engine, node: DeliNode) =
   test.line = -node.line
   increment.line = end_line
 
-  engine.insertStmt( DeliNode(kind: dkPush, line: -node.line) )
-  engine.insertStmt( setup )
+  let push    = DeliNode(kind: dkPush, line: -node.line)
   var continu = DeliNode(kind: dkJump, line: end_line)
   var assign_c = DK(dkLocalStmt, DeliNode(kind: dkVariable, varName: ".continue"), continu)
   var assign_b = DK(dkLocalStmt, DeliNode(kind: dkVariable, varName: ".break"   ), brake)
   assign_c.line = -node.line
   assign_b.line = -node.line
-  engine.insertStmt( assign_b )
-  engine.insertStmt( assign_c )
+  engine.insertStmt( DK(dkInner, push, setup, assign_b, assign_c) )
   continu.node = engine.write_head
-  engine.insertStmt( assign )
-  engine.insertStmt( test )
+  engine.insertStmt( DK(dkInner, assign, test) )
+
   for stmt in node.sons[2].sons:
     engine.insertStmt(stmt)
-  engine.insertStmt( increment )
-  engine.insertStmt( DeliNode(kind: dkContinueStmt, line: end_line-1) )
 
+  let continue_stmt = DeliNode(kind: dkContinueStmt, line: end_line-1)
+  let pop_stmt = DeliNode(kind: dkPop, line: end_line - 1)
+  engine.insertStmt( DK(dkInner, increment, continue_stmt) )
   engine.writehead = after
-  engine.insertStmt( DeliNode(kind: dkPop, line: end_line - 1) )
+  engine.insertStmt( DK(dkInner, pop_stmt) )
 
   #let code = node.sons[2]
   #for thing in things.sons:
@@ -570,6 +569,9 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.popLocals()
   of dkStreamStmt:
     engine.doStream(s.sons)
+  of dkInner:
+    for s in s.sons:
+      engine.runStmt(s)
   else:
     todo "run ", s.kind
 
@@ -620,7 +622,8 @@ iterator tick*(engine: Engine): int =
   debug engine, "\nRunning program..."
   while true:
     engine.current = engine.readhead.value
-    yield engine.current.line
+    if engine.current.kind != dkInner:
+      yield engine.current.line
     engine.runStmt(engine.current)
     if engine.readhead == nil or engine.readhead.next == nil:
       break
