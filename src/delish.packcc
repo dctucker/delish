@@ -115,9 +115,16 @@ Invocation    <- c:Command                                           { CN1( Invo
 ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { CN2( ArgExpr, a, e ); }
 Expr          <-
                ( s:VarDeref / s:Arg        / s:Array   / s:Object
+               / s:MathExpr
                / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
                / s:Path     / s:JsonBlock  / s:Stream  / s:BoolExpr
                )                                                     { CN1( Expr, s); }
+MathExpr      <- e1:Expr Blank+ o:MathOp Blank+ e2:Expr              { CN3( MathExpr, o, e1, e2 ); }
+MathOp        <- o:AddOp / o:SubOp / o:MulOp / o:DivOp               { CN1( MathOp, o ); }
+AddOp         <- "+"                                                 { CN0( AddOp ); }
+SubOp         <- "-"                                                 { CN0( SubOp ); }
+MulOp         <- "*"                                                 { CN0( MulOp ); }
+DivOp         <- "/"                                                 { CN0( DivOp ); }
 BoolExpr      <- c:Comparison                                        { CN1( BoolExpr, c ); }
               (  o:BoolOp c:Comparison                               { CN3( BoolExpr, o, $$, c ); }
               )*
@@ -135,7 +142,7 @@ CompLt        <- "<"                                                 { CN0( Comp
 CompEq        <- "=="                                                { CN0( CompEq ); }
 CompNe        <- "!="                                                { CN0( CompNe ); }
 VarDeref      <- &'$' n:Variable                                     { CN1( VarDeref, n ); }
-              (  [.]
+              (  "."
                ( s:StrLiteral / s:Integer
                / s:Variable   / s:Identifier  )                      { NA( $$, s ); }
               )*

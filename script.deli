@@ -57,6 +57,10 @@ for $flag in $flags {
   out $flag
 }
 
+$x = $flags.1
+$x += $flags.2
+out $x
+
 #
 ##$js = json """
 ##{

@@ -10,7 +10,7 @@ import deliparser
 
 type
   Engine* = ref object
-    debug*:     bool
+    debug*:     int
     arguments:  seq[Argument]
     variables:  DeliTable
     locals:     Stack[ DeliTable ]
@@ -26,14 +26,12 @@ type
     returns:    Stack[ DeliListNode ]
 
 proc debugn(engine: Engine, msg: varargs[string, `$`]) =
-  if not engine.debug:
-    return
+  if engine.debug < 3: return
   stdout.write("\27[30;1m")
   for m in msg:
     stdout.write(m)
 proc debug(engine: Engine, msg: varargs[string, `$`]) =
-  if not engine.debug:
-    return
+  if engine.debug < 3: return
   debugn engine, msg
   stdout.write("\n\27[0m")
 
@@ -45,7 +43,7 @@ proc setHeads(engine: Engine, list: DeliListNode) =
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
 
 proc insertStmt(engine: Engine, node: DeliNode) =
-  if node.kind in @[ dkStatement, dkBlock ]:
+  if node.kind in @[ dkStatement, dkBlock, dkCode ]:
     for s in node.sons:
       engine.insertStmt(s)
     return
@@ -55,6 +53,10 @@ proc insertStmt(engine: Engine, node: DeliNode) =
   engine.writehead.next = listnode
   listnode.next = sw
   engine.writehead = listnode
+
+proc insertStmt(engine: Engine, nodes: seq[DeliNode]) =
+  for node in nodes:
+    engine.insertStmt(node)
 
 proc sourceLine*(engine: Engine, line: int): string =
   return engine.parser.getLine(line)
@@ -69,13 +71,14 @@ proc lineInfo*(engine: Engine, line: int): string =
   let parsed = "\27[1;24m " & repr(engine.current)
   return linenum & source & parsed & "\27[0m"
 
-proc newEngine*(parser: Parser): Engine =
+proc newEngine*(parser: Parser, debug: int): Engine =
   result = Engine(
     arguments:  newSeq[Argument](),
     variables:  initTable[string, DeliNode](),
     parser:     parser,
     script:     parser.getScript(),
-    statements: @[deliNone()].toSinglyLinkedList
+    statements: @[deliNone()].toSinglyLinkedList,
+    debug:      debug
   )
   result.locals.push(initTable[string, DeliNode]())
   result.fds[0] = stdin
@@ -85,7 +88,7 @@ proc newEngine*(parser: Parser): Engine =
   result.writehead = result.statements.head
 
 proc printVariables(engine: Engine) =
-  if not engine.debug: return
+  if engine.debug < 2: return
   echo "\27[36m== Engine Variables (", engine.variables.len(), ") =="
   for k,v in engine.variables:
     stdout.write("  $", k, " = ")
@@ -93,7 +96,7 @@ proc printVariables(engine: Engine) =
     stdout.write("\n")
 
 proc printArguments(engine: Engine) =
-  if not engine.debug: return
+  if engine.debug < 2: return
   echo "\27[36m== Engine Arguments =="
   let longest = engine.arguments.map(proc(x:Argument):int = x.long_name.len()).max()
   for arg in engine.arguments:
@@ -113,7 +116,7 @@ proc printArguments(engine: Engine) =
   stdout.write("\27[0m")
 
 proc printEnvars(engine: Engine) =
-  if not engine.debug: return
+  if engine.debug < 2: return
   debug engine, "ENV = ", $(engine.envars)
   #echo "--- available envars ---"
   #for k,v in envPairs():
@@ -121,7 +124,7 @@ proc printEnvars(engine: Engine) =
   #stdout.write("\n")
 
 proc debugNext(engine: Engine) =
-  if not engine.debug: return
+  if engine.debug < 3: return
   stdout.write("\27[30;1m  next = ")
   var head = engine.readhead.next
   while head != nil:
@@ -460,49 +463,53 @@ proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
   )
   result.line = line
 
+proc setupPush(engine: Engine, line: int, table: DeliTable) =
+  var inner = DKInner(line, DK(dkPush))
+  for k,v in table.pairs():
+    inner.sons.add(DK(dkLocalStmt, DKVar(k), v))
+  engine.insertStmt(inner)
+
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0]
   let code = node.sons[2]
   let things = engine.evaluate(node.sons[1])
   let after = engine.readhead.next
+  let top_line = -node.line
   let end_line = -code.sons[^1].line
   let counter = DKVar(".counter")
 
-  var setup = DK(dkLocalStmt, counter, DKInt(0))
-  var assign = DK(dkVariableStmt, variable, DK(dkAssignOp),
-    DK(dkVarDeref, things, counter )
-  )
-  var brake = DeliNode(kind: dkJump, node: after, line: end_line + 1)
-  var break_stmt = DeliNode(kind: dkBreakStmt, line: -node.line)
-  var test = DK(dkConditional,
-    DK( dkComparison, DK(dkCompEq), deliNone(), variable ),
-    DK( dkCode, DKInner( break_stmt) )
-  )
-  var increment = DK(dkVariableStmt, counter, DK(dkAppendOp), DKInt(1))
+  var brake     = DeliNode(kind: dkJump, line: end_line + 1)
+  var continu   = DeliNode(kind: dkJump, line: end_line)
 
-  setup.line = -node.line
-  assign.line = -node.line
-  test.line = -node.line
-  increment.line = end_line
-
-  let push    = DeliNode(kind: dkPush, line: -node.line)
-  var continu = DeliNode(kind: dkJump, line: end_line)
-  var assign_c = DK(dkLocalStmt, DKVar(".continue"), continu)
-  var assign_b = DK(dkLocalStmt, DKVar(".break"   ), brake)
-  assign_c.line = -node.line
-  assign_b.line = -node.line
-  engine.insertStmt( DKInner( push, setup, assign_b, assign_c) )
+  engine.setupPush(top_line, {
+    ".counter" : DKInt(0),
+    ".break"   : brake,
+    ".continue": continu,
+  }.toTable)
   continu.node = engine.write_head
-  engine.insertStmt( DKInner( assign, test) )
 
-  for stmt in code.sons:
-    engine.insertStmt(stmt)
+  engine.insertStmt( DKInner(top_line,
+    DK( dkVariableStmt, variable, DK(dkAssignOp),
+      DK( dkVarDeref, things, counter )
+    ),
+    DK(dkConditional,
+      DK( dkComparison, DK(dkCompEq), deliNone(), variable ),
+      DK( dkCode, DKInner( top_line,
+        DeliNode(kind: dkBreakStmt, line: top_line)
+      ))
+    )
+  ))
 
-  let continue_stmt = DeliNode(kind: dkContinueStmt, line: end_line-1)
-  let pop_stmt = DeliNode(kind: dkPop, line: end_line - 1)
-  engine.insertStmt( DKInner( increment, continue_stmt) )
-  engine.writehead = after
-  engine.insertStmt( DKInner( pop_stmt) )
+  engine.insertStmt(code.sons)
+
+  engine.insertStmt( DKInner(end_line - 1,
+    DK(dkVariableStmt, counter, DK(dkAppendOp), DKInt(1)),
+    DK(dkContinueStmt)
+  ))
+  brake.node = engine.writehead
+  engine.insertStmt( DKInner(end_line - 1,
+    DK(dkPop)
+  ))
 
   # unroll loop
   #let code = node.sons[2]
@@ -516,6 +523,8 @@ proc doForLoop(engine: Engine, node: DeliNode) =
 proc runStmt(engine: Engine, s: DeliNode) =
   let nsons = s.sons.len()
   case s.kind
+  of dkNone:
+    discard
   of dkStatement, dkBlock:
     for stmt in s.sons:
       engine.insertStmt(stmt)
@@ -597,13 +606,13 @@ proc initArguments(engine: Engine) =
           arg.value = DeliNode(kind: dkBoolean, boolVal: true)
         f.value = arg.value
 
-  if engine.debug: engine.printArguments()
+  if engine.debug > 2: engine.printArguments()
 
 proc loadScript(engine: Engine) =
   for s in engine.script.sons:
     for s2 in s.sons:
       engine.insertStmt(s2)
-  engine.insertStmt(deliNone())
+  engine.insertStmt(DKInner(0, deliNone()))
   debug engine, engine.statements
   engine.setHeads(engine.statements.head.next)
 
@@ -613,8 +622,11 @@ iterator tick*(engine: Engine): int =
   debug engine, "\nRunning program..."
   while true:
     engine.current = engine.readhead.value
-    if engine.current.kind != dkInner:
+    if engine.debug > 1:
       yield engine.current.line
+    else:
+      if engine.current.kind != dkInner:
+        yield engine.current.line
     engine.runStmt(engine.current)
     if engine.readhead == nil or engine.readhead.next == nil:
       break

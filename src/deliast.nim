@@ -84,8 +84,12 @@ proc toString*(node: DeliNode):string =
       node.sons[0].toString()
     else:
       ""
-  of dkArgShort, dkArgLong:
-    $(node.argName)
+  of dkArgShort:
+    "-" & node.argName
+  of dkArgLong:
+    "--" & node.argName
+  of dkArgExpr:
+    node.sons[0].toString & " " & node.sons[1].toString
   of dkObject:     $(node.table)
   else: ""
 
@@ -140,6 +144,8 @@ proc repr*(node: DeliNode): string =
 
 proc getOneliner*(node: DeliNode): string =
   case node.kind
+  of dkNone:
+    return "nop"
   of dkVariableStmt:
     return "$" & node.sons[0].varName & " " & node.sons[1].toString() & " " & node.sons[2].toString()
   of dkLocalStmt:
@@ -206,11 +212,15 @@ proc DKVar*(varName: string): DeliNode =
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
 
-proc DKInner*(nodes: varargs[DeliNode]): DeliNode =
+proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
   var sons: seq[DeliNode] = @[]
   for node in nodes:
     sons.add(node)
-  return DeliNode(kind: dkInner, sons: sons, line: nodes[0].line)
+  return DeliNode(kind: dkInner, sons: sons, line: line)
+
+proc setLine*(node: var DeliNode, line: int): DeliNode =
+  result = node
+  result.line = line
 
 proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
   return DeliNode(kind: dkObject, table: table.toTable)
