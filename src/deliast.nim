@@ -30,13 +30,14 @@ type
     of dkInvocation:   cmd*:        string
     of dkJump:         node*:       DeliListNode
     of dkObject,
-       dkRan:          table*:      Table[string, DeliNode]
+       dkRan:          table*:      DeliTable
     of dkArgShort,
        dkArgLong,
        dkArg:          argName*:    string
     of dkArgStmt:      short_name*, long_name*, default_value*: DeliNode
     of dkIncludeStmt:  includeVal*: DeliNode
     of dkFunctionStmt: funcName*:   DeliNode
+    of dkForLoop:      counter*:    string
     else:
       discard
     sons*: seq[DeliNode]

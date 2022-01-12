@@ -49,6 +49,7 @@ proc insertStmt(engine: Engine, node: DeliNode) =
     for s in node.sons:
       engine.insertStmt(s)
     return
+
   var sw = engine.writehead.next
   let listnode = newSinglyLinkedNode[DeliNode](node)
   engine.writehead.next = listnode
@@ -95,7 +96,7 @@ proc repr(node: DeliNode): string =
 proc getOneliner(node: DeliNode): string =
   case node.kind
   of dkVariableStmt:
-    return "$" & node.sons[0].varName & " <- " & node.sons[2].toString()
+    return "$" & node.sons[0].varName & " <- " & node.sons[1].toString() & " " & node.sons[2].toString()
   else:
     return $(node.kind) & "?"
 
@@ -240,8 +241,15 @@ proc getVariable(engine: Engine, name: string): DeliNode =
 proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
   #echo "evalVarDeref ", vard.repr
   let variable = vard.sons[0]
-  result = engine.getVariable(variable.varName)
+  case variable.kind
+  of dkVariable:
+    result = engine.getVariable(variable.varName)
+  of dkArray:
+    result = variable
+  else:
+    todo "evalVarDeref ", variable.kind
   #echo result
+
   for son in vard.sons[1 .. ^1]:
     case result.kind
     of dkObject:
@@ -249,9 +257,12 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
       result = result.table[str]
     of dkArray:
       let idx = engine.evaluate(son).intVal
-      result = result.sons[idx]
+      if idx < result.sons.len:
+        result = result.sons[idx]
+      else:
+        result = deliNone()
     else:
-      todo "evalVarDeref using ", son.kind
+      todo "evalVarDeref Variable using ", son.kind
 
 proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
   result = expr
@@ -291,6 +302,48 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
   result = DeliNode(kind: dkStream, intVal: 1)
   engine.variables[variable] = result
 
+proc ordinal(o: DeliNode): int =
+  case o.kind
+  of dkInteger:
+    return o.intVal
+  of dkBoolean:
+    return if o.boolVal == true:
+      1
+    else:
+      0
+  of dkNone:
+    return 0
+  else:
+    todo "ordinal value of ", $(o.kind)
+    return -1
+
+proc `>=`(o1, o2: DeliNode): bool =
+  let kind = o1.kind
+  return o1.ordinal >= o2.ordinal
+
+proc `!=`(o1, o2: DeliNode): bool =
+  let kind = o1.kind
+  return o1.ordinal != o2.ordinal
+
+proc `==`(o1, o2: DeliNode): bool =
+  let kind = o1.kind
+  return o1.ordinal == o2.ordinal
+
+proc doComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
+  echo "compare ", v1, op, v2
+  let val = case op.kind
+  of dkCompEq: v1 == v2
+  of dkCompNe: v1 != v2
+  of dkCompGt: v1 >  v2
+  of dkCompGe: v1 >= v2
+  of dkCompLt: v1 <  v2
+  of dkCompLe: v1 <= v2
+  else:
+    todo "doComparison ", $op
+    false
+  return DeliNode(kind: dkBoolean, boolVal: val)
+
+
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
   of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkNone:
@@ -312,6 +365,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return engine.evalExpression(val)
   of dkLazy:
     return val.sons[0]
+  of dkVariable:
+    return engine.getVariable(val.varName)
   of dkVarDeref:
     return engine.evalVarDeref(val)
   of dkArg:
@@ -327,6 +382,10 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return engine.evaluate(val.sons[0])
   of dkOpenExpr:
     return engine.doOpen(val.sons)
+  of dkComparison:
+    let v1 = engine.evaluate(val.sons[1])
+    let v2 = engine.evaluate(val.sons[2])
+    return engine.doComparison(val.sons[0], v1, v2)
   else:
     todo "evaluate ", val.kind
     return deliNone()
@@ -361,9 +420,13 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       expr
   case op.kind
   of dkAssignOp:
-    engine.assignVariable(key.varName, engine.evaluate(val))
+    let value = engine.evaluate(val)
+    engine.assignVariable(key.varName, value)
+    echo value
   of dkAppendOp:
-    engine.assignVariable(key.varName, engine.variables[key.varName] + val)
+    let variable = engine.getVariable(key.varName)
+    let value = variable + val
+    engine.assignVariable(key.varName, value)
   else:
     todo "assign ", op.kind
 
@@ -473,31 +536,46 @@ proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
 
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0].varName
-  let top = engine.readhead
-  let after = engine.readhead.next
-  let repeat = DeliNode(kind: dkJump, node: top)
-  let next_value = deliNone()
-  let begin = DK(dkCode,
-    DK(dkVariableStmt,
-      DeliNode(kind: dkVariable, varName: variable),
-      DK(dkAssignOp),
-      DK(dkLazy, next_value)
-    ),
-    DK(dkConditional,
-      DK(dkExpr,
-        DK(dkComparison, DK(dkCompNe), DeliNode(kind: dkVariable, varName: variable), deliNone())
-      ),
-      DeliNode(kind: dkJump, node: top)
-    )
-  )
-  #let repeat = 
   let things = engine.evaluate(node.sons[1])
-  #let things = node.sons[1]
-  let code = node.sons[2]
-  for thing in things.sons:
-    engine.insertStmt(deliLocalAssign(variable, thing, -node.line))
-    for stmt in code.sons:
-      engine.insertStmt(stmt)
+  let after = engine.readhead.next
+
+  echo "init for loop"
+  node.counter = variable & ".counter"
+  engine.assignLocal(node.counter, DeliNode(kind: dkInteger, intVal: 0))
+
+  var setup = DK(dkVariableStmt,
+    DeliNode(kind: dkVariable, varName: variable),
+    DK(dkAssignOp),
+    DK(dkExpr, DK(dkVarDeref, things, DeliNode(kind: dkVariable, varName: node.counter) ) )
+  )
+  var test = DK(dkConditional,
+    DK(dkExpr,
+      DK( dkComparison, DK(dkCompEq), deliNone(), DeliNode(kind: dkVariable, varName: variable) )
+    ),
+    DK(dkCode, DeliNode(kind: dkJump, node: after) )
+  )
+  var increment = DK(dkVariableStmt,
+    DeliNode(kind: dkVariable, varName: node.counter),
+    DK(dkAppendOp),
+    DeliNode(kind: dkInteger, intVal: 1)
+  )
+  setup.line = -node.line
+  test.line = -node.line
+  increment.line = -node.line
+
+  let top = engine.writehead
+  engine.insertStmt( setup )
+  engine.insertStmt( test )
+  for stmt in node.sons[2].sons:
+    engine.insertStmt(stmt)
+  engine.insertStmt( increment )
+  engine.insertStmt( DeliNode(kind: dkJump, node: top, line: -node.line - node.sons[2].sons.len+1) )
+
+  #let code = node.sons[2]
+  #for thing in things.sons:
+  #  engine.insertStmt(deliLocalAssign(variable, thing, -node.line))
+  #  for stmt in code.sons:
+  #    engine.insertStmt(stmt)
   engine.debugNext()
 
 proc runStmt(engine: Engine, s: DeliNode) =
