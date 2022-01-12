@@ -96,7 +96,15 @@ proc repr(node: DeliNode): string =
 proc getOneliner(node: DeliNode): string =
   case node.kind
   of dkVariableStmt:
-    return "$" & node.sons[0].varName & " <- " & node.sons[1].toString() & " " & node.sons[2].toString()
+    return "$" & node.sons[0].varName & " " & node.sons[1].toString() & " " & node.sons[2].toString()
+  of dkJump:
+    let line = if node.node == nil:
+      "end"
+    else:
+      $(node.node.value.line)
+    return "jump :" & line
+  of dkConditional:
+    return "if " & $(node.sons[0].repr) & $(node.sons[1].repr)
   else:
     return $(node.kind) & "?"
 
@@ -302,35 +310,39 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
   result = DeliNode(kind: dkStream, intVal: 1)
   engine.variables[variable] = result
 
-proc ordinal(o: DeliNode): int =
-  case o.kind
-  of dkInteger:
-    return o.intVal
-  of dkBoolean:
-    return if o.boolVal == true:
-      1
-    else:
-      0
-  of dkNone:
-    return 0
-  else:
-    todo "ordinal value of ", $(o.kind)
-    return -1
-
 proc `>=`(o1, o2: DeliNode): bool =
-  let kind = o1.kind
-  return o1.ordinal >= o2.ordinal
+  case o1.kind
+  of dkInteger:
+    return o1.intVal >= o2.intVal
+  of dkPath, dkString, dkStrLiteral, dkStrBlock:
+    return o1.strVal >= o2.strVal
+  else:
+    todo ">= ", o1.kind, " ", o2.kind
 
 proc `!=`(o1, o2: DeliNode): bool =
-  let kind = o1.kind
-  return o1.ordinal != o2.ordinal
+  case o1.kind
+  of dkInteger:
+    return o1.intVal != o2.intVal
+  of dkPath, dkString, dkStrLiteral, dkStrBlock:
+    return o1.strVal != o2.strVal
+  of dkNone:
+    return o2.kind != dkNone
+  else:
+    todo "!= ", o1.kind, " ", o2.kind
 
 proc `==`(o1, o2: DeliNode): bool =
-  let kind = o1.kind
-  return o1.ordinal == o2.ordinal
+  case o1.kind
+  of dkInteger:
+    return o1.intVal == o2.intVal
+  of dkPath, dkString, dkStrLiteral, dkStrBlock:
+    return o1.strVal == o2.strVal
+  of dkNone:
+    return o2.kind == dkNone
+  else:
+    todo "== ", o1.kind, " ", o2.kind
 
 proc doComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
-  echo "compare ", v1, op, v2
+  #echo "compare ", v1, op, v2
   let val = case op.kind
   of dkCompEq: v1 == v2
   of dkCompNe: v1 != v2
@@ -422,7 +434,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
   of dkAssignOp:
     let value = engine.evaluate(val)
     engine.assignVariable(key.varName, value)
-    echo value
+    #echo value
   of dkAppendOp:
     let variable = engine.getVariable(key.varName)
     let value = variable + val
@@ -538,12 +550,17 @@ proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0].varName
   let things = engine.evaluate(node.sons[1])
   let after = engine.readhead.next
+  let end_line = -node.sons[2].sons[^1].line
 
-  echo "init for loop"
   node.counter = variable & ".counter"
   engine.assignLocal(node.counter, DeliNode(kind: dkInteger, intVal: 0))
 
   var setup = DK(dkVariableStmt,
+    DeliNode(kind: dkVariable, varName: variable),
+    DK(dkAssignOp),
+    DeliNode(kind: dkInteger, intVal: 0)
+  )
+  var assign = DK(dkVariableStmt,
     DeliNode(kind: dkVariable, varName: variable),
     DK(dkAssignOp),
     DK(dkExpr, DK(dkVarDeref, things, DeliNode(kind: dkVariable, varName: node.counter) ) )
@@ -552,24 +569,27 @@ proc doForLoop(engine: Engine, node: DeliNode) =
     DK(dkExpr,
       DK( dkComparison, DK(dkCompEq), deliNone(), DeliNode(kind: dkVariable, varName: variable) )
     ),
-    DK(dkCode, DeliNode(kind: dkJump, node: after) )
+    DK(dkCode, DeliNode(kind: dkJump, node: after, line: -node.line) )
   )
   var increment = DK(dkVariableStmt,
     DeliNode(kind: dkVariable, varName: node.counter),
     DK(dkAppendOp),
     DeliNode(kind: dkInteger, intVal: 1)
   )
-  setup.line = -node.line
-  test.line = -node.line
-  increment.line = -node.line
 
-  let top = engine.writehead
+  setup.line = -node.line
+  assign.line = -node.line
+  test.line = -node.line
+  increment.line = end_line
+
   engine.insertStmt( setup )
+  var jump = DeliNode(kind: dkJump, node: engine.write_head, line: end_line)
+  engine.insertStmt( assign )
   engine.insertStmt( test )
   for stmt in node.sons[2].sons:
     engine.insertStmt(stmt)
   engine.insertStmt( increment )
-  engine.insertStmt( DeliNode(kind: dkJump, node: top, line: -node.line - node.sons[2].sons.len+1) )
+  engine.insertStmt( jump )
 
   #let code = node.sons[2]
   #for thing in things.sons:

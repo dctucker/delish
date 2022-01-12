@@ -56,6 +56,7 @@ $flags += --decode "base64"
 for $flag in $flags {
   out $flag
 }
+
 #
 ##$js = json """
 ##{

@@ -60,6 +60,9 @@ proc toString*(node: DeliNode):string =
       result &= " "
     return result
   return case node.kind
+  of dkAssignOp: "="
+  of dkAppendOp: "+="
+  of dkRemoveOp: "-="
   of dkIdentifier: node.id
   of dkPath,
      dkStrLiteral,
@@ -69,6 +72,7 @@ proc toString*(node: DeliNode):string =
      dkInteger:    $(node.intVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
+  of dkVarDeref:   "VarDeref"
   of dkArgDefault:
     if node.sons.len > 0:
       $(node.sons[0])
