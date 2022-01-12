@@ -56,67 +56,6 @@ proc insertStmt(engine: Engine, node: DeliNode) =
   listnode.next = sw
   engine.writehead = listnode
 
-proc `+`(a, b: DeliNode): DeliNode =
-  if a.kind == b.kind:
-    case a.kind
-    of dkInteger:
-      return DeliNode(kind: dkInteger, intVal: a.intVal + b.intval)
-    of dkString:
-      return DeliNode(kind: dkString, strVal: a.strVal & b.strVal)
-    of dkArray:
-      result = DeliNode(kind: dkArray)
-      for n in a.sons:
-        result.sons.add(n)
-      for n in b.sons:
-        result.sons.add(n)
-        return result
-    else:
-      return deliNone()
-
-  case a.kind
-  of dkArray:
-    a.sons.add(b)
-    return a
-  else:
-    todo "add ", a.kind, " + ", b.kind
-    return a
-
-  return deliNone()
-
-proc repr(node: DeliNode): string =
-  result = ""
-  result &= $node
-  if node.sons.len() > 0:
-    result &= "( "
-    for n in node.sons:
-      result &= repr(n)
-    result &= ")"
-  result &= " "
-
-proc getOneliner(node: DeliNode): string =
-  case node.kind
-  of dkVariableStmt:
-    return "$" & node.sons[0].varName & " " & node.sons[1].toString() & " " & node.sons[2].toString()
-  of dkLocalStmt:
-    result = "local $" & node.sons[0].varName
-    if node.sons.len > 1:
-      result &= " = " & node.sons[1].toString()
-  of dkPush: return "push"
-  of dkPop:  return "pop"
-  of dkJump:
-    let line = if node.node == nil:
-      "end"
-    else:
-      $(node.node.value.line)
-    return "jump :" & line
-  of dkConditional:
-    return "if " & $(node.sons[0].repr) & $(node.sons[1].repr)
-  of dkReturnStmt, dkBreakStmt, dkContinueStmt:
-    let k = $(node.kind)
-    return k.substr(2, k.len - 5).toLowerAscii
-  else:
-    return $(node.kind) & "?"
-
 proc sourceLine*(engine: Engine, line: int): string =
   return engine.parser.getLine(line)
 
@@ -144,31 +83,6 @@ proc newEngine*(parser: Parser): Engine =
   result.fds[2] = stderr
   result.readhead  = result.statements.head
   result.writehead = result.statements.head
-
-proc printSons(node: DeliNode): string =
-  result = ""
-  if node.sons.len() > 0:
-    for son in node.sons:
-      result &= " " & $son
-      if son.sons.len() > 0:
-        result &= "("
-        result &= printSons(son)
-        result &= ") "
-
-proc printSons(node: DeliNode, level: int): string =
-  result = ""
-  if node.sons.len() > 0:
-    for son in node.sons:
-      result &= indent($son, 4*level)
-      result &= printSons(son, level+1)
-
-proc printValue(v: DeliNode): string =
-  result = "\27[30;1m"
-  if( v.sons.len() > 0 ):
-    result &= "("
-    result &= printSons(v)
-    result &= ")"
-  result &= "\27[0m"
 
 proc printVariables(engine: Engine) =
   if not engine.debug: return
@@ -218,15 +132,6 @@ proc debugNext(engine: Engine) =
     stdout.write("\27[4m", line, "\27[24m ")
     head = head.next
   stdout.write("\27[0m\n")
-
-proc DK(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
-  var sons: seq[DeliNode] = @[]
-  for node in nodes:
-    sons.add(node)
-  return DeliNode(kind: kind, sons: sons)
-
-proc DeliObject(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
-  return DeliNode(kind: dkObject, table: table.toTable)
 
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   todo "run and consume output"
