@@ -454,42 +454,31 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
 
 proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
   result = DK(dkVariableStmt,
-    DeliNode(kind: dkVariable, varName: variable),
+    DKVar(variable),
     DeliNode(kind: dkAssignOp),
     DK(dkLazy, value)
   )
   result.line = line
 
 proc doForLoop(engine: Engine, node: DeliNode) =
-  let variable = node.sons[0].varName
+  let variable = node.sons[0]
+  let code = node.sons[2]
   let things = engine.evaluate(node.sons[1])
   let after = engine.readhead.next
-  let end_line = -node.sons[2].sons[^1].line
+  let end_line = -code.sons[^1].line
+  let counter = DKVar(".counter")
 
-  node.counter = ".counter"
-
-  var setup = DK(dkLocalStmt,
-    DeliNode(kind: dkVariable, varName: node.counter),
-    DeliNode(kind: dkInteger, intVal: 0)
-  )
-  var assign = DK(dkVariableStmt,
-    DeliNode(kind: dkVariable, varName: variable),
-    DK(dkAssignOp),
-    DK(dkExpr, DK(dkVarDeref, things, DeliNode(kind: dkVariable, varName: node.counter) ) )
+  var setup = DK(dkLocalStmt, counter, DKInt(0))
+  var assign = DK(dkVariableStmt, variable, DK(dkAssignOp),
+    DK(dkVarDeref, things, counter )
   )
   var brake = DeliNode(kind: dkJump, node: after, line: end_line + 1)
   var break_stmt = DeliNode(kind: dkBreakStmt, line: -node.line)
   var test = DK(dkConditional,
-    DK(dkExpr,
-      DK( dkComparison, DK(dkCompEq), deliNone(), DeliNode(kind: dkVariable, varName: variable) )
-    ),
-    DK(dkCode, DK(dkInner, break_stmt))
+    DK( dkComparison, DK(dkCompEq), deliNone(), variable ),
+    DK( dkCode, DKInner( break_stmt) )
   )
-  var increment = DK(dkVariableStmt,
-    DeliNode(kind: dkVariable, varName: node.counter),
-    DK(dkAppendOp),
-    DeliNode(kind: dkInteger, intVal: 1)
-  )
+  var increment = DK(dkVariableStmt, counter, DK(dkAppendOp), DKInt(1))
 
   setup.line = -node.line
   assign.line = -node.line
@@ -498,28 +487,30 @@ proc doForLoop(engine: Engine, node: DeliNode) =
 
   let push    = DeliNode(kind: dkPush, line: -node.line)
   var continu = DeliNode(kind: dkJump, line: end_line)
-  var assign_c = DK(dkLocalStmt, DeliNode(kind: dkVariable, varName: ".continue"), continu)
-  var assign_b = DK(dkLocalStmt, DeliNode(kind: dkVariable, varName: ".break"   ), brake)
+  var assign_c = DK(dkLocalStmt, DKVar(".continue"), continu)
+  var assign_b = DK(dkLocalStmt, DKVar(".break"   ), brake)
   assign_c.line = -node.line
   assign_b.line = -node.line
-  engine.insertStmt( DK(dkInner, push, setup, assign_b, assign_c) )
+  engine.insertStmt( DKInner( push, setup, assign_b, assign_c) )
   continu.node = engine.write_head
-  engine.insertStmt( DK(dkInner, assign, test) )
+  engine.insertStmt( DKInner( assign, test) )
 
-  for stmt in node.sons[2].sons:
+  for stmt in code.sons:
     engine.insertStmt(stmt)
 
   let continue_stmt = DeliNode(kind: dkContinueStmt, line: end_line-1)
   let pop_stmt = DeliNode(kind: dkPop, line: end_line - 1)
-  engine.insertStmt( DK(dkInner, increment, continue_stmt) )
+  engine.insertStmt( DKInner( increment, continue_stmt) )
   engine.writehead = after
-  engine.insertStmt( DK(dkInner, pop_stmt) )
+  engine.insertStmt( DKInner( pop_stmt) )
 
+  # unroll loop
   #let code = node.sons[2]
   #for thing in things.sons:
   #  engine.insertStmt(deliLocalAssign(variable, thing, -node.line))
   #  for stmt in code.sons:
   #    engine.insertStmt(stmt)
+
   engine.debugNext()
 
 proc runStmt(engine: Engine, s: DeliNode) =

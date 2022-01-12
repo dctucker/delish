@@ -154,6 +154,12 @@ proc getOneliner*(node: DeliNode): string =
     else:
       $(node.node.value.line)
     return "jump :" & line
+  of dkInner:
+    result = ""
+    for son in node.sons:
+      result &= son.getOneliner()
+      result &= " ; "
+    result = result[0..^4]
   of dkConditional:
     return "if " & $(node.sons[0].repr) & $(node.sons[1].repr)
   of dkReturnStmt, dkBreakStmt, dkContinueStmt:
@@ -193,6 +199,18 @@ proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
   for node in nodes:
     sons.add(node)
   return DeliNode(kind: kind, sons: sons)
+
+proc DKVar*(varName: string): DeliNode =
+  return DeliNode(kind: dkVariable, varName: varName)
+
+proc DKInt*(intVal: int): DeliNode =
+  return DeliNode(kind: dkInteger, intVal: intVal)
+
+proc DKInner*(nodes: varargs[DeliNode]): DeliNode =
+  var sons: seq[DeliNode] = @[]
+  for node in nodes:
+    sons.add(node)
+  return DeliNode(kind: dkInner, sons: sons, line: nodes[0].line)
 
 proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
   return DeliNode(kind: dkObject, table: table.toTable)
