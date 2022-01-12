@@ -97,6 +97,12 @@ proc getOneliner(node: DeliNode): string =
   case node.kind
   of dkVariableStmt:
     return "$" & node.sons[0].varName & " " & node.sons[1].toString() & " " & node.sons[2].toString()
+  of dkLocalStmt:
+    result = "local $" & node.sons[0].varName
+    if node.sons.len > 1:
+      result &= " = " & node.sons[1].toString()
+  of dkPush: return "push"
+  of dkPop:  return "pop"
   of dkJump:
     let line = if node.node == nil:
       "end"
@@ -105,6 +111,9 @@ proc getOneliner(node: DeliNode): string =
     return "jump :" & line
   of dkConditional:
     return "if " & $(node.sons[0].repr) & $(node.sons[1].repr)
+  of dkReturnStmt, dkBreakStmt, dkContinueStmt:
+    let k = $(node.kind)
+    return k.substr(2, k.len - 5).toLowerAscii
   else:
     return $(node.kind) & "?"
 
@@ -502,10 +511,10 @@ proc popLocals(engine: Engine) =
 
 proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
   let code = engine.functions[id.id]
-  engine.pushLocals()
+  engine.insertStmt( DeliNode(kind: dkPush, line: -code.sons[0].line + 1) )
   for s in code.sons:
     engine.insertStmt(s)
-  engine.popLocals()
+  engine.insertStmt( DeliNode(kind: dkPop , line: -code.sons[^1].line - 1) )
   engine.debugNext()
 
 proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
@@ -552,12 +561,10 @@ proc doForLoop(engine: Engine, node: DeliNode) =
   let after = engine.readhead.next
   let end_line = -node.sons[2].sons[^1].line
 
-  node.counter = variable & ".counter"
-  engine.assignLocal(node.counter, DeliNode(kind: dkInteger, intVal: 0))
+  node.counter = ".counter"
 
-  var setup = DK(dkVariableStmt,
-    DeliNode(kind: dkVariable, varName: variable),
-    DK(dkAssignOp),
+  var setup = DK(dkLocalStmt,
+    DeliNode(kind: dkVariable, varName: node.counter),
     DeliNode(kind: dkInteger, intVal: 0)
   )
   var assign = DK(dkVariableStmt,
@@ -565,11 +572,13 @@ proc doForLoop(engine: Engine, node: DeliNode) =
     DK(dkAssignOp),
     DK(dkExpr, DK(dkVarDeref, things, DeliNode(kind: dkVariable, varName: node.counter) ) )
   )
+  var brake = DeliNode(kind: dkJump, node: after, line: end_line + 1)
+  var break_stmt = DeliNode(kind: dkBreakStmt, line: -node.line)
   var test = DK(dkConditional,
     DK(dkExpr,
       DK( dkComparison, DK(dkCompEq), deliNone(), DeliNode(kind: dkVariable, varName: variable) )
     ),
-    DK(dkCode, DeliNode(kind: dkJump, node: after, line: -node.line) )
+    DK(dkCode, break_stmt)
   )
   var increment = DK(dkVariableStmt,
     DeliNode(kind: dkVariable, varName: node.counter),
@@ -582,14 +591,25 @@ proc doForLoop(engine: Engine, node: DeliNode) =
   test.line = -node.line
   increment.line = end_line
 
+  engine.insertStmt( DeliNode(kind: dkPush, line: -node.line) )
   engine.insertStmt( setup )
-  var jump = DeliNode(kind: dkJump, node: engine.write_head, line: end_line)
+  var continu = DeliNode(kind: dkJump, line: end_line)
+  var assign_c = DK(dkLocalStmt, DeliNode(kind: dkVariable, varName: ".continue"), continu)
+  var assign_b = DK(dkLocalStmt, DeliNode(kind: dkVariable, varName: ".break"   ), brake)
+  assign_c.line = -node.line
+  assign_b.line = -node.line
+  engine.insertStmt( assign_b )
+  engine.insertStmt( assign_c )
+  continu.node = engine.write_head
   engine.insertStmt( assign )
   engine.insertStmt( test )
   for stmt in node.sons[2].sons:
     engine.insertStmt(stmt)
   engine.insertStmt( increment )
-  engine.insertStmt( jump )
+  engine.insertStmt( DeliNode(kind: dkContinueStmt, line: end_line-1) )
+
+  engine.writehead = after
+  engine.insertStmt( DeliNode(kind: dkPop, line: end_line - 1) )
 
   #let code = node.sons[2]
   #for thing in things.sons:
@@ -633,6 +653,16 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.doFunctionDef(s.sons[0], s.sons[1])
   of dkFunctionStmt:
     engine.doFunctionCall(s.sons[0], s.sons[1 .. ^1])
+  of dkContinueStmt:
+    var to = engine.getVariable(".continue")
+    engine.setHeads(to.node)
+  of dkBreakStmt:
+    var to = engine.getVariable(".break")
+    engine.setHeads(to.node)
+  of dkPush:
+    engine.pushLocals()
+  of dkPop:
+    engine.popLocals()
   of dkStreamStmt:
     engine.doStream(s.sons)
   else:
@@ -675,6 +705,7 @@ proc loadScript(engine: Engine) =
   for s in engine.script.sons:
     for s2 in s.sons:
       engine.insertStmt(s2)
+  engine.insertStmt(deliNone())
   debug engine, engine.statements
   engine.setHeads(engine.statements.head.next)
 
