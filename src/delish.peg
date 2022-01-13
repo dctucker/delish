@@ -1,19 +1,22 @@
 Script        <- Code
 Code          <- ( Blank* VLine )+ Blank*
-Blank         <- ( "\\" \n ) / "\t" / ' '
-VLine         <- \n / Comment / Block / Statement Comment* \n
-Comment       <- '#' (! \n .)* \n
+Blank         <- ( "\\" \n ) / "\t" / ' '  #
+VLine         <- \n / Comment / Block / Statement Comment* \n  #
+Comment       <- '#' (! \n .)* \n  #
 Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell
-Statement     <- OpenStmt / AssignStmt / LocalStmt / CloseStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
+Statement     <- VariableStmt / LocalStmt / ArgStmt / EnvStmt / IncludeStmt / StreamStmt / RunStmt / FunctionStmt
 Conditional   <- "if"       Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
 WhileLoop     <- "while"    Blank+ Expr     Blank+                         "{" \s* Code* \s* "}" \s*
 ForLoop       <- "for"      Blank+ Variable Blank+ "in" Blank+ Expr Blank+ "{" \s* Code* \s* "}" \s*
 Function      <- Identifier Blank* "="      Blank*                         "{" \s* Code* \s* "}" \s*
 Subshell      <- "sub"      Blank+          Blank+                         "{" \s* Code* \s* "}" \s*
-OpenStmt      <- &'$' Variable Blank* "=" Blank* "open" (Blank+ RedirOp)? Blank+ Path
-AssignStmt    <- &'$' Variable Blank* ( AssignOp / AppendOp / RemoveOp )  Blank* (ArgExpr / Expr / RunStmt)
+VariableStmt  <- &'$' Variable Blank*
+               ( AssignOp Blank* (OpenExpr / ArgExpr / Expr / RunStmt)
+               / AppendOp Blank* (ArgExpr / Expr / RunStmt)
+               / RemoveOp Blank* (ArgExpr / Expr / RunStmt)
+               )
+OpenExpr      <- "open" (Blank+ RedirOp)? Blank+ Path
 LocalStmt     <- "local" Blank+ Variable ( Blank* "=" Blank* Expr )?
-CloseStmt     <- &'$' Variable ".close"
 ArgStmt       <- "arg" ArgNames (Blank* DefaultOp Blank* ArgDefault)?
 EnvStmt       <- "env" Blank+ Variable (Blank* DefaultOp Blank* EnvDefault)?
 IncludeStmt   <- "include" Blank+ StrLiteral
@@ -22,8 +25,9 @@ RunStmt       <- ( (AsyncFlag / RedirFlag / (AsyncFlag RedirFlag) ) Blank+)? "ru
 FunctionStmt  <- Identifier (Blank+ Expr)*
 ArgDefault    <- Expr
 EnvDefault    <- Expr
-ExprList      <- Expr ( Blank* "," Blank* Expr Blank* )*
-Invocation    <- { \w (\w/"-")* } ( Blank+ (Expr / String) )*
+ExprList      <- Expr ( Blank* ',' Blank* Expr Blank* )*
+Invocation    <- Command ( Blank+ (Expr / String) )*
+Command       <- < W ( W / '-' )* >
 ArgExpr       <- Arg (Blank+ / '=') Expr?
 Expr          <- VarDeref / Arg / Array / Object / StrBlock / StrLiteral / Integer / Boolean / Path / JsonBlock / Stream
 VarDeref      <- &'$' Variable ( [.] ( StrLiteral / Integer / Variable / Identifier ) )*
@@ -32,10 +36,11 @@ AsyncFlag     <- "async"
 ArgNames      <- ( Blank+ Arg )+
 Arg           <- &'-' (ArgLong / ArgShort)
 ArgShort      <- '-' { \w+ }
-ArgLong       <- "--" { (\w ('-' \w)*)+ }
+ArgLong       <- "--" { ( \w ('-' \w )*)+ }
 Array         <- '[' ( \s* Expr Blank* ','? \s* )* ']'
-Object        <- '[' ( \s* Expr Blank* ':' Blank* Expr Blank* ','? \s* )+ ']'
-Identifier    <- !Keyword { (\w/"-")+ }
+Object        <- '[' ( \s* Pair Blank* ','? \s* )+ ']'
+Pair          <- Expr Blank* ':' Blank* Expr
+Identifier    <- { ( \w / '-' )+ }
 JsonBlock     <- "json" Blank+ StrBlock
 StrBlock      <- "\"\"\"" @@ "\"\"\""
 StrLiteral    <- (["] @@ ["]) / (['] @@ ['])
@@ -43,7 +48,7 @@ String        <- { \S+ }
 Integer       <- { \d+ }
 Path          <- { ("."* "/" \S+ ) / "." }
 Variable      <- '$' { (\w / '-')+ }
-Keyword       <- "sub" / "if" / "white" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
+Keyword       <- "sub" / "if" / "while" / "arg" / "in" / "out" / "err" / "include" / "true" / "false"
 Boolean       <- { "true" / "false" }
 Stream        <- &[ioe] (StreamIn / StreamOut / StreamErr)
 StreamIn      <- "in"

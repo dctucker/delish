@@ -1,7 +1,5 @@
 #!/usr/bin/deli
 
-$found = run find . -name "disk*" | grep "sdb"
-
 arg -y --yes     |= false
 arg -n           |= true
 arg -v --verbose |= false
@@ -11,7 +9,12 @@ some documentation
 """
 #arg $filename
 env $SANDO |= "chicken parm"
+out $SANDO
 $SANDO = "meatball"
+out $SANDO
+
+$found = run find . -name "disk*" | grep "sdb"
+
 
 #assert = {
 #  arg $assertion
@@ -53,6 +56,12 @@ $flags += --decode "base64"
 for $flag in $flags {
   out $flag
 }
+
+$x = $flags.1
+$x += $flags.2
+$x += $flags.0
+out $x
+
 #
 ##$js = json """
 ##{

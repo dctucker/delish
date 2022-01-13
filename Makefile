@@ -1,27 +1,41 @@
-all: release strip
+all: debug
 
-.PHONY: src/delish.leg# src/delish_yy.c
-src/delish.leg:
+LEG=./src/delish.leg
+
+src/delish.leg: Makefile src/delish.peg src/delish.head.c src/delish.tail.c
+	echo "%{"                >${LEG}
+	cat ./src/delish.head.c >>${LEG}
+	echo "%}"               >>${LEG}
 	cat src/delish.peg \
-		| sed 's/ \\n/ "\\n" /g' \
-		| sed 's/\\s/\[ \\n\\r\\t\]/g' \
+		| sed 's@ \\n@ "\\n"@g' \
+		| sed 's@\\s@\[ \\n\\r\\t\]@g' \
 		| sed 's/ @@ \([^)]*\)/ (!\1 .)* \1/g' \
-		| sed 's/ { / < /g' \
-		| sed 's/ } / > /g' \
-		| sed 's/ }$$/ >/g' \
-		| sed 's/\\w/[0-9A-Za-z]/g' \
-		| sed 's/\\S/[^ \\t\\n\\r]/g' \
-		| sed 's/\\d/[0-9]/g' \
-		> src/delish.leg
+		| sed 's@ { @ < @g' \
+		| sed 's@ } @ > @g' \
+		| sed 's@ }$$@ >@g' \
+		| sed 's@\\w@[0-9A-Za-z]@g' \
+		| sed 's@\\S@[^ \\t\\n\\r]@g' \
+		| sed 's@\\d@[0-9]@g' \
+		| sed 's@^\([^ ]*\) *<- *\([^#]*\)$$@\1 = \@{ yyenter(dk\1); } ( \2 ) ~{ yyleave(dk\1); } { $$$$ = something(dk\1, yytext, yyleng); printf("%d ", yy->__val - yy->__vals); }@g' \
+		| sed 's@ / @ | @g' \
+		| sed 's@ <- @ = @g' \
+		>> ${LEG}
+	echo "%%"               >>${LEG}
+	cat ./src/delish.tail.c >>${LEG}
+	#| sed 's/^\([^ ]*\) \(.*\)$$/\1 \2 { printf("%d \1\\n", $$$$ ); }/g' \
 
 src/delish.yy.c: src/delish.leg
-	peg ./src/delish.leg > ./src/delish.yy.c
-	echo "int main() { while(yyparse()) puts(\"success\n\"); return 0; }" >> ./src/delish.yy.c
+	leg -o./src/delish.yy.c ${LEG}
 
 yyparse: src/delish.yy.c
+	#gcc -DYY_DEBUG=1 ./src/delish.yy.c -o yyparse
 	gcc ./src/delish.yy.c -o yyparse
 
-debug:
+
+src/packcc.c: src/delish.packcc src/packcc.h
+	cd src && packcc -o packcc delish.packcc && cd ..
+
+debug: src/packcc.c #src/delish.yy.c
 	nimble build
 
 release:
@@ -30,3 +44,7 @@ release:
 strip: release
 	strip --strip-all -R .note -R .comment -R .eh_frame -R .eh_frame_hdr delish
 	sstrip -z delish
+
+packdeli: src/packcc.c Makefile
+	cd src ; packcc -o packcc delish.packcc ; cd ..
+	gcc -Og src/packcc.c -o packdeli

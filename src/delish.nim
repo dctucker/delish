@@ -23,7 +23,7 @@ when isMainModule:
 #
 #when false:
   var interactive = false
-  var debug = false
+  var debug = 0
   var breakpoints = @[54]
   var filename = ""
 
@@ -36,7 +36,7 @@ when isMainModule:
       if arg.short_name == "i":
         interactive = true
       if arg.short_name == "d":
-        debug = true
+        debug += 1
     else:
       if not arg.isNone():
         filename = arg.value.toString()
@@ -47,9 +47,9 @@ when isMainModule:
     quit 2
 
   let source = readFile(filename)
-  let parser = Parser(source: source, debug: debug)
+  let parser = Parser(source: source, debug: debug > 0)
   var parsed_len = 0
-  if debug:
+  if debug > 0:
     benchmark "parsing":
       parsed_len = parser.parse()
   else:
@@ -62,20 +62,20 @@ when isMainModule:
     stderr.write("Syntax error in ", filename, ":", num, " near ", errline, "\n\n")
     quit 1
 
-  var engine: Engine = newEngine(parser)
+  var engine: Engine = newEngine(parser, debug)
   var nteract = newNteract(engine)
   nteract.filename = filename
 
   proc mainloop() =
     for line in engine.tick():
-      if debug:
+      if debug > 0:
         echo engine.lineInfo(line)
       if interactive:
         nteract.line = line.abs
         if line > 0:
           discard nteract.getUserInput()
 
-  if debug:
+  if debug > 0:
     benchmark "executing":
       mainloop()
   else:

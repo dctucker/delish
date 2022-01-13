@@ -1,11 +1,12 @@
-import std/tables
-import std/deques
-import macros
+#import std/tables
+#import std/deques
+#import macros
 import strutils
 import stacks
-import pegs
+#import pegs
 import deliast
-import deligrammar
+#import deligrammar
+
 
 type Parser* = ref object
   source*:      string
@@ -14,8 +15,11 @@ type Parser* = ref object
   symbol_stack: Stack[string]
   node_stack:   Stack[DeliNode]
   entry_point:  DeliNode
+  nodes:        seq[DeliNode]
   line_numbers: seq[int]
   parsed_len:   int
+
+proc packcc_main*(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
 proc debug(parser: Parser, msg: varargs[string]) =
   if not parser.debug:
@@ -93,12 +97,12 @@ proc initLineNumbers(parser: Parser) =
   #parser.debug parser.line_numbers
 
 
-proc echoItems(p: Peg) =
-  for item in p.items():
-    echo item.kind, item
-    echoItems(item)
+#proc echoItems(p: Peg) =
+#  for item in p.items():
+#    echo item.kind, item
+#    echoItems(item)
 
-let grammar = peg(getGrammar())
+#let grammar = peg(getGrammar())
 
 proc assimilate(inner, outer: DeliNode) =
   if outer.kind == dkStream:
@@ -113,6 +117,11 @@ proc parse*(parser: Parser): int =
   parser.initParser()
   parser.initLineNumbers()
 
+  var cstr = parser.source.cstring
+  parser.nodes = @[deliNone()]
+  let y = packcc_main(cstr, parser.source.len.cint, parser)
+  parser.entry_point = parser.nodes[^1]
+
   #echo "=== Grammar ==="
   #echo grammar.repr
   #echo "=== /Grammar ==="
@@ -120,44 +129,31 @@ proc parse*(parser: Parser): int =
   #let serial = $$grammar
   #echo serial
 
-  let peg_parser = grammar.eventParser:
-    pkCapture:
-      leave:
-        parser.parseCapture(start, length, s)
-    pkCapturedSearch:
-      leave:
-        case parser.symbol_stack.peek()
-        of "StrBlock":
-          parser.parseCapture(start, length-3, s)
-        else:
-          parser.parseCapture(start, length-1, s)
-    pkNonTerminal:
-      enter:
-        if p.nt.name notin ["Blank", "VLine", "Comment"]:
-          let k = parseEnum[DeliKind]("dk" & p.nt.name)
-          parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(start)))
-          debug parser, "\27[1;30m", parser.indent("> "), p.nt.name, ": \27[0;34m", s.substr(start).split("\n")[0], "\27[0m"
-          parser.symbol_stack.push(p.nt.name)
-      leave:
-        if p.nt.name notin ["Blank", "VLine", "Comment"]:
-          let inner_node = parser.node_stack.pop()
-          discard parser.symbol_stack.pop()
-          if length > 0:
-            let matchStr = s.substr(start, start+length-1)
-            debug parser, parser.indent("\27[1m< "), $p, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
-
-            if parser.node_stack.len() > 0:
-              var outer_node = parser.node_stack.pop()
-              outer_node.sons.add( inner_node )
-              assimilate(inner_node, outer_node)
-              parser.entry_point = outer_node
-              parser.node_stack.push(outer_node)
-
-            #let line = parser.line_number(start)
-            ##debug start, " :",  line
-
-  parser.parsed_len = peg_parser(parser.source)
+  #parser.parsed_len = peg_parser(parser.source)
   return parser.parsed_len
+
+proc enter*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
+  parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(pos)))
+  debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
+  parser.symbol_stack.push($k)
+  #echo "\27[31m", $parser.node_stack, "\27[0m"
+
+proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
+  let inner_node = parser.node_stack.pop()
+  discard parser.symbol_stack.pop()
+  if matchStr.len > 0:
+    debug parser, parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
+
+    if parser.node_stack.len() > 0:
+      var outer_node = parser.node_stack.pop()
+      outer_node.sons.add( inner_node )
+      assimilate(inner_node, outer_node)
+      parser.entry_point = outer_node
+      parser.node_stack.push(outer_node)
+  else:
+    debug parser, parser.indent("\27[30;1m< "), $k, "\27[0m"
+
+  #echo "\27[31m", $parser.node_stack, "\27[0m"
 
 proc getLine*(parser: Parser, line: int): string =
   let start = parser.line_numbers[line]
@@ -176,3 +172,144 @@ proc printEntryPoint*(parser: Parser) =
   echo "\n== Node Stack =="
   printSons(parser.entry_point, 0)
 
+
+## PackCC integration stuff
+
+type PackEvent = enum
+  peEvaluate, peMatch, peNoMatch
+
+proc something*(kind: cint, str: cstring, len: cint): cint {.exportc.} =
+  result = kind
+  let k = DeliKind(kind)
+  echo $k, " ", str
+
+type DeliT = object
+  input: cstring
+  offset: csize_t
+  length: csize_t
+  parser: Parser
+
+proc parseCapture(parser: Parser, rstart, rend: csize_t, buffer: cstring): DeliNode {.exportc.} =
+  let length = rend - rstart
+  var capture = newString(length)
+  if length > 0:
+    for i in 0 .. length - 1:
+      capture[i] = buffer[i].char
+  debug parser, "CAPTURE ", capture
+  #parser.parseCapture(rstart.int, length.int, capture)
+
+proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: cstring): cint {.exportc.} =
+  result = parser.nodes.len.cint
+  var node = DeliNode(kind: kind)
+
+  let length = rend - rstart
+  var capture = newString(length)
+  if length > 0:
+    for i in 0 .. length - 1:
+      capture[i] = buffer[i].char
+
+  debug parser, $result, " nodeString ", $kind, " \"", capture, "\""
+  node.parseCapture(capture)
+
+  parser.nodes.add(node)
+
+proc getNode(parser: Parser, i: cint): DeliNode =
+  result = if i.int <= 0: deliNone() else: parser.nodes[i.int]
+
+#proc createNode(parser: Parser, kind: DeliKind, ints: varargs[cint]): cint {.exportc.} =
+#  result = parser.nodes.len.cint
+#  debug parser, "createNode ", $kind
+#  let node = DeliNode(kind: kind, sons: @[])
+#
+#  for i in ints:
+#    let son = parser.getNode(i)
+#    node.sons.add(son)
+#  parser.nodes.add(node)
+
+proc createNode0(parser: Parser, kind: DeliKind): cint {.exportc.} =
+  result = parser.nodes.len.cint
+  debug parser, $result, " createNode0 ", $kind
+  let node = DeliNode(kind: kind)
+  parser.nodes.add(node)
+
+proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
+  result = parser.nodes.len.cint
+  debug parser, $result, " createNode1 ", $kind, " ", $s1
+  let node = DeliNode(kind: kind, sons: @[])
+
+  let son1 = parser.getNode(s1)
+  node.sons.add(son1)
+
+  parser.nodes.add(node)
+
+proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.} =
+  result = parser.nodes.len.cint
+  debug parser, $result, " createNode2 ", $kind, " ", $s1, " ", $s2
+  var node = DeliNode(kind: kind, sons: @[])
+
+  let son1 = parser.getNode(s1)
+  node.sons.add(son1)
+  let son2 = parser.getNode(s2)
+  node.sons.add(son2)
+
+  parser.nodes.add(node)
+
+proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.exportc.} =
+  result = parser.nodes.len.cint
+  debug parser, $result, " createNode3 ", $kind, " ", $s1, " ", $s2, " ", $s3
+  var node = DeliNode(kind: kind, sons: @[])
+
+  let son1 = parser.getNode(s1)
+  node.sons.add(son1)
+  let son2 = parser.getNode(s2)
+  node.sons.add(son2)
+  let son3 = parser.getNode(s3)
+  node.sons.add(son3)
+
+  parser.nodes.add(node)
+
+proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
+  let son = parser.getNode(s)
+  debug parser, $p, " nodeAppend ", $son.kind, " ", $s
+  parser.getNode(p).sons.add(son)
+  result = p
+
+proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
+  debug parser, $n, " setLine ", $l
+  var node = parser.getNode(n)
+  node.line = parser.line_number(l.int)
+  parser.nodes[n] = node
+
+proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
+  case rule
+  of dkS.ord, dkW.ord, dkU.ord, dkBlank.ord, dkVLine.ord, dkComment.ord: return
+  else: discard
+
+  var e = ""
+  var capture = ""
+
+  var aux = cast[ptr DeliT](pauxil)
+  var parser = aux.parser
+
+  parser.parsed_len = max(parser.parsed_len, pos.int)
+
+  case event
+    of peEvaluate.ord:
+      e = "> "
+      parser.enter( DeliKind(rule), pos.int, capture )
+    of peMatch.ord:
+      e = "\27[1m< "
+      capture = newString(length)
+      if length > 0:
+        for i in 0 .. length - 1:
+          capture[i] = buffer[i].char
+      parser.leave( DeliKind(rule), pos.int, capture )
+    of peNoMatch.ord:
+      e = "< "
+      parser.leave( DeliKind(rule), pos.int, capture )
+    else: e = "  "
+
+  #let k = DeliKind(rule)
+  #echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
+
+{.compile: "packcc.c" .}
