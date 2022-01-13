@@ -354,8 +354,13 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
     #echo value
   of dkAppendOp:
     let variable = engine.getVariable(key.varName)
-    let value = variable + val
-    engine.assignVariable(key.varName, value)
+    let value = if val.kind == dkVarDeref:
+      engine.evalVarDeref(val)
+    else:
+      val
+    #echo value.repr
+    let out_value = variable + value
+    engine.assignVariable(key.varName, out_value)
   else:
     todo "assign ", op.kind
 
@@ -471,28 +476,27 @@ proc setupPush(engine: Engine, line: int, table: DeliTable) =
 
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0]
-  let code = node.sons[2]
-  let things = engine.evaluate(node.sons[1])
-  let after = engine.readhead.next
+  let things   = engine.evaluate(node.sons[1])
+  let code     = node.sons[2]
   let top_line = -node.line
   let end_line = -code.sons[^1].line
-  let counter = DKVar(".counter")
+  let counter  = DKVar(".counter")
 
-  var brake     = DeliNode(kind: dkJump, line: end_line + 1)
-  var continu   = DeliNode(kind: dkJump, line: end_line)
+  var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
+  var jump_continue = DeliNode(kind: dkJump, line: end_line)
 
   engine.setupPush(top_line, {
     ".counter" : DKInt(0),
-    ".break"   : brake,
-    ".continue": continu,
+    ".break"   : jump_break,
+    ".continue": jump_continue,
   }.toTable)
-  continu.node = engine.write_head
 
+  jump_continue.node = engine.write_head
   engine.insertStmt( DKInner(top_line,
     DK( dkVariableStmt, variable, DK(dkAssignOp),
       DK( dkVarDeref, things, counter )
     ),
-    DK(dkConditional,
+    DK( dkConditional,
       DK( dkComparison, DK(dkCompEq), deliNone(), variable ),
       DK( dkCode, DKInner( top_line,
         DeliNode(kind: dkBreakStmt, line: top_line)
@@ -503,10 +507,11 @@ proc doForLoop(engine: Engine, node: DeliNode) =
   engine.insertStmt(code.sons)
 
   engine.insertStmt( DKInner(end_line - 1,
-    DK(dkVariableStmt, counter, DK(dkAppendOp), DKInt(1)),
-    DK(dkContinueStmt)
+    DK( dkVariableStmt, counter, DK(dkAppendOp), DKInt(1) ),
+    DK( dkContinueStmt )
   ))
-  brake.node = engine.writehead
+
+  jump_break.node = engine.writehead
   engine.insertStmt( DKInner(end_line - 1,
     DK(dkPop)
   ))

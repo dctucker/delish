@@ -51,6 +51,19 @@ proc isNone*(node: DeliNode):bool =
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
+
+proc argFormat(node: DeliNode): string =
+  var longarg = false
+  result = ""
+  for son in node.sons:
+    if son.kind == dkArgLong:
+      longarg = true
+      result &= "--" & son.argName
+    else:
+      result &= son.argName
+  if not longarg:
+    result = "-" & result
+
 proc `$`*(node: DeliNode): string
 proc toString*(node: DeliNode):string =
   if node.kind == dkExpr:
@@ -80,10 +93,7 @@ proc toString*(node: DeliNode):string =
       ""
   of dkInvocation: node.cmd
   of dkArg:
-    if node.sons.len > 0:
-      node.sons[0].toString()
-    else:
-      ""
+    argFormat(node)
   of dkArgShort:
     "-" & node.argName
   of dkArgLong:
@@ -119,7 +129,10 @@ proc `+`*(a, b: DeliNode): DeliNode =
       for n in b.sons:
         result.sons.add(n)
         return result
+    of dkArg:
+      return DeliNode(kind: dkArg, sons: @[a.sons[0], b.sons[0]])
     else:
+      todo "add ", a.kind, " + ", b.kind
       return deliNone()
 
   case a.kind
