@@ -66,7 +66,11 @@ proc lineInfo*(engine: Engine, line: int): string =
     engine.parser.getLine(line)
   else:
     getOneliner(engine.current)
-  let linenum = "\27[1;30m:" & $abs(line)
+  let delim = if line > 0:
+    ":"
+  else:
+    "."
+  let linenum = "\27[1;30m" & delim & $abs(line)
   let source = " \27[0;34;4m" & sline
   let parsed = "\27[1;24m " & repr(engine.current)
   return linenum & source & parsed & "\27[0m"
@@ -153,10 +157,12 @@ proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
     todo "getArgument ", arg.kind
 
 proc getVariable(engine: Engine, name: string): DeliNode =
-  let locals = engine.locals.peek()
-  if locals.contains(name):
-    return locals[name]
-  elif engine.variables.contains(name):
+  var stack = engine.locals.toSeq()
+  for i in countdown(stack.high, stack.low):
+    let locals = stack[i]
+    if locals.contains(name):
+      return locals[name]
+  if engine.variables.contains(name):
     return engine.variables[name]
   elif engine.envars.contains(name):
     return DeliNode(kind: dkString, strVal: engine.envars[name])
@@ -567,6 +573,9 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.setHeads(to.node)
   of dkBreakStmt:
     var to = engine.getVariable(".break")
+    engine.setHeads(to.node)
+  of dkReturnStmt:
+    var to = engine.getVariable(".return")
     engine.setHeads(to.node)
   of dkPush:
     engine.pushLocals()
