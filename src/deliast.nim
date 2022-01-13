@@ -52,19 +52,61 @@ proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
 
-proc argFormat(node: DeliNode): string =
-  var longarg = false
-  result = ""
-  for son in node.sons:
-    if son.kind == dkArgLong:
-      longarg = true
-      result &= "--" & son.argName
-    else:
-      result &= son.argName
-  if not longarg:
-    result = "-" & result
+proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
+  var sons: seq[DeliNode] = @[]
+  for node in nodes:
+    sons.add(node)
+  return DeliNode(kind: kind, sons: sons)
+
+proc DKVar*(varName: string): DeliNode =
+  return DeliNode(kind: dkVariable, varName: varName)
+
+proc DKInt*(intVal: int): DeliNode =
+  return DeliNode(kind: dkInteger, intVal: intVal)
+
+proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
+  var sons: seq[DeliNode] = @[]
+  for node in nodes:
+    sons.add(node)
+  return DeliNode(kind: dkInner, sons: sons, line: line)
+
+proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
+  return DeliNode(kind: dkObject, table: table.toTable)
 
 proc `$`*(node: DeliNode): string
+
+proc argFormat(node: DeliNode): string =
+  var current_kind = dkNone
+  result = ""
+  for son in node.sons:
+    case son.kind
+    of dkArgLong:
+      if current_kind != son.kind:
+        result &= " "
+      result &= "--" & son.argName
+    of dkArgShort:
+      if current_kind != son.kind:
+        result &= "-"
+      result &= son.argName
+    of dkArg:
+      let a = son.sons[0]
+      case a.kind
+      of dkArgLong:
+        if current_kind != a.kind and result.len > 0:
+          result &= " "
+        result &= "--" & a.argName
+      of dkArgShort:
+        if current_kind != a.kind:
+          result &= "-"
+        result &= a.argName
+      else:
+        result &= $a
+      current_kind = a.kind
+      continue
+    else:
+      result &= $son
+    current_kind = son.kind
+
 proc toString*(node: DeliNode):string =
   if node.kind == dkExpr:
     result = ""
@@ -99,7 +141,7 @@ proc toString*(node: DeliNode):string =
   of dkArgLong:
     "--" & node.argName
   of dkArgExpr:
-    node.sons[0].toString & " " & node.sons[1].toString
+    argFormat(node)
   of dkObject:     $(node.table)
   else: ""
 
@@ -130,13 +172,16 @@ proc `+`*(a, b: DeliNode): DeliNode =
         result.sons.add(n)
         return result
     of dkArg:
-      return DeliNode(kind: dkArg, sons: @[a.sons[0], b.sons[0]])
+      return DK(dkArgExpr, a, b)
     else:
       todo "add ", a.kind, " + ", b.kind
       return deliNone()
 
   case a.kind
   of dkArray:
+    a.sons.add(b)
+    return a
+  of dkArgExpr:
     a.sons.add(b)
     return a
   else:
@@ -213,28 +258,7 @@ proc printValue*(v: DeliNode): string =
   result &= "\27[0m"
 
 
-proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
-  var sons: seq[DeliNode] = @[]
-  for node in nodes:
-    sons.add(node)
-  return DeliNode(kind: kind, sons: sons)
-
-proc DKVar*(varName: string): DeliNode =
-  return DeliNode(kind: dkVariable, varName: varName)
-
-proc DKInt*(intVal: int): DeliNode =
-  return DeliNode(kind: dkInteger, intVal: intVal)
-
-proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
-  var sons: seq[DeliNode] = @[]
-  for node in nodes:
-    sons.add(node)
-  return DeliNode(kind: dkInner, sons: sons, line: line)
-
 proc setLine*(node: var DeliNode, line: int): DeliNode =
   result = node
   result.line = line
-
-proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
-  return DeliNode(kind: dkObject, table: table.toTable)
 

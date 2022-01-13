@@ -340,7 +340,7 @@ proc assignVariable(engine: Engine, key: string, value: DeliNode) =
     engine.variables[key] = value
   else:
     engine.variables[key] = value
-  debug engine, "$", key, " = ", printValue(value)
+  debug engine, "$", key, " = ", value.kind, " ", printValue(value)
 
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
   let val = if expr.kind == dkExpr:
@@ -358,7 +358,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       engine.evalVarDeref(val)
     else:
       val
-    #echo value.repr
+    debug engine, variable, " += ", value.repr
     let out_value = variable + value
     engine.assignVariable(key.varName, out_value)
   else:

@@ -59,6 +59,7 @@ for $flag in $flags {
 
 $x = $flags.1
 $x += $flags.2
+$x += $flags.0
 out $x
 
 #
