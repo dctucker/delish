@@ -233,6 +233,24 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
   result = DeliNode(kind: dkStream, intVal: 1)
   engine.variables[variable] = result
 
+proc `<=`(o1, o2: DeliNode): bool =
+  case o1.kind
+  of dkInteger:
+    return o1.intVal <= o2.intVal
+  of dkPath, dkString, dkStrLiteral, dkStrBlock:
+    return o1.strVal <= o2.strVal
+  else:
+    todo "<= ", o1.kind, " ", o2.kind
+
+proc `<`(o1, o2: DeliNode): bool =
+  case o1.kind
+  of dkInteger:
+    return o1.intVal < o2.intVal
+  of dkPath, dkString, dkStrLiteral, dkStrBlock:
+    return o1.strVal < o2.strVal
+  else:
+    todo "< ", o1.kind, " ", o2.kind
+
 proc `>=`(o1, o2: DeliNode): bool =
   case o1.kind
   of dkInteger:
@@ -241,6 +259,15 @@ proc `>=`(o1, o2: DeliNode): bool =
     return o1.strVal >= o2.strVal
   else:
     todo ">= ", o1.kind, " ", o2.kind
+
+proc `>`(o1, o2: DeliNode): bool =
+  case o1.kind
+  of dkInteger:
+    return o1.intVal > o2.intVal
+  of dkPath, dkString, dkStrLiteral, dkStrBlock:
+    return o1.strVal > o2.strVal
+  else:
+    todo "> ", o1.kind, " ", o2.kind
 
 proc `!=`(o1, o2: DeliNode): bool =
   case o1.kind
@@ -317,6 +344,10 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return engine.evaluate(val.sons[0])
   of dkOpenExpr:
     return engine.doOpen(val.sons)
+  of dkBoolExpr:
+    return engine.evaluate(val.sons[0])
+  of dkBoolNot:
+    return not engine.evaluate( val.sons[0] )
   of dkComparison:
     let v1 = engine.evaluate(val.sons[1])
     let v2 = engine.evaluate(val.sons[2])
@@ -366,6 +397,15 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       val
     debug engine, variable, " += ", value.repr
     let out_value = variable + value
+    engine.assignVariable(key.varName, out_value)
+  of dkRemoveOp:
+    let variable = engine.getVariable(key.varName)
+    let value = if val.kind == dkVarDeref:
+      engine.evalVarDeref(val)
+    else:
+      val
+    debug engine, variable, " -= ", value.repr
+    let out_value = variable - value
     engine.assignVariable(key.varName, out_value)
   else:
     todo "assign ", op.kind
@@ -480,6 +520,39 @@ proc setupPush(engine: Engine, line: int, table: DeliTable) =
     inner.sons.add(DK(dkLocalStmt, DKVar(k), v))
   engine.insertStmt(inner)
 
+proc doWhileLoop(engine: Engine, node: DeliNode) =
+  let condition = node.sons[0]
+  let code = node.sons[1]
+  let top_line = -node.line
+  let end_line = -code.sons[^1].line
+
+  var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
+  var jump_continue = DeliNode(kind: dkJump, line: end_line)
+
+  engine.setupPush(top_line, {
+    ".break"   : jump_break,
+    ".continue": jump_continue,
+  }.toTable)
+
+  jump_continue.node = engine.write_head
+  engine.insertStmt( DKInner(top_line,
+    DK( dkConditional, DK( dkBoolNot, condition),
+      DK( dkCode, DKInner( top_line,
+        DeliNode(kind: dkBreakStmt, line: top_line)
+      ))
+    )
+  ))
+  engine.insertStmt(code.sons)
+
+  engine.insertStmt( DKInner(end_line - 1,
+    DK( dkContinueStmt )
+  ))
+
+  jump_break.node = engine.writehead
+  engine.insertStmt( DKInner(end_line - 1,
+    DK(dkPop)
+  ))
+
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0]
   let things   = engine.evaluate(node.sons[1])
@@ -564,6 +637,8 @@ proc runStmt(engine: Engine, s: DeliNode) =
     engine.doConditional(s.sons[0], s.sons[1])
   of dkForLoop:
     engine.doForLoop(s)
+  of dkWhileLoop:
+    engine.doWhileLoop(s)
   of dkFunction:
     engine.doFunctionDef(s.sons[0], s.sons[1])
   of dkFunctionStmt:

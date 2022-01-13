@@ -156,6 +156,12 @@ import strutils
 proc todo*(msg: varargs[string, `$`]) =
   stderr.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")
 
+proc `not`*(a: DeliNode): DeliNode =
+  case a.kind:
+  of dkBoolean:
+    return DeliNode(kind: dkBoolean, boolVal: not a.boolVal)
+  else:
+    todo "not ", a.kind
 
 proc `+`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
@@ -188,6 +194,16 @@ proc `+`*(a, b: DeliNode): DeliNode =
     todo "add ", a.kind, " + ", b.kind
     return a
 
+  return deliNone()
+
+proc `-`*(a, b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger:
+      return DeliNode(kind: dkInteger, intVal: a.intVal - b.intval)
+    else:
+      todo "sub ", a.kind, " - ", b.kind
+      return deliNone()
   return deliNone()
 
 proc repr*(node: DeliNode): string =
