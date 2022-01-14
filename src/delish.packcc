@@ -58,9 +58,9 @@ Statement     <-
               /  a:RunStmt      /  a:FunctionStmt /  a:BreakStmt
               /  a:ContinueStmt /  a:ReturnStmt   /  a:Push / a:Pop
               )                                                      { CN1( Statement  , a ); SL(a); }
-Conditional   <- "if" Blank+ e:Expr
+Conditional   <- "if" Blank+ e:Condition
                  Blank+ "{" _ c:Code? _ "}" _                        { CN2( Conditional, e, c ); }
-WhileLoop     <- "while" Blank+ e:Expr
+WhileLoop     <- "while" Blank+ e:Condition
                  Blank+ "{" _ c:Code? _ "}" _                        { CN2( WhileLoop  , e, c ); }
 ForLoop       <- "for" Blank+ v:Variable Blank+ "in" Blank+ e:Expr
                  Blank+ "{" _ c:Code? _ "}" _                        { CN3( ForLoop    , v, e, c ); }
@@ -116,13 +116,17 @@ Invocation    <- c:Command                                           { CN1( Invo
               )*
 ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { CN2( ArgExpr, a, e ); }
 Expr          <- (
-                 s:MathExpr / s:BoolExpr
-               / s:VarDeref / s:Arg
-               / s:Array   / s:Object
+                 "(" Blank+ s:MathExpr Blank+ ")"
+               / s:BoolExpr
+               / s:Array / s:Object
+               / s:Arg / s:VarDeref
                / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
                / s:Path     / s:JsonBlock  / s:Stream
                )                                                     { CN1( Expr, s); }
+Condition     <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
 MathExpr      <- e1:Expr Blank+ o:MathOp Blank+ e2:Expr              { CN3( MathExpr, o, e1, e2 ); }
+              (          Blank+ o:MathOp Blank+ e3:Expr              { CN3( MathExpr, o, $$, e3 ); }
+              )*
 MathOp        <- o:AddOp / o:SubOp / o:MulOp / o:DivOp               { CN1( MathOp, o ); }
 AddOp         <- "+"                                                 { CN0( AddOp ); }
 SubOp         <- "-"                                                 { CN0( SubOp ); }
@@ -139,7 +143,11 @@ BoolOp2       <- o:BoolOr / o:BoolAnd                                { CN1( Bool
 BoolNot       <- "not"
 BoolOr        <- "or"                                                { CN0( BoolOr ); }
 BoolAnd       <- "and"                                               { CN0( BoolAnd ); }
-Comparison    <- e1:Expr Blank+ o:Comparator Blank+ e2:Expr          { CN3( Comparison, o, e1, e2 ); }
+Comparison    <- e1:CompExpr Blank+ o:Comparator Blank+ e2:CompExpr  { CN3( Comparison, o, e1, e2 ); }
+CompExpr      <-
+              (  s:VarDeref / s:StrLiteral
+              /  s:Integer / s:Boolean / s:Path
+              )                                                      { $$ = s; }
 Comparator    <- ( o:CompGe / o:CompGt
                /   o:CompLe / o:CompLt
                /   o:CompEq / o:CompNe )                             { $$ = o; }

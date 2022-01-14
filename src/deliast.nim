@@ -74,6 +74,7 @@ proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode 
   return DeliNode(kind: dkObject, table: table.toTable)
 
 proc `$`*(node: DeliNode): string
+proc toString*(node: DeliNode):string
 
 proc argFormat(node: DeliNode): string =
   var current_kind = dkNone
@@ -103,6 +104,10 @@ proc argFormat(node: DeliNode): string =
         result &= $a
       current_kind = a.kind
       continue
+    of dkString:
+      result &= son.strVal
+    of dkExpr:
+      result &= " " & son.sons[0].toString
     else:
       result &= $son
     current_kind = son.kind

@@ -411,8 +411,13 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
   of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkNone:
     return val
-  of dkStream:
-    return engine.evaluate(val.sons[0])
+  of dkLazy:
+    return val.sons[0]
+  of dkStream,
+    dkEnvDefault,
+    dkCondition,
+    dkBoolExpr:
+    return engine.evaluate( val.sons[0] )
   of dkStreamIn:  return DeliNode(kind: dkStream, intVal: 0)
   of dkStreamOut: return DeliNode(kind: dkStream, intVal: 1)
   of dkStreamErr: return DeliNode(kind: dkStream, intVal: 2)
@@ -426,8 +431,6 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return ran
   of dkExpr:
     return engine.evalExpression(val)
-  of dkLazy:
-    return val.sons[0]
   of dkVariable:
     return engine.getVariable(val.varName)
   of dkVarDeref:
@@ -441,12 +444,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     let arg = val.sons[0]
     let aval = engine.evalExpression(val.sons[1])
     result = DK(dkArray, arg, aval)
-  of dkEnvDefault:
-    return engine.evaluate(val.sons[0])
   of dkOpenExpr:
     return engine.doOpen(val.sons)
-  of dkBoolExpr:
-    return engine.evaluate(val.sons[0])
   of dkBoolNot:
     return not engine.evaluate( val.sons[0] )
   of dkComparison:
@@ -503,8 +502,11 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
 
   let last_node = nodes[^1]
   for expr in last_node.sons:
+    #echo expr.repr
     let eval = engine.evaluate(expr)
+    #echo eval.repr
     let str = eval.toString()
+    #echo str.repr
     fd.write(str, "\n")
 
 

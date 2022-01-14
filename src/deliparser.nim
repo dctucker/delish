@@ -261,6 +261,12 @@ proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.expor
 proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   let son = parser.getNode(s)
   debug_tree parser, $p, " nodeAppend ", $son.kind, " ", $s
+  #case son.kind
+  #of dkPair:
+  #  var k = son.sons[0]
+  #  var v = son.sons[1]
+  #  (parser.getNode(p).table)[k.toString] = v
+  #else:
   parser.getNode(p).sons.add(son)
   result = p
 
