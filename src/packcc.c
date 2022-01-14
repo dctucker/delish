@@ -2333,7 +2333,7 @@ static void pcc_action_Command_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #define _1 pcc_get_capture_string(__pcc_ctx, __pcc_in->data.leaf.capts.buf[0])
 #define _1s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.start))
 #define _1e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capts.buf[0]->range.end))
-    NS( Command   );
+    NS( String    );
 #undef _1e
 #undef _1s
 #undef _1
@@ -6892,9 +6892,9 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Keyword(deli_context_t *ctx) {
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
         if (
             pcc_refill_buffer(ctx, 3) < 3 ||
-            (ctx->buffer.buf + ctx->cur)[0] != 'a' ||
-            (ctx->buffer.buf + ctx->cur)[1] != 'r' ||
-            (ctx->buffer.buf + ctx->cur)[2] != 'g'
+            (ctx->buffer.buf + ctx->cur)[0] != 'f' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'o' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 'r'
         ) goto L0006;
         ctx->cur += 3;
         goto L0001;
@@ -6985,16 +6985,54 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Keyword(deli_context_t *ctx) {
         ctx->cur = p;
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
         if (
+            pcc_refill_buffer(ctx, 3) < 3 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'a' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'r' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 'g'
+        ) goto L0014;
+        ctx->cur += 3;
+        goto L0001;
+    L0014:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 5) < 5 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'l' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'o' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 'c' ||
+            (ctx->buffer.buf + ctx->cur)[3] != 'a' ||
+            (ctx->buffer.buf + ctx->cur)[4] != 'l'
+        ) goto L0015;
+        ctx->cur += 5;
+        goto L0001;
+    L0015:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 6) < 6 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'r' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'e' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 't' ||
+            (ctx->buffer.buf + ctx->cur)[3] != 'u' ||
+            (ctx->buffer.buf + ctx->cur)[4] != 'r' ||
+            (ctx->buffer.buf + ctx->cur)[5] != 'n'
+        ) goto L0016;
+        ctx->cur += 6;
+        goto L0001;
+    L0016:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
             pcc_refill_buffer(ctx, 5) < 5 ||
             (ctx->buffer.buf + ctx->cur)[0] != 'b' ||
             (ctx->buffer.buf + ctx->cur)[1] != 'r' ||
             (ctx->buffer.buf + ctx->cur)[2] != 'e' ||
             (ctx->buffer.buf + ctx->cur)[3] != 'a' ||
             (ctx->buffer.buf + ctx->cur)[4] != 'k'
-        ) goto L0014;
+        ) goto L0017;
         ctx->cur += 5;
         goto L0001;
-    L0014:;
+    L0017:;
         ctx->cur = p;
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
         if (
@@ -7007,10 +7045,91 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Keyword(deli_context_t *ctx) {
             (ctx->buffer.buf + ctx->cur)[5] != 'n' ||
             (ctx->buffer.buf + ctx->cur)[6] != 'u' ||
             (ctx->buffer.buf + ctx->cur)[7] != 'e'
-        ) goto L0015;
+        ) goto L0018;
         ctx->cur += 8;
         goto L0001;
-    L0015:;
+    L0018:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 5) < 5 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'a' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 's' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 'y' ||
+            (ctx->buffer.buf + ctx->cur)[3] != 'n' ||
+            (ctx->buffer.buf + ctx->cur)[4] != 'c'
+        ) goto L0019;
+        ctx->cur += 5;
+        goto L0001;
+    L0019:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 5) < 5 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'r' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'e' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 'd' ||
+            (ctx->buffer.buf + ctx->cur)[3] != 'i' ||
+            (ctx->buffer.buf + ctx->cur)[4] != 'r'
+        ) goto L0020;
+        ctx->cur += 5;
+        goto L0001;
+    L0020:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 3) < 3 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'a' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'n' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 'd'
+        ) goto L0021;
+        ctx->cur += 3;
+        goto L0001;
+    L0021:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 2) < 2 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'o' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'r'
+        ) goto L0022;
+        ctx->cur += 2;
+        goto L0001;
+    L0022:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 3) < 3 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'n' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'o' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 't'
+        ) goto L0023;
+        ctx->cur += 3;
+        goto L0001;
+    L0023:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 4) < 4 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'p' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'u' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 's' ||
+            (ctx->buffer.buf + ctx->cur)[3] != 'h'
+        ) goto L0024;
+        ctx->cur += 4;
+        goto L0001;
+    L0024:;
+        ctx->cur = p;
+        pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+        if (
+            pcc_refill_buffer(ctx, 3) < 3 ||
+            (ctx->buffer.buf + ctx->cur)[0] != 'p' ||
+            (ctx->buffer.buf + ctx->cur)[1] != 'o' ||
+            (ctx->buffer.buf + ctx->cur)[2] != 'p'
+        ) goto L0025;
+        ctx->cur += 3;
+        goto L0001;
+    L0025:;
         ctx->cur = p;
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
         goto L0000;

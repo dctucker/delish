@@ -10,7 +10,7 @@ import deliast
 
 type Parser* = ref object
   source*:      string
-  debug*:       bool
+  debug*:       int
   captures:     Stack[string]
   symbol_stack: Stack[string]
   node_stack:   Stack[DeliNode]
@@ -22,7 +22,14 @@ type Parser* = ref object
 proc packcc_main*(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
 proc debug(parser: Parser, msg: varargs[string]) =
-  if not parser.debug:
+  if parser.debug == 0:
+    return
+  for m in msg:
+    stdout.write(m)
+  stdout.write("\n")
+
+proc debug_tree(parser: Parser, msg: varargs[string]) =
+  if parser.debug < 2:
     return
   for m in msg:
     stdout.write(m)
@@ -96,14 +103,6 @@ proc initLineNumbers(parser: Parser) =
     parser.line_numbers.add(offset)
   #parser.debug parser.line_numbers
 
-
-#proc echoItems(p: Peg) =
-#  for item in p.items():
-#    echo item.kind, item
-#    echoItems(item)
-
-#let grammar = peg(getGrammar())
-
 proc assimilate(inner, outer: DeliNode) =
   if outer.kind == dkStream:
     outer.intVal = case inner.kind
@@ -112,7 +111,6 @@ proc assimilate(inner, outer: DeliNode) =
       of dkStreamErr: 2
       else: -1
 
-#import std/marshal
 proc parse*(parser: Parser): int =
   parser.initParser()
   parser.initLineNumbers()
@@ -122,14 +120,6 @@ proc parse*(parser: Parser): int =
   let y = packcc_main(cstr, parser.source.len.cint, parser)
   parser.entry_point = parser.nodes[^1]
 
-  #echo "=== Grammar ==="
-  #echo grammar.repr
-  #echo "=== /Grammar ==="
-
-  #let serial = $$grammar
-  #echo serial
-
-  #parser.parsed_len = peg_parser(parser.source)
   return parser.parsed_len
 
 proc enter*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
@@ -195,7 +185,7 @@ proc parseCapture(parser: Parser, rstart, rend: csize_t, buffer: cstring): DeliN
   if length > 0:
     for i in 0 .. length - 1:
       capture[i] = buffer[i].char
-  debug parser, "CAPTURE ", capture
+  debug_tree parser, "CAPTURE ", capture
   #parser.parseCapture(rstart.int, length.int, capture)
 
 proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: cstring): cint {.exportc.} =
@@ -208,7 +198,7 @@ proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: c
     for i in 0 .. length - 1:
       capture[i] = buffer[i].char
 
-  debug parser, $result, " nodeString ", $kind, " \"", capture, "\""
+  debug_tree parser, $result, " nodeString ", $kind, " \"", capture, "\""
   node.parseCapture(capture)
 
   parser.nodes.add(node)
@@ -228,13 +218,13 @@ proc getNode(parser: Parser, i: cint): DeliNode =
 
 proc createNode0(parser: Parser, kind: DeliKind): cint {.exportc.} =
   result = parser.nodes.len.cint
-  debug parser, $result, " createNode0 ", $kind
+  debug_tree parser, $result, " createNode0 ", $kind
   let node = DeliNode(kind: kind)
   parser.nodes.add(node)
 
 proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
-  debug parser, $result, " createNode1 ", $kind, " ", $s1
+  debug_tree parser, $result, " createNode1 ", $kind, " ", $s1
   let node = DeliNode(kind: kind, sons: @[])
 
   let son1 = parser.getNode(s1)
@@ -244,7 +234,7 @@ proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
 
 proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
-  debug parser, $result, " createNode2 ", $kind, " ", $s1, " ", $s2
+  debug_tree parser, $result, " createNode2 ", $kind, " ", $s1, " ", $s2
   var node = DeliNode(kind: kind, sons: @[])
 
   let son1 = parser.getNode(s1)
@@ -256,7 +246,7 @@ proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.}
 
 proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
-  debug parser, $result, " createNode3 ", $kind, " ", $s1, " ", $s2, " ", $s3
+  debug_tree parser, $result, " createNode3 ", $kind, " ", $s1, " ", $s2, " ", $s3
   var node = DeliNode(kind: kind, sons: @[])
 
   let son1 = parser.getNode(s1)
@@ -270,12 +260,12 @@ proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.expor
 
 proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   let son = parser.getNode(s)
-  debug parser, $p, " nodeAppend ", $son.kind, " ", $s
+  debug_tree parser, $p, " nodeAppend ", $son.kind, " ", $s
   parser.getNode(p).sons.add(son)
   result = p
 
 proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
-  debug parser, $n, " setLine ", $l
+  debug_tree parser, $n, " setLine ", $l
   var node = parser.getNode(n)
   node.line = parser.line_number(l.int)
   parser.nodes[n] = node

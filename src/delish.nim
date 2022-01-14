@@ -47,7 +47,7 @@ when isMainModule:
     quit 2
 
   let source = readFile(filename)
-  let parser = Parser(source: source, debug: debug > 0)
+  let parser = Parser(source: source, debug: debug)
   var parsed_len = 0
   if debug > 0:
     benchmark "parsing":

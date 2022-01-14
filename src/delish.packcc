@@ -48,8 +48,9 @@ VLine         <- ( "\n"                                              { $$ = -1; 
                  )                                                   { if( $$ >= 0 ) SL($$); }
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <- ( !'$'
-               ( a:Conditional / a:WhileLoop / a:ForLoop / a:Function
-               ) / a:Subshell
+               (  a:Conditional / a:WhileLoop / a:ForLoop / a:Function
+               )
+               /  a:Subshell
               )                                                      { CN1( Block    , a ); SL(a); }
 Statement     <-
               (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
@@ -91,8 +92,9 @@ EnvStmt       <- "env" Blank+ v:Variable                             { CN1( EnvS
                  (Blank* o:DefaultOp Blank* e:EnvDefault             { NA( $$, o ); NA( $$, e ); }
                  )?
 IncludeStmt   <- "include" Blank+ s:StrLiteral                       { CN1( IncludeStmt, s ); }
-StreamStmt    <- ( v:Variable "." s:Stream Blank+ l:ExprList         { CN3( StreamStmt,  v, s, l ); }
-              /                   s:Stream Blank+ l:ExprList         { CN2( StreamStmt,  s, l ); }
+StreamStmt    <-
+              (  v:Variable "." s:Stream Blank+ l:ExprList           { CN3( StreamStmt,  v, s, l ); }
+              /                 s:Stream Blank+ l:ExprList           { CN2( StreamStmt,  s, l ); }
               )
 RunStmt       <- (
                ( f1:AsyncFlag / f2:RedirFlag
@@ -115,7 +117,8 @@ Invocation    <- c:Command                                           { CN1( Invo
 ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { CN2( ArgExpr, a, e ); }
 Expr          <- (
                  s:MathExpr / s:BoolExpr
-               / s:VarDeref / s:Arg        / s:Array   / s:Object
+               / s:VarDeref / s:Arg
+               / s:Array   / s:Object
                / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
                / s:Path     / s:JsonBlock  / s:Stream
                )                                                     { CN1( Expr, s); }
@@ -173,12 +176,15 @@ Object        <- '['                                                 { CN0( Obje
               )+ ']'
 Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { CN2( Pair, k, v ); }
 JsonBlock     <- "json" Blank+ s:StrBlock                            { CN1( JsonBlock, s ); }
-Keyword       <- "json" / "sub"   / "if"  / "while"  / "arg"
+Keyword       <- "json" / "sub"   / "if"  / "while" / "for"
                / "in"   / "out"   / "err" / "include"
-               / "true" / "false" / "env" / "break" / "continue"
+               / "true" / "false" / "env" / "arg" / "local"
+               / "return" / "break" / "continue"
+               / "async" / "redir" / "and" / "or" / "not"
+               / "push" / "pop"
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String    ); }
 StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String    ); }
-Command       <- < W ( W / '-' )* >                                  { NS( Command   ); }
+Command       <- < W ( W / '-' )* >                                  { NS( String    ); }
 Identifier    <- !Keyword < ( W / '-' )+ >                           { NS( Identifier); }
 ArgShort      <- '-' < W+ >                                          { NS( ArgShort  ); }
 ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLong   ); }

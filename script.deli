@@ -62,6 +62,12 @@ $x += $flags.2
 $x += $flags.0
 out $x
 
+$n = 5
+while $n > 0 {
+  out $n
+  $n -= 1
+}
+
 #
 ##$js = json """
 ##{
