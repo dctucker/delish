@@ -12,8 +12,7 @@ type Parser* = ref object
   source*:      string
   debug*:       int
   captures:     Stack[string]
-  symbol_stack: Stack[string]
-  node_stack:   Stack[DeliNode]
+  symbol_stack: Stack[DeliKind]
   entry_point:  DeliNode
   nodes:        seq[DeliNode]
   line_numbers: seq[int]
@@ -83,19 +82,9 @@ proc parseCapture(node: DeliNode, capture: string) =
   else:
     todo "capture failed for ", $(node.kind), " '", capture, "'"
 
-proc parseCapture(parser: Parser, start, length: int, s: string) =
-  if length >= 0:
-    let matchStr = s.substr(start, start+length-1)
-    parser.captures.push(matchStr)
-    debug parser, "\27[1;33m", parser.indent("capture: "), "\27[4m", matchStr.replace("\n","\\n"), "\27[0m"
-
-    let node = parser.node_stack.pop()
-    node.parseCapture(s[ start .. start+length-1 ])
-    parser.node_stack.push(node)
-
 proc initParser(parser: Parser) =
   parser.captures     = Stack[string]()
-  parser.symbol_stack = Stack[string]()
+  parser.symbol_stack = Stack[DeliKind]()
 
 proc initLineNumbers(parser: Parser) =
   parser.line_numbers = @[0]
@@ -123,27 +112,15 @@ proc parse*(parser: Parser): int =
   return parser.parsed_len
 
 proc enter*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
-  parser.node_stack.push(DeliNode(kind: k, line: parser.line_number(pos)))
   debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
-  parser.symbol_stack.push($k)
-  #echo "\27[31m", $parser.node_stack, "\27[0m"
+  parser.symbol_stack.push(k)
 
 proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
-  let inner_node = parser.node_stack.pop()
   discard parser.symbol_stack.pop()
   if matchStr.len > 0:
     debug parser, parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
-
-    if parser.node_stack.len() > 0:
-      var outer_node = parser.node_stack.pop()
-      outer_node.sons.add( inner_node )
-      assimilate(inner_node, outer_node)
-      parser.entry_point = outer_node
-      parser.node_stack.push(outer_node)
   else:
     debug parser, parser.indent("\27[30;1m< "), $k, "\27[0m"
-
-  #echo "\27[31m", $parser.node_stack, "\27[0m"
 
 proc getLine*(parser: Parser, line: int): string =
   let start = parser.line_numbers[line]
@@ -205,16 +182,6 @@ proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: c
 
 proc getNode(parser: Parser, i: cint): DeliNode =
   result = if i.int <= 0: deliNone() else: parser.nodes[i.int]
-
-#proc createNode(parser: Parser, kind: DeliKind, ints: varargs[cint]): cint {.exportc.} =
-#  result = parser.nodes.len.cint
-#  debug parser, "createNode ", $kind
-#  let node = DeliNode(kind: kind, sons: @[])
-#
-#  for i in ints:
-#    let son = parser.getNode(i)
-#    node.sons.add(son)
-#  parser.nodes.add(node)
 
 proc createNode0(parser: Parser, kind: DeliKind): cint {.exportc.} =
   result = parser.nodes.len.cint

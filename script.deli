@@ -68,6 +68,11 @@ while $n > 0 {
   $n -= 1
 }
 
+do {
+  $n += 1
+  out $n
+} while $n < 5
+
 #
 ##$js = json """
 ##{

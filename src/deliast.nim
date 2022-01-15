@@ -28,7 +28,6 @@ type
     of dkBoolean:      boolVal*:    bool
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
-    of dkJump:         node*:       DeliListNode
     of dkObject,
        dkRan:          table*:      DeliTable
     of dkArgShort,
@@ -37,7 +36,11 @@ type
     of dkArgStmt:      short_name*, long_name*, default_value*: DeliNode
     of dkIncludeStmt:  includeVal*: DeliNode
     of dkFunctionStmt: funcName*:   DeliNode
-    of dkForLoop:      counter*:    string
+    of dkJump,
+       dkWhileLoop,
+       dkDoLoop,
+       dkConditional,
+       dkForLoop:      node*:       DeliListNode
     else:
       discard
     sons*: seq[DeliNode]

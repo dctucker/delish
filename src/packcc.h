@@ -3,6 +3,7 @@
 #ifndef PCC_INCLUDED_PACKCC_H
 #define PCC_INCLUDED_PACKCC_H
 
+#include "stdarg.h"
 #include "delikind.h"
 struct deli_t {
         const char *input;

@@ -3,6 +3,7 @@
 %auxil "struct deli_t *"
 
 %header {
+	#include "stdarg.h"
 	#include "delikind.h"
 	struct deli_t {
 		const char *input;
@@ -28,6 +29,9 @@
 	#define NA(P,S)     nodeAppend( auxil->parser, P, S )
 	#define SL(X)       setLine( auxil->parser, X, _0s )
 
+	#define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
+	#define DK(...) GET_DK( __VA_ARGS__, CN3, CN2, CN1, CN0)(__VA_ARGS__)
+
 	int deli_get_character( struct deli_t *auxil )
 	{
 		if( auxil->offset >= auxil->length )
@@ -36,185 +40,203 @@
 	}
 }
 
-Script        <- c:Code                                              { CN1( Script, c ); }
-Code          <-                                                     { CN0( Code ); }
+Script        <- c:Code                                              { DK( Script, c ); }
+Code          <-                                                     { DK( Code ); }
               (  Blank* l:VLine                                      { if( l >= 0 ) NA( $$, l ); }
               )+ Blank*
 Blank         <- ( "\\" "\n" ) / "\t" / ' '
-VLine         <- ( "\n"                                              { $$ = -1; }
-                 / Comment                                           { $$ = -1; }
-                 / a:Block                                           { $$ = a; }
-                 / a:Statement Comment* "\n"                         { $$ = a; }
-                 )                                                   { if( $$ >= 0 ) SL($$); }
+VLine         <-
+              (  "\n"                                                { $$ = -1; }
+              /  Comment                                             { $$ = -1; }
+              /  a:Block                                             { $$ = a; }
+              /  a:Statement Comment* "\n"                           { $$ = a; }
+              )                                                      { if( $$ >= 0 ) SL($$); }
 Comment       <- '#' (! "\n" .)* "\n"
-Block         <- ( !'$'
-               (  a:Conditional / a:WhileLoop / a:ForLoop / a:Function
+Block         <-
+              (  !'$'
+               ( a:Conditional
+               / a:DoLoop / a:WhileLoop / a:ForLoop
+               / a:Function
                )
-               /  a:Subshell
-              )                                                      { CN1( Block    , a ); SL(a); }
+              /  a:Subshell
+              )                                                      { DK( Block    , a ); SL(a); }
 Statement     <-
               (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
               /  a:EnvStmt      /  a:IncludeStmt  /  a:StreamStmt
               /  a:RunStmt      /  a:FunctionStmt /  a:BreakStmt
               /  a:ContinueStmt /  a:ReturnStmt   /  a:Push / a:Pop
-              )                                                      { CN1( Statement  , a ); SL(a); }
+              )                                                      { DK( Statement  , a ); SL(a); }
 Conditional   <- "if" Blank+ e:Condition
-                 Blank+ "{" _ c:Code? _ "}" _                        { CN2( Conditional, e, c ); }
+                 Blank+ "{" _ c:Code? _ "}" _                        { DK( Conditional, e, c ); }
 WhileLoop     <- "while" Blank+ e:Condition
-                 Blank+ "{" _ c:Code? _ "}" _                        { CN2( WhileLoop  , e, c ); }
-ForLoop       <- "for" Blank+ v:Variable Blank+ "in" Blank+ e:Expr
-                 Blank+ "{" _ c:Code? _ "}" _                        { CN3( ForLoop    , v, e, c ); }
+                 Blank+ "{" _ c:Code? _ "}" _                        { DK( WhileLoop  , e, c ); }
+DoLoop        <- "do" Blank+ "{" _ c:Code? _ "}" _
+                 "while" Blank+ e:Condition                          { DK( DoLoop     , c, e ); }
+ForLoop       <- "for" Blank+ v:Variable Blank+ "in" Blank+ e:IterExpr
+                 Blank+ "{" _ c:Code? _ "}" _                        { DK( ForLoop    , v, e, c ); }
 Function      <- !Keyword i:Identifier Blank*        "="
-                 Blank* "{" _ c:Code? _ "}" _                        { CN2( Function   , i, c ); }
-Subshell      <- "sub" Blank+ "{" _ c:Code? _ "}" _                  { CN1( Subshell   , c ); }
-BreakStmt     <- "break"                                             { CN0( BreakStmt ); }
-ContinueStmt  <- "continue"                                          { CN0( ContinueStmt ); }
-ReturnStmt    <- "return"                                            { CN0( ReturnStmt ); }
-Push          <- "push"                                              { CN0( Push ); }
-Pop           <- "pop"                                               { CN0( Pop ); }
+                 Blank* "{" _ c:Code? _ "}" _                        { DK( Function   , i, c ); }
+Subshell      <- "sub" Blank+ "{" _ c:Code? _ "}" _                  { DK( Subshell   , c ); }
+BreakStmt     <- "break"                                             { DK( BreakStmt ); }
+ContinueStmt  <- "continue"                                          { DK( ContinueStmt ); }
+ReturnStmt    <- "return"                                            { DK( ReturnStmt ); }
+Push          <- "push"                                              { DK( Push ); }
+Pop           <- "pop"                                               { DK( Pop ); }
 VariableStmt  <- &'$' v:Variable Blank*
-              (  o:AssignOp Blank*
-               ( e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt )
-              /  o:AppendOp Blank*
-               ( e:ArgExpr / e:Expr / e:RunStmt )
-              /  o:RemoveOp Blank*
-               ( e:ArgExpr / e:Expr / e:RunStmt )
-              )                                                      { CN3( VariableStmt, v, o, e ); }
-OpenExpr      <- "open" (Blank+ o:RedirOp)? Blank+ p:Path            { CN2( OpenExpr, p, o); }
-LocalStmt     <- "local" Blank+ v:Variable                           { CN1( LocalStmt, v ); }
+              (  o:AssignOp Blank* e:AssignExpr
+              /  o:AppendOp Blank* e:AppendExpr
+              /  o:RemoveOp Blank* e:AppendExpr
+              )                                                      { DK( VariableStmt, v, o, e ); }
+AssignExpr    <- ( e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt )     { $$ = e; }
+AppendExpr    <- ( e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr )    { $$ = e; }
+OpenExpr      <- "open" (Blank+ o:RedirOp)? Blank+ p:Path            { DK( OpenExpr, p, o); }
+LocalStmt     <- "local" Blank+ v:Variable                           { DK( LocalStmt, v ); }
               (  Blank* "=" Blank* e:Expr                            { NA( $$, e ); }
               )?
 ArgStmt       <- "arg"
-                 ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { CN3( ArgStmt, a, o, d); }
-                 / a:ArgNames                                        { CN1( ArgStmt, a); }
+                 ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { DK( ArgStmt, a, o, d); }
+                 / a:ArgNames                                        { DK( ArgStmt, a); }
                  )
-EnvStmt       <- "env" Blank+ v:Variable                             { CN1( EnvStmt, v ); }
+EnvStmt       <- "env" Blank+ v:Variable                             { DK( EnvStmt, v ); }
                  (Blank* o:DefaultOp Blank* e:EnvDefault             { NA( $$, o ); NA( $$, e ); }
                  )?
-IncludeStmt   <- "include" Blank+ s:StrLiteral                       { CN1( IncludeStmt, s ); }
+IncludeStmt   <- "include" Blank+ s:StrLiteral                       { DK( IncludeStmt, s ); }
 StreamStmt    <-
-              (  v:Variable "." s:Stream Blank+ l:ExprList           { CN3( StreamStmt,  v, s, l ); }
-              /                 s:Stream Blank+ l:ExprList           { CN2( StreamStmt,  s, l ); }
+              (  v:Variable "." s:Stream Blank+ l:ExprList           { DK( StreamStmt,  v, s, l ); }
+              /                 s:Stream Blank+ l:ExprList           { DK( StreamStmt,  s, l ); }
               )
-RunStmt       <- (
-               ( f1:AsyncFlag / f2:RedirFlag
-               / (f1:AsyncFlag f2:RedirFlag)
-               ) Blank+
-              )? "run" Blank+ i:Invocation                           { CN1( RunStmt, i ); }
+RunStmt       <-
+              (  f:RunFlags Blank+ "run"                             { DK( RunStmt, f ); }
+              /  "run"                                               { DK( RunStmt ); }
+              )  Blank+ i:Invocation                                 { NA( $$, i ); }
               (  Blank* "|" Blank* i:Invocation                      { NA( $$, i ); }
               )*
-FunctionStmt  <- i:Identifier                                        { CN1( FunctionStmt, i ); SL(i); }
+RunFlags      <-
+              (  f:AsyncFlag                                         { DK( RunFlags, f ); }
+              /  f:RedirFlag                                         { DK( RunFlags, f ); }
+              /  (f1:AsyncFlag f2:RedirFlag)                         { DK( RunFlags, f1, f2 ); }
+              )
+FunctionStmt  <- i:Identifier                                        { DK( FunctionStmt, i ); SL(i); }
                ( Blank+ e:Expr                                       { NA( $$, e ); }
                )*
-ArgDefault    <- e:Expr                                              { CN1( ArgDefault, e ); }
-EnvDefault    <- e:Expr                                              { CN1( EnvDefault, e ); }
-ExprList      <- e:Expr                                              { CN1( ExprList, e ); }
+ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
+EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }
+ExprList      <- e:Expr                                              { DK( ExprList, e ); }
                ( Blank* ',' Blank* e:Expr Blank*                     { NA( $$, e ); }
                )*
-Invocation    <- c:Command                                           { CN1( Invocation, c ); }
+Invocation    <- c:Command                                           { DK( Invocation, c ); }
               (  Blank+ !'|' (e:Expr / e:String)                     { NA( $$, e ); }
               )*
-ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { CN2( ArgExpr, a, e ); }
+ArgExpr       <- a:Arg (Blank+ / '=') e:Expr?                        { DK( ArgExpr, a, e ); }
+ConstExpr     <-
+              (  e:Integer / e:StrBlock / e:StrLiteral
+              /  e:Boolean / e:Array / e:Object
+              /  e:Path / e:JsonBlock
+              )                                                      { $$ = e; }
 Expr          <- (
                  "(" Blank+ s:MathExpr Blank+ ")"
-               / s:BoolExpr
                / s:Array / s:Object
                / s:Arg / s:VarDeref
                / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
+               / s:BoolExpr
                / s:Path     / s:JsonBlock  / s:Stream
-               )                                                     { CN1( Expr, s); }
+               )                                                     { DK( Expr, s); }
+IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
 Condition     <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
-MathExpr      <- e1:Expr Blank+ o:MathOp Blank+ e2:Expr              { CN3( MathExpr, o, e1, e2 ); }
-              (          Blank+ o:MathOp Blank+ e3:Expr              { CN3( MathExpr, o, $$, e3 ); }
+MathExpr      <- e1:Expr Blank+ o:MathOp Blank+ e2:Expr              { DK( MathExpr, o, e1, e2 ); }
+              (          Blank+ o:MathOp Blank+ e3:Expr              { DK( MathExpr, o, $$, e3 ); }
               )*
-MathOp        <- o:AddOp / o:SubOp / o:MulOp / o:DivOp               { CN1( MathOp, o ); }
-AddOp         <- "+"                                                 { CN0( AddOp ); }
-SubOp         <- "-"                                                 { CN0( SubOp ); }
-MulOp         <- "*"                                                 { CN0( MulOp ); }
-DivOp         <- "/"                                                 { CN0( DivOp ); }
+MathOp        <- o:AddOp / o:SubOp / o:MulOp / o:DivOp               { DK( MathOp, o ); }
+AddOp         <- "+"                                                 { DK( AddOp ); }
+SubOp         <- "-"                                                 { DK( SubOp ); }
+MulOp         <- "*"                                                 { DK( MulOp ); }
+DivOp         <- "/"                                                 { DK( DivOp ); }
 BoolExpr      <-
-              (  n:BoolNot Blank+ c:Comparison                       { CN1( BoolExpr, CN1( BoolNot, c ) ); }
-              /  c:Comparison                                        { CN1( BoolExpr, c ); }
+              (  n:BoolNot Blank+ c:Comparison                       { DK( BoolExpr, DK( BoolNot, c ) ); }
+              /  c:Comparison                                        { DK( BoolExpr, c ); }
               )
-              (  Blank+ o:BoolOp2 Blank+ c:Comparison                { CN3( BoolExpr, o, $$, c ); }
-              /  Blank+ o:BoolOp2 Blank+ n:BoolNot c:Comparison      { CN3( BoolExpr, o, $$, CN1( BoolNot, c ) ); }
+              (  Blank+ o:BoolOp2 Blank+ c:Comparison                { DK( BoolExpr, o, $$, c ); }
+              /  Blank+ o:BoolOp2 Blank+ n:BoolNot c:Comparison      { DK( BoolExpr, o, $$, DK( BoolNot, c ) ); }
               )*
-BoolOp2       <- o:BoolOr / o:BoolAnd                                { CN1( BoolOp2, o ); }
+BoolOp2       <- o:BoolOr / o:BoolAnd                                { DK( BoolOp2, o ); }
 BoolNot       <- "not"
-BoolOr        <- "or"                                                { CN0( BoolOr ); }
-BoolAnd       <- "and"                                               { CN0( BoolAnd ); }
-Comparison    <- e1:CompExpr Blank+ o:Comparator Blank+ e2:CompExpr  { CN3( Comparison, o, e1, e2 ); }
+BoolOr        <- "or"                                                { DK( BoolOr ); }
+BoolAnd       <- "and"                                               { DK( BoolAnd ); }
+Comparison    <- e1:CompExpr Blank+ o:Comparator Blank+ e2:CompExpr  { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
-              (  s:VarDeref / s:StrLiteral
+              (  s:VarDeref / s:StrBlock / s:StrLiteral
               /  s:Integer / s:Boolean / s:Path
               )                                                      { $$ = s; }
 Comparator    <- ( o:CompGe / o:CompGt
                /   o:CompLe / o:CompLt
                /   o:CompEq / o:CompNe )                             { $$ = o; }
-CompGe        <- ">="                                                { CN0( CompGe ); }
-CompGt        <- ">"                                                 { CN0( CompGt ); }
-CompLe        <- "<="                                                { CN0( CompLe ); }
-CompLt        <- "<"                                                 { CN0( CompLt ); }
-CompEq        <- "=="                                                { CN0( CompEq ); }
-CompNe        <- "!="                                                { CN0( CompNe ); }
-VarDeref      <- &'$' n:Variable                                     { CN1( VarDeref, n ); }
+CompGe        <- ">="                                                { DK( CompGe ); }
+CompGt        <- ">"                                                 { DK( CompGt ); }
+CompLe        <- "<="                                                { DK( CompLe ); }
+CompLt        <- "<"                                                 { DK( CompLt ); }
+CompEq        <- "=="                                                { DK( CompEq ); }
+CompNe        <- "!="                                                { DK( CompNe ); }
+VarDeref      <- &'$' n:Variable                                     { DK( VarDeref, n ); }
               (  "."
                ( s:StrLiteral / s:Integer
                / s:Variable   / s:Identifier  )                      { NA( $$, s ); }
               )*
-RedirFlag     <- "redir"
+RedirFlag     <- "redir"                                             { DK( RedirFlag ); }
               (  Blank+
-               ( Variable / Path / Stream ) Blank*
-                 RedirOp Blank*
-               ( Variable / Path / Stream )
+               ( i:VarDeref / i:Path / i:Stream ) Blank*
+                 r:RedirOp Blank*
+               ( o:VarDeref / o:Path / o:Stream )                    { NA( r, i ); NA( r, o ); NA( $$, r ); }
               )+
-AsyncFlag     <- "async"
-ArgNames      <- ( Blank+ a:Arg )+                                   { CN1( ArgNames, a); }
+AsyncFlag     <- "async"                                             { DK( AsyncFlag ); }
+ArgNames      <- ( Blank+ a:Arg )+                                   { DK( ArgNames, a); }
 Arg           <- &'-'
-              (  l:ArgLong                                           { CN1( Arg, l ); }
-              /  s:ArgShort                                          { CN1( Arg, s ); }
+              (  l:ArgLong                                           { DK( Arg, l ); }
+              /  s:ArgShort                                          { DK( Arg, s ); }
               )
-Array         <- '['                                                 { CN0( Array ); }
+Array         <- "[" Blank* "]"                                      { DK( Array ); }
+              /  '['                                                 { DK( Array ); }
               (  _ e:Expr                                            { NA( $$, e ); }
                  Blank* ','? _
               )* ']'
-Object        <- '['                                                 { CN0( Object ); }
+Object        <- '['                                                 { DK( Object ); }
               (  _ p:Pair                                            { NA( $$, p ); }
                  Blank* ','? _
               )+ ']'
-Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { CN2( Pair, k, v ); }
-JsonBlock     <- "json" Blank+ s:StrBlock                            { CN1( JsonBlock, s ); }
-Keyword       <- "json" / "sub"   / "if"  / "while" / "for"
+Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { DK( Pair, k, v ); }
+JsonBlock     <- "json" Blank+ s:StrBlock                            { DK( JsonBlock, s ); }
+Keyword       <- "json" / "sub"   / "if"  / "do" / "while" / "for"
                / "in"   / "out"   / "err" / "include"
                / "true" / "false" / "env" / "arg" / "local"
                / "return" / "break" / "continue"
                / "async" / "redir" / "and" / "or" / "not"
                / "push" / "pop"
-StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String    ); }
-StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String    ); }
-Command       <- < W ( W / '-' )* >                                  { NS( String    ); }
+StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
+StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }
+Command       <- < W ( W / '-' )* >                                  { NS( String ); }
 Identifier    <- !Keyword < ( W / '-' )+ >                           { NS( Identifier); }
-ArgShort      <- '-' < W+ >                                          { NS( ArgShort  ); }
-ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLong   ); }
-String        <- < S+ >                                              { NS( String    ); }
-Integer       <- < [0-9]+ >                                          { NS( Integer   ); }
-Path          <- < ("."* "/" S+ ) / "." >                            { NS( Path      ); }
-Variable      <- '$' < (W / '-')+ >                                  { NS( Variable  ); }
-Boolean       <- < "true" / "false" >                                { NS( Boolean   ); }
-Stream        <- &[ioe] ( s:StreamIn / s:StreamOut / s:StreamErr )   { CN1( Stream, s ); }
-StreamIn      <- "in"                                                { CN0( StreamIn ); }
-StreamOut     <- "out"                                               { CN0( StreamOut ); }
-StreamErr     <- "err"                                               { CN0( StreamErr ); }
-AssignOp      <- "="                                                 { CN0( AssignOp ); }
-AppendOp      <- "+="                                                { CN0( AppendOp ); }
-RemoveOp      <- "-="                                                { CN0( RemoveOp ); }
-RedirOp       <- ( o:RedirAppendOp / o:RedirReadOp
-               / o:RedirWriteOp / o:RedirDuplexOp )                  { CN1( RedirOp, o ); }
-RedirAppendOp <- ">>"                                                { CN0( RedirAppendOp ); }
-RedirReadOp   <- "<"                                                 { CN0( RedirReadOp ); }
-RedirWriteOp  <- ">"                                                 { CN0( RedirWriteOp ); }
-RedirDuplexOp <- "<>"                                                { CN0( RedirDuplexOp ); }
-DefaultOp     <- "|="                                                { CN0( DefaultOp ); }
+ArgShort      <- '-' < W+ >                                          { NS( ArgShort ); }
+ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLong ); }
+String        <- < S+ >                                              { NS( String ); }
+Integer       <- < [0-9]+ >                                          { NS( Integer ); }
+Path          <- < ("."* "/" S+ ) / "." >                            { NS( Path ); }
+Variable      <- '$' < (W / '-')+ >                                  { NS( Variable ); }
+Boolean       <- < "true" / "false" >                                { NS( Boolean ); }
+Stream        <- &[ioe] ( s:StreamIn / s:StreamOut / s:StreamErr )   { DK( Stream, s ); }
+StreamIn      <- "in"                                                { DK( StreamIn ); }
+StreamOut     <- "out"                                               { DK( StreamOut ); }
+StreamErr     <- "err"                                               { DK( StreamErr ); }
+AssignOp      <- "="                                                 { DK( AssignOp ); }
+AppendOp      <- "+="                                                { DK( AppendOp ); }
+RemoveOp      <- "-="                                                { DK( RemoveOp ); }
+RedirOp       <-
+              (  o:RedirAppendOp / o:RedirReadOp
+              /  o:RedirWriteOp / o:RedirDuplexOp
+              )                                                      { DK( RedirOp, o ); }
+RedirAppendOp <- ">>"                                                { DK( RedirAppendOp ); }
+RedirReadOp   <- "<"                                                 { DK( RedirReadOp ); }
+RedirWriteOp  <- ">"                                                 { DK( RedirWriteOp ); }
+RedirDuplexOp <- "<>"                                                { DK( RedirDuplexOp ); }
+DefaultOp     <- "|="                                                { DK( DefaultOp ); }
 S             <- [^ \n\r\t]
 W             <- [A-Za-z0-9-]
 _             <- [ \n\r\t]*

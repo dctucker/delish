@@ -1,5 +1,6 @@
 
 import times
+import strutils
 import deliparser
 import deliargs
 import deliast
@@ -10,8 +11,8 @@ template benchmark(benchmarkName: string, code: untyped) =
   block:
     let t0 = epochTime()
     code
-    let elapsed = epochTime() - t0
-    echo "CPU Time [", benchmarkName, "] ", elapsed, "s"
+    let elapsed = 1000 * (epochTime() - t0)
+    echo "CPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms"
 
 when isMainModule:
 #  import pegs
