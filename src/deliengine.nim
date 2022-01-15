@@ -577,33 +577,37 @@ proc doConditional(engine: Engine, cond: DeliNode) =
   else:
     engine.setHeads(jump_false.node)
 
-proc doDoLoop(engine: Engine, node: DeliNode) =
-  let code = node.sons[0]
-  let condition = node.sons[1]
-  let top_line = -node.line
+proc doDoLoop(engine: Engine, loop: DeliNode) =
+  let code = loop.sons[0]
+  let condition = loop.sons[1]
+  let top_line = -loop.line
   let end_line = -code.sons[^1].line
 
-  var jump_break    = DK(dkJump)
-  var jump_continue = DK(dkJump)
+  if loop.node == nil:
+    var jump_break    = DK(dkJump)
+    var jump_continue = DK(dkJump)
 
-  engine.setupPush(top_line, {
-    ".break"   : jump_break,
-    ".continue": jump_continue,
-  }.toTable)
+    engine.setupPush(top_line, {
+      ".break"   : jump_break,
+      ".continue": jump_continue,
+    }.toTable)
 
-  jump_continue.node = engine.write_head
-  engine.insertStmt(code.sons)
+    jump_continue.node = engine.write_head
+    engine.insertStmt(code.sons)
 
-  engine.insertStmt( DKInner( -end_line + 1,
-    DK( dkConditional, condition,
-      DK( dkCode, DKInner( end_line - 1,
-        DeliNode(kind: dkContinueStmt, line: end_line - 1)
-      ))
-    )
-  ))
+    engine.insertStmt( DKInner( -end_line + 1,
+      DK( dkConditional, condition,
+        DK( dkCode, DKInner( end_line - 1,
+          DeliNode(kind: dkContinueStmt, line: end_line - 1)
+        ))
+      )
+    ))
 
-  jump_break.node = engine.writehead
-  engine.setupPop( end_line - 1 )
+    jump_break.node = engine.writehead
+    engine.setupPop( end_line - 1 )
+    loop.node = jump_continue.node
+
+  engine.debugNext()
 
 proc doWhileLoop(engine: Engine, loop: DeliNode) =
   let condition = loop.sons[0]
