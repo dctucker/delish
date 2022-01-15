@@ -70,6 +70,7 @@ proc DKInt*(intVal: int): DeliNode =
 proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
   var sons: seq[DeliNode] = @[]
   for node in nodes:
+    node.line = line
     sons.add(node)
   return DeliNode(kind: dkInner, sons: sons, line: line)
 
@@ -193,11 +194,11 @@ proc getOneliner*(node: DeliNode): string =
       $(node.node.value.line)
     return "jump :" & line
   of dkInner:
-    result = ""
+    result = "{ "
     for son in node.sons:
       result &= son.getOneliner()
       result &= " ; "
-    result = result[0..^4]
+    result = result[0..^4] & " }"
   of dkConditional:
     return "if " & $(node.sons[0].repr) & $(node.sons[1].repr)
   of dkReturnStmt, dkBreakStmt, dkContinueStmt:

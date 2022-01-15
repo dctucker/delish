@@ -95,6 +95,7 @@ proc lineInfo*(engine: Engine, line: int): string =
     engine.parser.getLine(line)
   else:
     getOneliner(engine.current)
+
   let delim = if line > 0:
     ":"
   else:
@@ -537,20 +538,27 @@ proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
 proc doConditional(engine: Engine, cond: DeliNode) =
   let condition = cond.sons[0]
   let code = cond.sons[1]
+  let top_line = -cond.line
   let end_line = -code.sons[^1].line
 
   #echo cond.repr
 
   if cond.node == nil:
-    var jump_true  = DeliNode(kind: dkJump, line: code.line)
-    var jump_false = DeliNode(kind: dkJump, line: end_line)
-    var jump_end   = DeliNode(kind: dkJump, line: end_line + 1)
+    var jump_true  = DK(dkJump)
+    var jump_false = DK(dkJump)
+    var jump_end   = DK(dkJump)
 
+    engine.insertStmt( DKInner( top_line, jump_true ) )
     jump_true.node = engine.writehead
+
     for stmt in code.sons:
-      engine.insertStmt(stmt)
+      engine.insertStmt( stmt )
+
+    engine.insertStmt( DKInner( end_line, jump_end ) )
+    engine.insertStmt( DKInner( end_line, jump_false ) )
     jump_false.node = engine.writehead
-    engine.insertStmt( jump_end )
+
+    #engine.insertStmt( DKInner( top_line - 1, jump_end ) )
     jump_end.node = engine.writehead
 
     cond.sons.add(jump_true)
@@ -569,17 +577,14 @@ proc doConditional(engine: Engine, cond: DeliNode) =
   else:
     engine.setHeads(jump_false.node)
 
-  engine.debugNext()
-
-
 proc doDoLoop(engine: Engine, node: DeliNode) =
   let code = node.sons[0]
   let condition = node.sons[1]
   let top_line = -node.line
   let end_line = -code.sons[^1].line
 
-  var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
-  var jump_continue = DeliNode(kind: dkJump, line: end_line)
+  var jump_break    = DK(dkJump)
+  var jump_continue = DK(dkJump)
 
   engine.setupPush(top_line, {
     ".break"   : jump_break,
@@ -589,7 +594,7 @@ proc doDoLoop(engine: Engine, node: DeliNode) =
   jump_continue.node = engine.write_head
   engine.insertStmt(code.sons)
 
-  engine.insertStmt( DKInner(top_line,
+  engine.insertStmt( DKInner( -end_line + 1,
     DK( dkConditional, condition,
       DK( dkCode, DKInner( end_line - 1,
         DeliNode(kind: dkContinueStmt, line: end_line - 1)
@@ -600,36 +605,43 @@ proc doDoLoop(engine: Engine, node: DeliNode) =
   jump_break.node = engine.writehead
   engine.setupPop( end_line - 1 )
 
-proc doWhileLoop(engine: Engine, node: DeliNode) =
-  let condition = node.sons[0]
-  let code = node.sons[1]
-  let top_line = -node.line
+proc doWhileLoop(engine: Engine, loop: DeliNode) =
+  let condition = loop.sons[0]
+  let code      = loop.sons[1]
+  let top_line = -loop.line
   let end_line = -code.sons[^1].line
 
-  var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
-  var jump_continue = DeliNode(kind: dkJump, line: end_line)
+  if loop.node == nil:
+    var jump_break    = DK(dkJump)
+    var jump_continue = DK(dkJump)
 
-  engine.setupPush(top_line, {
-    ".break"   : jump_break,
-    ".continue": jump_continue,
-  }.toTable)
+    engine.setupPush(top_line, {
+      ".break"   : jump_break,
+      ".continue": jump_continue,
+    }.toTable)
 
-  jump_continue.node = engine.write_head
-  engine.insertStmt( DKInner(top_line,
-    DK( dkConditional, DK( dkBoolNot, condition),
-      DK( dkCode, DKInner( top_line,
-        DeliNode(kind: dkBreakStmt, line: top_line)
-      ))
-    )
-  ))
-  engine.insertStmt(code.sons)
+    jump_continue.node = engine.write_head
+    engine.insertStmt( DKInner( top_line,
+      DK( dkConditional, DK( dkBoolNot, condition),
+        DK( dkCode, DKInner( top_line,
+          DeliNode(kind: dkBreakStmt, line: top_line)
+        ))
+      )
+    ))
+    engine.insertStmt(code.sons)
 
-  engine.insertStmt( DKInner(end_line - 1,
-    DK( dkContinueStmt )
-  ))
+    engine.insertStmt( DKInner(end_line - 1,
+      DK( dkContinueStmt )
+    ))
 
-  jump_break.node = engine.writehead
-  engine.setupPop( end_line - 1 )
+    jump_break.node = engine.writehead
+    engine.setupPop( end_line - 1 )
+
+    loop.sons.add(jump_break)
+    loop.sons.add(jump_continue)
+    loop.node = jump_continue.node
+
+  engine.debugNext()
 
 proc doForLoop(engine: Engine, node: DeliNode) =
   let variable = node.sons[0]
@@ -694,6 +706,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.debugNext()
   of dkJump:
     engine.setHeads(s.node)
+    engine.debugNext()
   of dkVariableStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
   of dkArgStmt:
