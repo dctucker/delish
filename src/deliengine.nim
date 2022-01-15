@@ -539,6 +539,8 @@ proc doConditional(engine: Engine, cond: DeliNode) =
   let code = cond.sons[1]
   let end_line = -code.sons[^1].line
 
+  #echo cond.repr
+
   if cond.node == nil:
     var jump_true  = DeliNode(kind: dkJump, line: code.line)
     var jump_false = DeliNode(kind: dkJump, line: end_line)
@@ -554,19 +556,18 @@ proc doConditional(engine: Engine, cond: DeliNode) =
     cond.sons.add(jump_true)
     cond.sons.add(jump_false)
     cond.node = jump_end.node
+
+  let jump_true  = cond.sons[2]
+  let jump_false = cond.sons[3]
+
+  let eval = engine.evaluate(condition)
+  debug engine, "  condition: ", $eval
+  let ok = engine.isTruthy(eval)
+
+  if ok:
+    engine.setHeads(jump_true.node)
   else:
-    let jump_true  = cond.sons[2]
-    let jump_false = cond.sons[3]
-
-    let eval = engine.evaluate(condition)
-    debug engine, "  condition: ", $eval
-    let ok = engine.isTruthy(eval)
-
-    if ok:
-      engine.setHeads(jump_true.node)
-    else:
-      engine.setHeads(jump_false.node)
-
+    engine.setHeads(jump_false.node)
 
   engine.debugNext()
 
