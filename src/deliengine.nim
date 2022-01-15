@@ -647,50 +647,52 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
 
   engine.debugNext()
 
-proc doForLoop(engine: Engine, node: DeliNode) =
-  let variable = node.sons[0]
-  let things   = engine.evaluate(node.sons[1])
-  let code     = node.sons[2]
-  let top_line = -node.line
+proc doForLoop(engine: Engine, loop: DeliNode) =
+  let variable = loop.sons[0]
+  let things   = engine.evaluate(loop.sons[1])
+  let code     = loop.sons[2]
+  let top_line = -loop.line
   let end_line = -code.sons[^1].line
   let counter  = DKVar(".counter")
 
-  var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
-  var jump_continue = DeliNode(kind: dkJump, line: end_line)
+  if loop.node == nil:
+    var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
+    var jump_continue = DeliNode(kind: dkJump, line: end_line)
 
-  engine.setupPush(top_line, {
-    ".counter" : DKInt(0),
-    ".break"   : jump_break,
-    ".continue": jump_continue,
-  }.toTable)
+    engine.setupPush(top_line, {
+      ".counter" : DKInt(0),
+      ".break"   : jump_break,
+      ".continue": jump_continue,
+    }.toTable)
 
-  jump_continue.node = engine.write_head
-  engine.insertStmt( DKInner(top_line,
-    DK( dkVariableStmt, variable, DK(dkAssignOp),
-      DK( dkVarDeref, things, counter )
-    ),
-    DK( dkConditional,
-      DK( dkComparison, DK(dkCompEq), deliNone(), variable ),
-      DK( dkCode, DKInner( top_line,
-        DeliNode(kind: dkBreakStmt, line: top_line)
-      ))
-    )
-  ))
+    jump_continue.node = engine.write_head
+    engine.insertStmt( DKInner(top_line,
+      DK( dkVariableStmt, variable, DK(dkAssignOp),
+        DK( dkVarDeref, things, counter )
+      ),
+      DK( dkConditional,
+        DK( dkComparison, DK(dkCompEq), deliNone(), variable ),
+        DK( dkCode, DKInner( top_line,
+          DeliNode(kind: dkBreakStmt, line: top_line)
+        ))
+      )
+    ))
 
-  engine.insertStmt(code.sons)
+    engine.insertStmt(code.sons)
 
-  engine.insertStmt( DKInner(end_line - 1,
-    DK( dkVariableStmt, counter, DK(dkAppendOp), DKInt(1) ),
-    DK( dkContinueStmt )
-  ))
+    engine.insertStmt( DKInner(end_line - 1,
+      DK( dkVariableStmt, counter, DK(dkAppendOp), DKInt(1) ),
+      DK( dkContinueStmt )
+    ))
 
-  jump_break.node = engine.writehead
-  engine.setupPop( end_line - 1 )
+    jump_break.node = engine.writehead
+    engine.setupPop( end_line - 1 )
+    loop.node = jump_continue.node
 
   # unroll loop
-  #let code = node.sons[2]
+  #let code = loop.sons[2]
   #for thing in things.sons:
-  #  engine.insertStmt(deliLocalAssign(variable, thing, -node.line))
+  #  engine.insertStmt(deliLocalAssign(variable, thing, -loop.line))
   #  for stmt in code.sons:
   #    engine.insertStmt(stmt)
 
