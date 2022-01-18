@@ -75,6 +75,9 @@ do {
   out $n
 } while $n < 5
 
+$x = ( 3 + 8 / 7 )
+out $x
+
 #
 ##$js = json """
 ##{

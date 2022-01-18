@@ -143,14 +143,15 @@ Expr          <- (
                )                                                     { DK( Expr, s); }
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
 Condition     <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
-MathExpr      <- e1:Expr Blank+ o:MathOp Blank+ e2:Expr              { DK( MathExpr, o, e1, e2 ); }
-              (          Blank+ o:MathOp Blank+ e3:Expr              { DK( MathExpr, o, $$, e3 ); }
+MathExpr      <- e1:Expr Blank+ o1:MathOp Blank+ e2:Expr             { DK( MathExpr, o1, e1, e2 ); }
+              (          Blank+ o2:MathOp Blank+ e3:Expr             { DK( MathExpr, o2, $$, e3 ); }
               )*
-MathOp        <- o:AddOp / o:SubOp / o:MulOp / o:DivOp               { DK( MathOp, o ); }
-AddOp         <- "+"                                                 { DK( AddOp ); }
-SubOp         <- "-"                                                 { DK( SubOp ); }
+MathOp        <- ( o:MulOp / o:DivOp / o:ModOp / o:AddOp / o:SubOp ) { $$ = o; }
 MulOp         <- "*"                                                 { DK( MulOp ); }
 DivOp         <- "/"                                                 { DK( DivOp ); }
+ModOp         <- "%"                                                 { DK( ModOp ); }
+AddOp         <- "+"                                                 { DK( AddOp ); }
+SubOp         <- "-"                                                 { DK( SubOp ); }
 BoolExpr      <-
               (  n:BoolNot Blank+ c:Comparison                       { DK( BoolExpr, DK( BoolNot, c ) ); }
               /  c:Comparison                                        { DK( BoolExpr, c ); }
@@ -183,8 +184,8 @@ VarDeref      <- &'$' n:Variable                                     { DK( VarDe
               )*
 RedirFlag     <- "redir"                                             { DK( RedirFlag ); }
               (  Blank+
-               ( i:VarDeref / i:Path / i:Stream ) Blank*
-                 r:RedirOp Blank*
+               ( i:VarDeref / i:Path / i:Stream )
+                 Blank* r:RedirOp Blank*
                ( o:VarDeref / o:Path / o:Stream )                    { NA( r, i ); NA( r, o ); NA( $$, r ); }
               )+
 AsyncFlag     <- "async"                                             { DK( AsyncFlag ); }

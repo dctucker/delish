@@ -378,6 +378,15 @@ proc isTruthy(engine: Engine, node: DeliNode): bool =
     return false
   return false
 
+proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
+  case op.kind
+  of dkAddOp: return v1 + v2
+  of dkSubOp: return v1 - v2
+  of dkMulOp: return v1 * v2
+  of dkDivOp: return v1 / v2
+  else:
+    return deliNone()
+
 proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
   #echo "compare ", v1, op, v2
   let val = case op.kind
@@ -453,6 +462,10 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     let v1 = engine.evaluate(val.sons[1])
     let v2 = engine.evaluate(val.sons[2])
     return engine.evalComparison(val.sons[0], v1, v2)
+  of dkMathExpr:
+    let v1 = engine.evaluate(val.sons[1])
+    let v2 = engine.evaluate(val.sons[2])
+    return engine.evalMath(val.sons[0], v1, v2)
   else:
     todo "evaluate ", val.kind
     return deliNone()

@@ -109,3 +109,22 @@ proc `-`*(a, b: DeliNode): DeliNode =
       return deliNone()
   return deliNone()
 
+proc `*`*(a, b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger:
+      return DeliNode(kind: dkInteger, intVal: a.intVal * b.intval)
+    else:
+      todo "mul ", a.kind, " * ", b.kind
+      return deliNone()
+  return deliNone()
+
+proc `/`*(a, b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger:
+      return DeliNode(kind: dkInteger, intVal: (a.intVal / b.intval).int)
+    else:
+      todo "div ", a.kind, " / ", b.kind
+      return deliNone()
+  return deliNone()
