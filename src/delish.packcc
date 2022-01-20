@@ -134,7 +134,7 @@ ConstExpr     <-
               /  e:Path / e:JsonBlock
               )                                                      { $$ = e; }
 Expr          <- (
-                 "(" Blank+ s:MathExpr Blank+ ")"
+                 "(" Blank* s:MathExpr Blank* ")"
                / s:Array / s:Object
                / s:Arg / s:VarDeref
                / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
@@ -143,10 +143,14 @@ Expr          <- (
                )                                                     { DK( Expr, s); }
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
 Condition     <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
-MathExpr      <- e1:Expr Blank+ o1:MathOp Blank+ e2:Expr             { DK( MathExpr, o1, e1, e2 ); }
-              (          Blank+ o2:MathOp Blank+ e3:Expr             { DK( MathExpr, o2, $$, e3 ); }
-              )*
-MathOp        <- ( o:MulOp / o:DivOp / o:ModOp / o:AddOp / o:SubOp ) { $$ = o; }
+MathExpr      <- a:AddExpr                                           { $$ = a; }
+AddExpr       <- l:AddExpr Blank+ ( o:AddOp / o:SubOp )
+                           Blank+ r:MulExpr                          { DK( MathExpr, o, l, r ); }
+               /                  r:MulExpr                          { $$ = r; }
+MulExpr       <- l:MulExpr Blank+ (o:MulOp / o:DivOp / o:ModOp)
+                           Blank+ r:PrimExpr                         { DK( MathExpr, o, l, r ); }
+               /                  r:PrimExpr                         { $$ = r; }
+PrimExpr      <- e:Expr                                              { $$ = e; }
 MulOp         <- "*"                                                 { DK( MulOp ); }
 DivOp         <- "/"                                                 { DK( DivOp ); }
 ModOp         <- "%"                                                 { DK( ModOp ); }
