@@ -15,14 +15,6 @@ template benchmark(benchmarkName: string, code: untyped) =
     echo "CPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms"
 
 when isMainModule:
-#  import pegs
-#  import std/marshal
-#  import std/streams
-#  let serial = newFileStream("./src/deligrammar.json", fmRead).readAll()
-#  let grammar_unmarshal = to[Peg](serial)
-#  #echo grammar_unmarshal.repr
-#
-#when false:
   var interactive = false
   var debug = 0
   var breakpoints = @[54]

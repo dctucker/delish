@@ -1,12 +1,6 @@
-#import std/tables
-#import std/deques
-#import macros
 import strutils
 import stacks
-#import pegs
 import deliast
-#import deligrammar
-
 
 type Parser* = ref object
   source*:      string
@@ -18,7 +12,7 @@ type Parser* = ref object
   line_numbers: seq[int]
   parsed_len:   int
 
-proc packcc_main*(input: cstring, len: cint, parser: Parser): cint {.importc.}
+proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
 proc debug(parser: Parser, msg: varargs[string]) =
   if parser.debug == 0:
@@ -34,6 +28,11 @@ proc debug_tree(parser: Parser, msg: varargs[string]) =
     stdout.write(m)
   stdout.write("\n")
 
+proc line_number*(parser: Parser, pos: int): int =
+  for line, offset in parser.line_numbers:
+    if offset > pos:
+      return line - 1
+
 iterator line_offsets(parser: Parser): int =
   var start = 0
   let length = parser.source.len()
@@ -41,17 +40,67 @@ iterator line_offsets(parser: Parser): int =
     yield start
     start = parser.source.find("\n", start) + 1
 
-proc line_number*(parser: Parser, pos: int): int =
-  for line, offset in parser.line_numbers:
-    if offset > pos:
-      return line - 1
-
 proc indent(parser: Parser, msg: string): string =
   return indent( msg, 4*parser.symbol_stack.len() )
 
-#proc popCapture(parser: Parser): string =
-#  result = parser.captures.pop()
-#  debug(parser, parser.indent("POPCAP "), result)
+proc initParser(parser: Parser) =
+  parser.captures     = Stack[string]()
+  parser.symbol_stack = Stack[DeliKind]()
+
+proc initLineNumbers(parser: Parser) =
+  parser.line_numbers = @[0]
+  for offset in parser.line_offsets():
+    parser.line_numbers.add(offset)
+  #parser.debug parser.line_numbers
+
+proc parse*(parser: Parser): int =
+  parser.initParser()
+  parser.initLineNumbers()
+
+  var cstr = parser.source.cstring
+  parser.nodes = @[deliNone()]
+  let y = packcc_main(cstr, parser.source.len.cint, parser)
+  parser.entry_point = parser.nodes[^1]
+
+  return parser.parsed_len
+
+proc getLine*(parser: Parser, line: int): string =
+  let start = parser.line_numbers[line]
+  if line+1 >= parser.line_numbers.len:
+    return parser.source[start .. ^1 ]
+  let endl  = parser.line_numbers[line+1]
+  return parser.source[start .. endl-2]
+
+proc getScript*(parser: Parser): DeliNode =
+  return parser.entry_point
+
+proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
+  debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
+  parser.symbol_stack.push(k)
+
+proc leave(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
+  discard parser.symbol_stack.pop()
+  if matchStr.len > 0:
+    debug parser, parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
+  else:
+    debug parser, parser.indent("\27[30;1m< "), $k, "\27[0m"
+
+proc printSons(node: DeliNode, level: int) =
+  for son in node.sons:
+    echo indent($son, 4*level)
+    printSons(son, level+1)
+
+
+## PackCC integration stuff
+
+type PackEvent = enum
+  peEvaluate, peMatch, peNoMatch
+
+type DeliT = object
+  input: cstring
+  offset: csize_t
+  length: csize_t
+  parser: Parser
 
 proc parseStreamInt(str: string): int =
   case str
@@ -81,89 +130,6 @@ proc parseCapture(node: DeliNode, capture: string) =
   of dkArgLong:    node.argName = capture
   else:
     todo "capture failed for ", $(node.kind), " '", capture, "'"
-
-proc initParser(parser: Parser) =
-  parser.captures     = Stack[string]()
-  parser.symbol_stack = Stack[DeliKind]()
-
-proc initLineNumbers(parser: Parser) =
-  parser.line_numbers = @[0]
-  for offset in parser.line_offsets():
-    parser.line_numbers.add(offset)
-  #parser.debug parser.line_numbers
-
-proc assimilate(inner, outer: DeliNode) =
-  if outer.kind == dkStream:
-    outer.intVal = case inner.kind
-      of dkStreamIn:  0
-      of dkStreamOut: 1
-      of dkStreamErr: 2
-      else: -1
-
-proc parse*(parser: Parser): int =
-  parser.initParser()
-  parser.initLineNumbers()
-
-  var cstr = parser.source.cstring
-  parser.nodes = @[deliNone()]
-  let y = packcc_main(cstr, parser.source.len.cint, parser)
-  parser.entry_point = parser.nodes[^1]
-
-  return parser.parsed_len
-
-proc enter*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
-  debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
-  parser.symbol_stack.push(k)
-
-proc leave*(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
-  discard parser.symbol_stack.pop()
-  if matchStr.len > 0:
-    debug parser, parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
-  else:
-    debug parser, parser.indent("\27[30;1m< "), $k, "\27[0m"
-
-proc getLine*(parser: Parser, line: int): string =
-  let start = parser.line_numbers[line]
-  let endl  = parser.line_numbers[line+1]
-  return parser.source[start .. endl-2]
-
-proc getScript*(parser: Parser): DeliNode =
-  return parser.entry_point
-
-proc printSons(node: DeliNode, level: int) =
-  for son in node.sons:
-    echo indent($son, 4*level)
-    printSons(son, level+1)
-
-proc printEntryPoint*(parser: Parser) =
-  echo "\n== Node Stack =="
-  printSons(parser.entry_point, 0)
-
-
-## PackCC integration stuff
-
-type PackEvent = enum
-  peEvaluate, peMatch, peNoMatch
-
-proc something*(kind: cint, str: cstring, len: cint): cint {.exportc.} =
-  result = kind
-  let k = DeliKind(kind)
-  echo $k, " ", str
-
-type DeliT = object
-  input: cstring
-  offset: csize_t
-  length: csize_t
-  parser: Parser
-
-proc parseCapture(parser: Parser, rstart, rend: csize_t, buffer: cstring): DeliNode {.exportc.} =
-  let length = rend - rstart
-  var capture = newString(length)
-  if length > 0:
-    for i in 0 .. length - 1:
-      capture[i] = buffer[i].char
-  debug_tree parser, "CAPTURE ", capture
-  #parser.parseCapture(rstart.int, length.int, capture)
 
 proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: cstring): cint {.exportc.} =
   result = parser.nodes.len.cint
