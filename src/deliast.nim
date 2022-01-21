@@ -67,6 +67,12 @@ proc DKVar*(varName: string): DeliNode =
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
 
+proc DKStr*(strVal: string): DeliNode =
+  return DeliNode(kind: dkString, strVal: strVal)
+
+proc DKStmt*(kind: DeliKind, args: varargs[DeliNode]): DeliNode =
+  return DK( dkStatement, DK( kind, args ) )
+
 proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
   var sons: seq[DeliNode] = @[]
   for node in nodes:

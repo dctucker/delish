@@ -26,7 +26,7 @@ type
     writehead:  DeliListNode
     returns:    Stack[ DeliListNode ]
 
-proc clearStatements(engine: Engine) =
+proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList
 
 proc newEngine*(debug: int): Engine =
@@ -213,7 +213,7 @@ proc printVariables(engine: Engine) =
     stdout.write(printValue(v))
     stdout.write("\n")
 
-proc getVariable(engine: Engine, name: string): DeliNode =
+proc getVariable*(engine: Engine, name: string): DeliNode =
   var stack = engine.locals.toSeq()
   for i in countdown(stack.high, stack.low):
     let locals = stack[i]
@@ -808,7 +808,9 @@ proc isEnd(engine: Engine): bool =
 proc advance(engine: Engine) =
   engine.setHeads(engine.readhead.next)
 
-proc runNext*(engine: Engine): int =
+proc doNext*(engine: Engine): int =
+  if engine.isEnd():
+    return -1
   engine.readCurrent()
   result = engine.current.line
   engine.execCurrent()
