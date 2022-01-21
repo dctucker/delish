@@ -91,7 +91,7 @@ AssignExpr    <- ( e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt )     { $$ = e; }
 AppendExpr    <- ( e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr )    { $$ = e; }
 OpenExpr      <- "open" (Blank+ o:RedirOp)? Blank+ p:Path            { DK( OpenExpr, p, o); }
 LocalStmt     <- "local" Blank+ v:Variable                           { DK( LocalStmt, v ); }
-              (  Blank* "=" Blank* e:Expr                            { NA( $$, e ); }
+              (  Blank* o:AssignOp Blank* e:Expr                     { NA( $$, o ); NA( $$, e ); }
               )?
 ArgStmt       <- "arg"
                  ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { DK( ArgStmt, a, o, d); }

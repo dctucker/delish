@@ -61,6 +61,11 @@ proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
     sons.add(node)
   return DeliNode(kind: kind, sons: sons)
 
+proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
+  result = DK( dkExpr )
+  for node in nodes:
+    result.sons.add(node)
+
 proc DKVar*(varName: string): DeliNode =
   return DeliNode(kind: dkVariable, varName: varName)
 

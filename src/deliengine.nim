@@ -191,7 +191,7 @@ proc assignLocal(engine: Engine, key: string, value: DeliNode) =
 
 proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   var locals = engine.locals.pop()
-  locals[name.varName] = default
+  locals[name.varName] = engine.evaluate(default)
   engine.locals.push(locals)
 
 proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
@@ -759,8 +759,8 @@ proc doStmt(engine: Engine, s: DeliNode) =
     else:
       engine.doEnv(s.sons[0])
   of dkLocalStmt:
-    if nsons > 1:
-      engine.doLocal(s.sons[0], s.sons[1])
+    if nsons > 2:
+      engine.doLocal(s.sons[0], s.sons[2])
     else:
       engine.doLocal(s.sons[0], deliNone())
   of dkConditional:
