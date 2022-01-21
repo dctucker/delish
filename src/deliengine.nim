@@ -137,6 +137,13 @@ proc debugNext(engine: Engine) =
     head = head.next
   stdout.write("\27[0m\n")
 
+proc nextLen*(engine: Engine): int =
+  result = 0
+  var head = engine.readhead.next
+  while head != nil:
+    result += 1
+    head = head.next
+
 
 ### Environment ###
 
@@ -166,6 +173,15 @@ proc doEnv(engine: Engine, name: DeliNode, default: DeliNode = deliNone()) =
 
 ### Locals ###
 
+proc printLocals(engine: Engine) =
+  let layer = engine.locals.peek()
+  if engine.debug < 2: return
+  echo "\27[36m== Local Variables (", layer.len(), ") =="
+  for k,v in layer:
+    stdout.write("  $", k, " = ")
+    stdout.write(printValue(v))
+    stdout.write("\n")
+
 proc pushLocals(engine: Engine) =
   engine.locals.push(engine.locals.peek())
   debug engine, "  push locals ", engine.locals
@@ -173,7 +189,7 @@ proc pushLocals(engine: Engine) =
 proc setupPush(engine: Engine, line: int, table: DeliTable) =
   var inner = DKInner(line, DK(dkPush))
   for k,v in table.pairs():
-    inner.sons.add(DK(dkLocalStmt, DKVar(k), v))
+    inner.sons.add(DK(dkLocalStmt, DKVar(k), DK( dkAssignOp ), v))
   engine.insertStmt(inner)
 
 proc popLocals(engine: Engine) =
@@ -197,7 +213,7 @@ proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
 proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
   result = DK(dkVariableStmt,
     DKVar(variable),
-    DeliNode(kind: dkAssignOp),
+    DK(dkAssignOp),
     DK(dkLazy, value)
   )
   result.line = line
@@ -244,6 +260,8 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
       let str = son.toString()
       result = result.table[str]
     of dkArray:
+      #echo engine.evaluate(son.repr).repr
+      engine.printLocals()
       let idx = engine.evaluate(son).intVal
       if idx < result.sons.len:
         result = result.sons[idx]
@@ -438,7 +456,7 @@ proc evaluateStream(engine: Engine, stream: DeliNode): File =
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkNone:
+  of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkJump, dkNone:
     return val
   of dkLazy:
     return val.sons[0]
@@ -816,6 +834,11 @@ proc doNext*(engine: Engine): int =
   engine.execCurrent()
   if not engine.isEnd():
     engine.advance()
+
+  #while not engine.isEnd() and engine.current.kind == dkInner:
+  #  engine.execCurrent()
+  #  engine.advance()
+  #  engine.readCurrent()
 
 iterator tick*(engine: Engine): int =
   engine.setup()
