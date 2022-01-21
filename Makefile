@@ -16,3 +16,7 @@ strip: release
 packdeli: src/packcc.c Makefile
 	cd src ; packcc -o packcc delish.packcc ; cd ..
 	gcc -Og src/packcc.c -o packdeli
+
+test:
+	nim c -r tests/test_parser.nim
+	nim c -r tests/test_engine.nim

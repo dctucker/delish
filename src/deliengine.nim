@@ -26,21 +26,40 @@ type
     writehead:  DeliListNode
     returns:    Stack[ DeliListNode ]
 
-proc newEngine*(parser: Parser, debug: int): Engine =
+proc clearStatements(engine: Engine) =
+  engine.statements = @[deliNone()].toSinglyLinkedList
+
+proc newEngine*(debug: int): Engine =
   result = Engine(
     arguments:  newSeq[Argument](),
     variables:  initTable[string, DeliNode](),
-    parser:     parser,
-    script:     parser.getScript(),
     statements: @[deliNone()].toSinglyLinkedList,
     debug:      debug
   )
+  result.clearStatements()
   result.locals.push(initTable[string, DeliNode]())
   result.fds[0] = stdin
   result.fds[1] = stdout
   result.fds[2] = stderr
   result.readhead  = result.statements.head
   result.writehead = result.statements.head
+
+proc initArguments(engine: Engine)
+proc loadScript(engine: Engine)
+
+proc setup*(engine: Engine) =
+  engine.initArguments()
+  engine.loadScript()
+
+proc setup*(engine: var Engine, script: DeliNode) =
+  engine.script = script
+  engine.setup()
+
+proc newEngine*(parser: Parser, debug: int): Engine =
+  result = newEngine(debug)
+  result.parser = parser
+  result.script = parser.getScript()
+
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
 proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
@@ -777,21 +796,39 @@ proc doStmt(engine: Engine, s: DeliNode) =
   else:
     todo "run ", s.kind
 
+proc readCurrent(engine: Engine) =
+  engine.current = engine.readhead.value
+
+proc execCurrent(engine: Engine) =
+  engine.doStmt(engine.current)
+
+proc isEnd(engine: Engine): bool =
+  return engine.readhead == nil or engine.readhead.next == nil
+
+proc advance(engine: Engine) =
+  engine.setHeads(engine.readhead.next)
+
+proc runNext*(engine: Engine): int =
+  engine.readCurrent()
+  result = engine.current.line
+  engine.execCurrent()
+  if not engine.isEnd():
+    engine.advance()
+
 iterator tick*(engine: Engine): int =
-  engine.initArguments()
-  engine.loadScript()
+  engine.setup()
   debug engine, "\nRunning program..."
   while true:
-    engine.current = engine.readhead.value
+    engine.readCurrent()
     if engine.debug > 1:
       yield engine.current.line
     else:
       if engine.current.kind != dkInner:
         yield engine.current.line
-    engine.doStmt(engine.current)
-    if engine.readhead == nil or engine.readhead.next == nil:
+    engine.execCurrent()
+    if engine.isEnd():
       break
-    engine.setHeads(engine.readhead.next)
+    engine.advance()
 
 ### do stuff with environment
 #
