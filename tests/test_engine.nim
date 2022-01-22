@@ -235,6 +235,35 @@ suite "engine":
       x.kind == dkInteger
       x.intVal == 5
 
-  test "condition":
-    skip
+  test "conditionals":
+    script(
+      DK( dkVariableStmt, DKVar("y"), DK( dkAssignOp ), DKExpr( DeliNode(kind: dkBoolean, boolVal: false) ) ),
+      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(1) ) ),
+      DK( dkConditional,
+        DK( dkCondition, DK( dkComparison,
+          DK( dkCompGt ), DKVar("x"), DKInt(0)
+        )),
+        DK( dkCode,
+          DK( dkVariableStmt, DKVar("y"), DK( dkAssignOp ), DKExpr( DeliNode(kind: dkBoolean, boolVal: true) ) ),
+        )
+      )
+    )
+    var x,y: DeliNode
+
+    y = nextVar("y")
+    check:
+      y.kind == dkBoolean
+      y.boolVal == false
+
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 1
+
+    next()
+    y = nextVar("y")
+
+    check:
+      y.kind == dkBoolean
+      y.boolVal == true
 
