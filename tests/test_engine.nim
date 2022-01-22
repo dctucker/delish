@@ -169,7 +169,52 @@ suite "engine":
       x.intVal == 2
 
   test "do loop":
-    skip
+    script(
+      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(3) ),
+      DK( dkDoLoop,
+        DK( dkCode,
+          DK( dkVariableStmt, DKVar("x"), DK( dkRemoveOp ), DKInt(1) ),
+        ),
+        DK( dkCondition, DK( dkComparison, DK( dkCompGt ), DKVar("x"), DKInt(0) ) )
+      ),
+      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(5) ),
+    )
+
+    var x: DeliNode
+
+    x = nextVar("x")
+    check:
+      x.intVal == 3
+
+    next() # setup do
+    check:
+      engine.nextLen() > 1
+
+    next() # push
+
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 2
+    next()
+    next()
+
+    x = nextVar("x")
+    check:
+      x.intVal == 1
+    next()
+    next()
+
+    x = nextVar("x")
+    check:
+      x.intVal == 0
+    next()
+    next()
+
+    x = nextVar("x")
+    check:
+      x.intVal == 5
+
 
   test "while loop":
     skip
