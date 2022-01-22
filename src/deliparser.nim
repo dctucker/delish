@@ -1,15 +1,16 @@
 import strutils
 import stacks
 import deliast
+import deliscript
+
 
 type Parser* = ref object
-  source*:      string
+  script*:      DeliScript
   debug*:       int
   captures:     Stack[string]
   symbol_stack: Stack[DeliKind]
   entry_point:  DeliNode
   nodes:        seq[DeliNode]
-  line_numbers: seq[int]
   parsed_len:   int
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
@@ -28,18 +29,6 @@ proc debug_tree(parser: Parser, msg: varargs[string]) =
     stdout.write(m)
   stdout.write("\n")
 
-proc line_number*(parser: Parser, pos: int): int =
-  for line, offset in parser.line_numbers:
-    if offset > pos:
-      return line - 1
-
-iterator line_offsets(parser: Parser): int =
-  var start = 0
-  let length = parser.source.len()
-  while start < length:
-    yield start
-    start = parser.source.find("\n", start) + 1
-
 proc indent(parser: Parser, msg: string): string =
   return indent( msg, 4*parser.symbol_stack.len() )
 
@@ -47,29 +36,21 @@ proc initParser(parser: Parser) =
   parser.captures     = Stack[string]()
   parser.symbol_stack = Stack[DeliKind]()
 
-proc initLineNumbers(parser: Parser) =
-  parser.line_numbers = @[0]
-  for offset in parser.line_offsets():
-    parser.line_numbers.add(offset)
-  #parser.debug parser.line_numbers
-
 proc parse*(parser: Parser): int =
   parser.initParser()
-  parser.initLineNumbers()
+  parser.script.initLineNumbers()
 
-  var cstr = parser.source.cstring
+  var cstr = parser.script.source.cstring
   parser.nodes = @[deliNone()]
-  let y = packcc_main(cstr, parser.source.len.cint, parser)
+  discard packcc_main(cstr, parser.script.source.len.cint, parser)
   parser.entry_point = parser.nodes[^1]
 
-  return parser.parsed_len
+  #parser.entry_point.script = DeliScript(
+  #  filename: filename,
+  #  line_numbers: parser.line_numbers
+  #)
 
-proc getLine*(parser: Parser, line: int): string =
-  let start = parser.line_numbers[line]
-  if line+1 >= parser.line_numbers.len:
-    return parser.source[start .. ^1 ]
-  let endl  = parser.line_numbers[line+1]
-  return parser.source[start .. endl-2]
+  return parser.parsed_len
 
 proc getScript*(parser: Parser): DeliNode =
   return parser.entry_point
@@ -206,7 +187,7 @@ proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
 proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
   debug_tree parser, $n, " setLine ", $l
   var node = parser.getNode(n)
-  node.line = parser.line_number(l.int)
+  node.line = parser.script.line_number(l.int)
   parser.nodes[n] = node
 
 proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =

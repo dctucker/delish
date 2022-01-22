@@ -8,6 +8,7 @@ import sequtils
 import stacks
 import deliargs
 import deliparser
+import deliscript
 
 type
   Engine* = ref object
@@ -107,11 +108,11 @@ proc loadScript(engine: Engine) =
   engine.setHeads(engine.statements.head.next)
 
 proc sourceLine*(engine: Engine, line: int): string =
-  return engine.parser.getLine(line)
+  return engine.parser.script.getLine(line)
 
 proc lineInfo*(engine: Engine, line: int): string =
   let sline = if line > 0:
-    engine.parser.getLine(line)
+    engine.parser.script.getLine(line)
   else:
     getOneliner(engine.current)
 

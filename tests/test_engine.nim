@@ -131,7 +131,7 @@ suite "engine":
     check:
       engine.nextLen == 3
 
-    var x, y: DeliNode
+    var x: DeliNode
 
     x = nextVar("x")
     check:
@@ -160,7 +160,7 @@ suite "engine":
     check:
       engine.nextLen == 1
 
-    var i,x: DeliNode
+    var x: DeliNode
 
     next() # for loop expansion
     check:

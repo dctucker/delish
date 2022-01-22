@@ -4,6 +4,7 @@ import std/tables
 import strutils
 #import stacks
 import deligrammar
+import deliscript
 
 ### AST representation
 grammarToEnum( @["None","Inner","Ran","Jump","Lazy","S","W","U"])
@@ -18,6 +19,7 @@ type
   DeliNodeObj* = object
     case kind*: DeliKind
     of dkNone:         none:        bool
+    of dkScript:       script:      DeliScript
     of dkIdentifier:   id*:         string
     of dkPath,
        dkStrBlock,

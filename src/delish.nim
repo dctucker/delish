@@ -6,6 +6,7 @@ import deliargs
 import deliast
 import deliengine
 import delinteract
+import deliscript
 
 template benchmark(benchmarkName: string, code: untyped) =
   block:
@@ -39,8 +40,8 @@ when isMainModule:
     stderr.write("usage: delish script.deli\n")
     quit 2
 
-  let source = readFile(filename)
-  let parser = Parser(source: source, debug: debug)
+  let script = loadScript(filename)
+  let parser = Parser(script: script, debug: debug)
   var parsed_len = 0
   if debug > 0:
     benchmark "parsing":
@@ -48,10 +49,10 @@ when isMainModule:
   else:
     parsed_len = parser.parse()
 
-  if parsed_len != source.len():
-    stderr.write("\n*** ERROR: Stopped parsing at pos ", parsed_len, "/", source.len(), "\n")
-    let num = parser.line_number(parsed_len)
-    let errline = parser.getLine(num)
+  if parsed_len != script.source.len():
+    stderr.write("\n*** ERROR: Stopped parsing at pos ", parsed_len, "/", script.source.len(), "\n")
+    let num = parser.script.line_number(parsed_len)
+    let errline = parser.script.getLine(num)
     stderr.write("Syntax error in ", filename, ":", num, " near ", errline, "\n\n")
     quit 1
 
