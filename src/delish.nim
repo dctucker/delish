@@ -13,7 +13,8 @@ template benchmark(benchmarkName: string, code: untyped) =
     let t0 = epochTime()
     code
     let elapsed = 1000 * (epochTime() - t0)
-    echo "CPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms"
+    if debug > 0:
+      echo "CPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms"
 
 when isMainModule:
   var interactive = false
@@ -42,21 +43,18 @@ when isMainModule:
 
   let script = loadScript(filename)
   let parser = Parser(script: script, debug: debug)
-  var parsed_len = 0
-  if debug > 0:
-    benchmark "parsing":
-      parsed_len = parser.parse()
-  else:
-    parsed_len = parser.parse()
+  var parsed: DeliNode
+  benchmark "parsing":
+    parsed = parser.parse()
 
-  if parsed_len != script.source.len():
-    stderr.write("\n*** ERROR: Stopped parsing at pos ", parsed_len, "/", script.source.len(), "\n")
-    let num = parser.script.line_number(parsed_len)
-    let errline = parser.script.getLine(num)
+  if parser.parsed_len != script.source.len():
+    stderr.write("\n*** ERROR: Stopped parsing at pos ", parser.parsed_len, "/", script.source.len(), "\n")
+    let num = script.line_number(parser.parsed_len)
+    let errline = script.getLine(num)
     stderr.write("Syntax error in ", filename, ":", num, " near ", errline, "\n\n")
     quit 1
 
-  var engine: Engine = newEngine(parser, debug)
+  var engine: Engine = newEngine(parsed, debug)
   var nteract = newNteract(engine)
   nteract.filename = filename
 
@@ -69,9 +67,6 @@ when isMainModule:
         if line > 0:
           discard nteract.getUserInput()
 
-  if debug > 0:
-    benchmark "executing":
-      mainloop()
-  else:
+  benchmark "executing":
     mainloop()
 

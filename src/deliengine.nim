@@ -7,7 +7,6 @@ import strutils
 import sequtils
 import stacks
 import deliargs
-import deliparser
 import deliscript
 
 type
@@ -18,7 +17,6 @@ type
     locals:     Stack[ DeliTable ]
     envars:     Table[string, string]
     functions:  DeliTable
-    parser:     Parser
     script:     DeliNode
     current:    DeliNode
     fds:        Table[int, File]
@@ -56,11 +54,9 @@ proc setup*(engine: var Engine, script: DeliNode) =
   engine.script = script
   engine.setup()
 
-proc newEngine*(parser: Parser, debug: int): Engine =
+proc newEngine*(script: DeliNode, debug: int): Engine =
   result = newEngine(debug)
-  result.parser = parser
-  result.script = parser.getScript()
-
+  result.script = script
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
 proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
@@ -108,11 +104,11 @@ proc loadScript(engine: Engine) =
   engine.setHeads(engine.statements.head.next)
 
 proc sourceLine*(engine: Engine, line: int): string =
-  return engine.parser.script.getLine(line)
+  return engine.script.script.getLine(line)
 
 proc lineInfo*(engine: Engine, line: int): string =
   let sline = if line > 0:
-    engine.parser.script.getLine(line)
+    engine.script.script.getLine(line)
   else:
     getOneliner(engine.current)
 

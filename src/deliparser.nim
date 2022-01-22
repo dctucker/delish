@@ -7,11 +7,10 @@ import deliscript
 type Parser* = ref object
   script*:      DeliScript
   debug*:       int
-  captures:     Stack[string]
   symbol_stack: Stack[DeliKind]
   entry_point:  DeliNode
   nodes:        seq[DeliNode]
-  parsed_len:   int
+  parsed_len*:  int
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
@@ -33,26 +32,16 @@ proc indent(parser: Parser, msg: string): string =
   return indent( msg, 4*parser.symbol_stack.len() )
 
 proc initParser(parser: Parser) =
-  parser.captures     = Stack[string]()
   parser.symbol_stack = Stack[DeliKind]()
 
-proc parse*(parser: Parser): int =
+proc parse*(parser: Parser): DeliNode =
   parser.initParser()
-  parser.script.initLineNumbers()
 
   var cstr = parser.script.source.cstring
   parser.nodes = @[deliNone()]
   discard packcc_main(cstr, parser.script.source.len.cint, parser)
   parser.entry_point = parser.nodes[^1]
-
-  #parser.entry_point.script = DeliScript(
-  #  filename: filename,
-  #  line_numbers: parser.line_numbers
-  #)
-
-  return parser.parsed_len
-
-proc getScript*(parser: Parser): DeliNode =
+  parser.entry_point.script = parser.script
   return parser.entry_point
 
 proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) =

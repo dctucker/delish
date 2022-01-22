@@ -19,18 +19,17 @@ test "parser":
   let source_path = "tests/fixtures/test_parser.deli"
   let source = readFile(source_path)
   let source_len = source.len
-  let script = DeliScript(filename: source_path, source: source)
+  let script = makeScript(source_path, source)
   var parser = Parser(script: script, debug: 0)
 
   let parsed = parser.parse()
   check:
-    parsed == source_len
+    parser.parsed_len == source_len
 
   echo parser.script.getLine(1)
   check:
     parser.script.getLine(1) == "out \"hello world\", 4\n"
 
-  let node = parser.getScript()
   let check = DK( dkScript, DK( dkCode, DK( dkStatement,
     DK( dkStreamStmt,
       DK( dkStream, DK( dkStreamOut ) ),
@@ -41,5 +40,5 @@ test "parser":
     )
   )))
   check:
-    kinds_match(node, check)
+    kinds_match(parsed, check)
 

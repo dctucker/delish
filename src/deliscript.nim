@@ -6,13 +6,6 @@ type
     line_numbers: seq[int]
     source*:      string
 
-proc loadScript*(filename: string): DeliScript =
-  result = DeliScript(
-    filename: filename,
-    line_numbers: @[0],
-    source: readFile(filename)
-  )
-
 proc line_number*(script: DeliScript, pos: int): int =
   for line, offset in script.line_numbers:
     if offset > pos:
@@ -37,4 +30,14 @@ proc getLine*(script: DeliScript, line: int): string =
     return script.source[start .. ^1 ]
   let endl  = script.line_numbers[line+1]
   return script.source[start .. endl-2]
+
+proc makeScript*(name: string, source: string): DeliScript =
+  result = DeliScript(
+    filename: name,
+    source: source,
+  )
+  result.initLineNumbers()
+
+proc loadScript*(filename: string): DeliScript =
+  result = makeScript(filename, readFile(filename))
 
