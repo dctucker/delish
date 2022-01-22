@@ -120,7 +120,34 @@ suite "engine":
     skip
 
   test "functions":
-    skip
+    let id = DeliNode(kind: dkIdentifier, id: "foo")
+    script(
+      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(0) ) ),
+      DK( dkFunction, id, DK( dkCode,
+        DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(1) ) )
+      )),
+      DK( dkFunctionStmt, id ),
+    )
+    check:
+      engine.nextLen == 3
+
+    var x, y: DeliNode
+
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 0
+
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 0
+
+    next()
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 1
 
   test "for loop":
     script(
