@@ -5,12 +5,12 @@ import deliscript
 
 
 type Parser* = ref object
-  script*:      DeliScript
   debug*:       int
-  symbol_stack: Stack[DeliKind]
-  entry_point:  DeliNode
-  nodes:        seq[DeliNode]
   parsed_len*:  int
+  entry_point:  DeliNode
+  script*:      DeliScript
+  symbol_stack: Stack[DeliKind]
+  nodes:        seq[DeliNode]
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
@@ -177,6 +177,7 @@ proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
   debug_tree parser, $n, " setLine ", $l
   var node = parser.getNode(n)
   node.line = parser.script.line_number(l.int)
+  node.script = parser.script
   parser.nodes[n] = node
 
 proc deli_event(pauxil: pointer, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =

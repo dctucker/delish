@@ -33,6 +33,7 @@ proc newEngine*(debug: int): Engine =
     arguments:  newSeq[Argument](),
     variables:  initTable[string, DeliNode](),
     statements: @[deliNone()].toSinglyLinkedList,
+    current:    deliNone(),
     debug:      debug
   )
   result.clearStatements()
@@ -80,6 +81,11 @@ proc setHeads(engine: Engine, list: DeliListNode) =
   engine.writehead = engine.readhead
 
 proc insertStmt(engine: Engine, node: DeliNode) =
+  if node.script == nil:
+    if engine.current.kind == dkNone:
+      node.script = engine.script.script
+    else:
+      node.script = engine.current.script
   if node.kind in @[ dkStatement, dkBlock, dkCode ]:
     for s in node.sons:
       engine.insertStmt(s)
@@ -107,16 +113,20 @@ proc sourceLine*(engine: Engine, line: int): string =
   return engine.script.script.getLine(line)
 
 proc lineInfo*(engine: Engine, line: int): string =
-  let sline = if line > 0:
-    engine.script.script.getLine(line)
+  var filename: string
+  var sline: string
+  if line > 0:
+    sline = engine.script.script.getLine(line)
+    filename = engine.script.script.filename
   else:
-    getOneliner(engine.current)
+    sline = getOneliner(engine.current)
+    filename = engine.current.script.filename
 
   let delim = if line > 0:
     ":"
   else:
     "."
-  let linenum = "\27[1;30m" & delim & $abs(line)
+  let linenum = "\27[1;30m" & filename & delim & $abs(line)
   let source = " \27[0;34;4m" & sline
   let parsed = "\27[1;24m " & repr(engine.current)
   return linenum & source & parsed & "\27[0m"
@@ -207,13 +217,13 @@ proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   locals[name.varName] = engine.evaluate(default)
   engine.locals.push(locals)
 
-proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
-  result = DK(dkVariableStmt,
-    DKVar(variable),
-    DK(dkAssignOp),
-    DK(dkLazy, value)
-  )
-  result.line = line
+#proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
+#  result = DK(dkVariableStmt,
+#    DKVar(variable),
+#    DK(dkAssignOp),
+#    DK(dkLazy, value)
+#  )
+#  result.line = line
 
 
 ### Variables ###

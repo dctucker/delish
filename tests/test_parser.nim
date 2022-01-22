@@ -26,7 +26,7 @@ test "parser":
   check:
     parser.parsed_len == source_len
 
-  echo parser.script.getLine(1)
+  #echo parser.script.getLine(1)
   check:
     parser.script.getLine(1) == "out \"hello world\", 4\n"
 

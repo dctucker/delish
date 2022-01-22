@@ -1,4 +1,3 @@
-import std/tables
 import std/lists
 import std/tables
 import strutils
@@ -19,7 +18,6 @@ type
   DeliNodeObj* = object
     case kind*: DeliKind
     of dkNone:         none:        bool
-    of dkScript:       script*:     DeliScript
     of dkIdentifier:   id*:         string
     of dkPath,
        dkStrBlock,
@@ -47,6 +45,7 @@ type
       discard
     sons*: seq[DeliNode]
     line*: int
+    script*:     DeliScript
 
 proc isNone*(node: DeliNode):bool =
   if node.kind == dkNone:
@@ -174,7 +173,6 @@ proc `$`*(node: DeliNode): string =
   else:
     return ($(node.kind)).substr(2) & " " & value
 
-import strutils
 proc todo*(msg: varargs[string, `$`]) =
   stderr.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")
 
