@@ -834,11 +834,14 @@ proc doNext*(engine: Engine): int =
   engine.execCurrent()
   if not engine.isEnd():
     engine.advance()
+    engine.readCurrent()
 
-  #while not engine.isEnd() and engine.current.kind == dkInner:
-  #  engine.execCurrent()
-  #  engine.advance()
-  #  engine.readCurrent()
+  while engine.current.kind == dkInner:
+    if engine.isEnd():
+      return -1
+    engine.execCurrent()
+    engine.advance()
+    engine.readCurrent()
 
 iterator tick*(engine: Engine): int =
   engine.setup()

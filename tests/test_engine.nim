@@ -139,30 +139,14 @@ suite "engine":
     check:
       engine.nextLen > 1
 
-    next() # push
-    i = nextVar("i") # check/assign
-    check:
-      i.kind == dkInteger
-      i.intVal == 0
-
     x = nextVar("x") # assign
     check:
       x.kind == dkInteger
       x.intVal == 0
 
-    next() # continue
-    i = nextVar("i") # check/assign
-    check:
-      i.intVal == 1
-
     x = nextVar("x") # assign
     check:
       x.intVal == 1
-
-    next() # continue
-    i = nextVar("i") # check/assign
-    check:
-      i.intVal == 2
 
     x = nextVar("x") # assign
     check:
@@ -174,8 +158,9 @@ suite "engine":
       DK( dkDoLoop,
         DK( dkCode,
           DK( dkVariableStmt, DKVar("x"), DK( dkRemoveOp ), DKInt(1) ),
-        ),
-        DK( dkCondition, DK( dkComparison, DK( dkCompGt ), DKVar("x"), DKInt(0) ) )
+        ), DK( dkCondition, DK( dkComparison,
+          DK( dkCompGt ), DKVar("x"), DKInt(0)
+        ))
       ),
       DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(5) ),
     )
@@ -190,34 +175,65 @@ suite "engine":
     check:
       engine.nextLen() > 1
 
-    next() # push
-
     x = nextVar("x")
     check:
       x.kind == dkInteger
       x.intVal == 2
-    next()
-    next()
 
     x = nextVar("x")
     check:
       x.intVal == 1
-    next()
-    next()
 
     x = nextVar("x")
     check:
       x.intVal == 0
-    next()
-    next()
 
     x = nextVar("x")
     check:
+      x.kind == dkInteger
       x.intVal == 5
 
 
   test "while loop":
-    skip
+    script(
+      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(3) ),
+      DK( dkWhileLoop,
+        DK( dkCondition, DK( dkComparison,
+          DK( dkCompGt ), DKVar("x"), DKInt(0)
+        )),
+        DK( dkCode,
+          DK( dkVariableStmt, DKVar("x"), DK( dkRemoveOp ), DKInt(1) ),
+        ),
+      ),
+      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(5) ),
+    )
+    var x: DeliNode
+
+    next() # setup while
+    check:
+      engine.nextLen() > 1
+
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 3
+
+    x = nextVar("x")
+    check:
+      x.intVal == 2
+
+    x = nextVar("x")
+    check:
+      x.intVal == 1
+
+    x = nextVar("x")
+    check:
+      x.intVal == 0
+
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 5
 
   test "condition":
     skip
