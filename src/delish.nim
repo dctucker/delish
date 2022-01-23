@@ -56,14 +56,14 @@ when isMainModule:
 
   var engine: Engine = newEngine(parsed, debug)
   var nteract = newNteract(engine)
-  nteract.filename = filename
 
   proc mainloop() =
     for line in engine.tick():
       if debug > 0:
-        echo engine.lineInfo(line)
+        echo engine.lineInfo()
       if interactive:
         nteract.line = line.abs
+        nteract.filename = engine.sourceFile()
         if line > 0:
           discard nteract.getUserInput()
 

@@ -17,7 +17,6 @@ type
     locals:     Stack[ DeliTable ]
     envars:     Table[string, string]
     functions:  DeliTable
-    script:     DeliNode
     current:    DeliNode
     fds:        Table[int, File]
     statements: DeliList
@@ -44,20 +43,16 @@ proc newEngine*(debug: int): Engine =
   result.readhead  = result.statements.head
   result.writehead = result.statements.head
 
-proc initArguments(engine: Engine)
-proc loadScript(engine: Engine)
+proc initArguments(engine: Engine, script: DeliNode)
+proc loadScript(engine: Engine, script: DeliNode)
 
-proc setup*(engine: Engine) =
-  engine.initArguments()
-  engine.loadScript()
-
-proc setup*(engine: var Engine, script: DeliNode) =
-  engine.script = script
-  engine.setup()
+proc setup*(engine: Engine, script: DeliNode) =
+  engine.initArguments(script)
+  engine.loadScript(script)
 
 proc newEngine*(script: DeliNode, debug: int): Engine =
   result = newEngine(debug)
-  result.script = script
+  result.setup(script)
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
 proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
@@ -82,9 +77,7 @@ proc setHeads(engine: Engine, list: DeliListNode) =
 
 proc insertStmt(engine: Engine, node: DeliNode) =
   if node.script == nil:
-    if engine.current.kind == dkNone:
-      node.script = engine.script.script
-    else:
+    if engine.current.kind != dkNone:
       node.script = engine.current.script
   if node.kind in @[ dkStatement, dkBlock, dkCode ]:
     for s in node.sons:
@@ -101,26 +94,30 @@ proc insertStmt(engine: Engine, nodes: seq[DeliNode]) =
   for node in nodes:
     engine.insertStmt(node)
 
-proc loadScript(engine: Engine) =
-  for s in engine.script.sons:
+proc loadScript(engine: Engine, script: DeliNode) =
+  for s in script.sons:
     for s2 in s.sons:
       engine.insertStmt(s2)
   engine.insertStmt(DKInner(0, deliNone()))
   debug engine, engine.statements
   engine.setHeads(engine.statements.head.next)
 
-proc sourceLine*(engine: Engine, line: int): string =
-  return engine.script.script.getLine(line)
+proc sourceFile*(engine: Engine): string =
+  result = ""
+  if engine.current.script != nil:
+    result = engine.current.script.filename
 
-proc lineInfo*(engine: Engine, line: int): string =
+proc sourceLine*(engine: Engine): string =
+  return engine.current.script.getLine( engine.current.line )
+
+proc lineInfo*(engine: Engine): string =
   var filename: string
   var sline: string
-  if line > 0:
-    sline = engine.script.script.getLine(line)
-    filename = engine.script.script.filename
-  else:
-    sline = getOneliner(engine.current)
+
+  sline = getOneliner(engine.current)
+  if engine.current.script != nil:
     filename = engine.current.script.filename
+  let line = engine.current.line
 
   let delim = if line > 0:
     ":"
@@ -381,9 +378,9 @@ proc doArgStmts(engine: Engine, node: DeliNode) =
   else:
     discard
 
-proc initArguments(engine: Engine) =
+proc initArguments(engine: Engine, script: DeliNode) =
   engine.arguments = @[]
-  for stmt in engine.script.sons:
+  for stmt in script.sons:
     engine.doArgStmts(stmt)
 
   engine.printArguments()
@@ -851,7 +848,6 @@ proc doNext*(engine: Engine): int =
     engine.readCurrent()
 
 iterator tick*(engine: Engine): int =
-  engine.setup()
   debug engine, "\nRunning program..."
   while true:
     engine.readCurrent()

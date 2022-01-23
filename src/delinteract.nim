@@ -91,7 +91,7 @@ proc fwdel(nt: Nteract) =
 
 proc getUserInput*(nt: Nteract): string =
   nt.clear()
-  nt.cmdline = nt.engine.sourceLine(nt.line)
+  nt.cmdline = nt.engine.sourceLine()
   nt.pos = nt.cmdline.len
   stdout.write(nt.cmdline)
   stdout.flushFile()
