@@ -30,6 +30,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode
 proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
 proc doStmt(engine: Engine, s: DeliNode)
 proc initArguments(engine: Engine, script: DeliNode)
+proc initIncludes(engine: Engine, script: DeliNode)
 proc loadScript(engine: Engine, script: DeliNode)
 
 
@@ -38,6 +39,7 @@ proc clearStatements*(engine: Engine) =
 
 proc setup*(engine: Engine, script: DeliNode) =
   engine.initArguments(script)
+  engine.initIncludes(script)
   engine.loadScript(script)
 
 proc newEngine*(debug: int): Engine =
@@ -376,6 +378,16 @@ proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode) =
     #engine.printArguments()
     #echo "\n"
 
+proc doIncludes(engine: Engine, node: DeliNode) =
+  case node.kind:
+  of dkScript, dkCode, dkStatement:
+    for n in node.sons:
+      engine.doIncludes(n)
+  of dkIncludeStmt:
+    engine.doStmt(node)
+  else:
+    discard
+
 proc doArgStmts(engine: Engine, node: DeliNode) =
   case node.kind
   of dkStatement:
@@ -387,6 +399,9 @@ proc doArgStmts(engine: Engine, node: DeliNode) =
       engine.doArgStmts(son)
   else:
     discard
+
+proc initIncludes(engine: Engine, script: DeliNode) =
+  engine.doIncludes(script)
 
 proc initArguments(engine: Engine, script: DeliNode) =
   engine.arguments = @[]
@@ -823,7 +838,9 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkStreamStmt:
     engine.doStream(s.sons)
   of dkIncludeStmt:
-    engine.doInclude(s.sons[0])
+    if s.sons.len == 1:
+      engine.doInclude(s.sons[0])
+      s.sons.add(DKTrue)
   of dkInner:
     for s in s.sons:
       engine.doStmt(s)

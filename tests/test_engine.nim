@@ -76,7 +76,7 @@ suite "engine":
   test "include":
     script(
       DK( dkIncludeStmt, DKStr("tests/fixtures/test_include.deli") ),
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKStr("done") ),
+      DKVarStmt("x", dkAssignOp, DKStr("done"))
     )
     next() # include
     check:
@@ -153,10 +153,10 @@ suite "engine":
       ),
       DKVarStmt("x", dkAssignOp, DKInt(5)),
     )
+    check nextVar("x") == 3
     next() # setup while
     check:
       engine.nextLen() > 1
-      nextVar("x") == 3
       nextVar("x") == 2
       nextVar("x") == 1
       nextVar("x") == 0
