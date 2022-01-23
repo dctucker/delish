@@ -53,10 +53,27 @@ proc `==`*(o1, o2: DeliNode): bool =
     return o1.intVal == o2.intVal
   of dkPath, dkString, dkStrLiteral, dkStrBlock:
     return o1.strVal == o2.strVal
+  of dkBoolean:
+    return o1.boolVal == o2.boolVal
   of dkNone:
     return o2.kind == dkNone
   else:
     todo "== ", o1.kind, " ", o2.kind
+
+proc `==`*(o: DeliNode, i: int): bool =
+  if o.kind == dkInteger:
+    return o.intVal == i
+  return false
+
+proc `==`*(o: DeliNode, s: string): bool =
+  if o.kind == dkString:
+    return o.strVal == s
+  return false
+
+proc `==`*(o: DeliNode, b: bool): bool =
+  if o.kind == dkBoolean:
+    return o.boolVal == b
+  return false
 
 
 proc `not`*(a: DeliNode): DeliNode =

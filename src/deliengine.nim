@@ -135,7 +135,8 @@ proc doInclude(engine: Engine, included: DeliNode) =
   let script = loadScript(filename)
   let parser = Parser(script: script, debug: engine.debug)
   let parsed = parser.parse()
-  engine.loadScript(parsed)
+  for s in parsed.sons:
+    engine.insertStmt(s.sons)
 
 proc debugNext(engine: Engine) =
   if engine.debug < 3: return

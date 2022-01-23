@@ -3,6 +3,7 @@ import os
 
 import ../src/deliast
 import ../src/deliengine
+import ../src/deliops
 
 var engine: Engine
 
@@ -27,111 +28,61 @@ suite "engine":
 
   test "assign variable":
     script(
-      DK( dkVariableStmt,
-        DKVar("x"), DK( dkAssignOp ), DK( dkExpr, DKStr("foo") )
-      )
+      DKVarStmt("x", dkAssignOp, DKStr("foo"))
     )
-
-    let x = nextVar("x")
     check:
-      x.kind == dkString
-      x.strVal == "foo"
+      nextVar("x") == "foo"
 
   test "increment variable":
     script(
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(3) ) ),
-      DK( dkVariableStmt, DKVar("x"), DK( dkAppendOp ), DKExpr( DKInt(2) ) )
+      DKVarStmt("x", dkAssignOp, DKInt(3)),
+      DKVarStmt("x", dkAppendOp, DKInt(2)),
     )
-
-    var x: DeliNode
-    x = nextVar("x")
     check:
-      x.kind == dkInteger
-      x.intVal == 3
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 5
+      nextVar("x") == 3
+      nextVar("x") == 5
 
   test "local variables":
     script(
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(4) ) ),
+      DKVarStmt("x", dkAssignOp, DKInt(4)),
       DK( dkPush ),
-      DK( dkLocalStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKStr("foo") ) ),
+      DKLocalStmt("x", dkAssignOp, DKStr("foo")),
       DK( dkPop ),
     )
-
-    var x: DeliNode
-    x = nextVar("x")
     check:
-      x.kind == dkInteger
-      x.intVal == 4
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 4
-
-    x = nextVar("x")
-    check:
-      x.kind == dkString
-      x.strVal == "foo"
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 4
+      nextVar("x") == 4
+      nextVar("x") == 4
+      nextVar("x") == "foo"
+      nextVar("x") == 4
 
   test "arguments":
     let arg = DK( dkArg, DeliNode(kind: dkArgShort, argName: "a") )
     script(
       DK( dkArgStmt, DK( dkArgNames, arg ), DK( dkDefaultOp ), DKExpr( DKInt(3) ) ),
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( arg ) ),
+      DKVarStmt("x", dkAssignOp, arg),
     )
-
-    var x: DeliNode
     next()
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 3
+    check nextVar("x") == 3
 
   test "environment":
     script(
       DK( dkEnvStmt, DKVar("USER") ),
       DK( dkEnvStmt, DKVar("PASTRAMI_ON_RYE"), DK( dkDefaultOp ), DK( dkEnvDefault, DKStr("no mayonaise") ) )
     )
-    var u: DeliNode
-    u = nextVar("USER")
     check:
-      u.kind == dkString
-      u.strVal == getEnv("USER")
-
-    u = nextVar("PASTRAMI_ON_RYE")
-    check:
-      u.kind == dkString
-      u.strVal == "no mayonaise"
+      nextVar("USER") == getEnv("USER")
+      nextVar("PASTRAMI_ON_RYE") == "no mayonaise"
 
   test "include":
     script(
       DK( dkIncludeStmt, DKStr("tests/fixtures/test_include.deli") ),
+      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKStr("done") ),
     )
-    var x,y: DeliNode
-
     next() # include
-
-    x = nextVar("x")
     check:
-      x.kind == dkInteger
-      x.intVal == 6
-
-    y = nextVar("y")
-    check:
-      y.kind == dkInteger
-      y.intVal == 2
-
-
+      nextVar("x") == 6
+      nextVar("y") == 2
+      nextVar("x") == "done"
 
   test "stream":
     skip
@@ -139,175 +90,94 @@ suite "engine":
   test "functions":
     let id = DeliNode(kind: dkIdentifier, id: "foo")
     script(
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(0) ) ),
+      DKVarStmt("x", dkAssignOp, DKInt(0)),
       DK( dkFunction, id, DK( dkCode,
-        DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(1) ) )
+        DKVarStmt("x", dkAssignOp, DKInt(1)),
       )),
       DK( dkFunctionStmt, id ),
     )
     check:
       engine.nextLen == 3
-
-    var x: DeliNode
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 0
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 0
-
+      nextVar("x") == 0
+      nextVar("x") == 0
     next()
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 1
+    check nextVar("x") == 1
 
   test "for loop":
     script(
       DK( dkForLoop, DKVar("i"), DK( dkArray, DKInt(0), DKInt(1), DKInt(2) ),
         DK( dkCode,
-          DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKVar("i") ) )
+          DKVarStmt("x", dkAssignOp, DKVar("i")),
         )
       )
     )
-    check:
-      engine.nextLen == 1
-
-    var x: DeliNode
-
+    check engine.nextLen == 1
     next() # for loop expansion
     check:
       engine.nextLen > 1
-
-    x = nextVar("x") # assign
-    check:
-      x.kind == dkInteger
-      x.intVal == 0
-
-    x = nextVar("x") # assign
-    check:
-      x.intVal == 1
-
-    x = nextVar("x") # assign
-    check:
-      x.intVal == 2
+      nextVar("x") == 0
+      nextVar("x") == 1
+      nextVar("x") == 2
 
   test "do loop":
     script(
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(3) ),
+      DKVarStmt("x", dkAssignOp, DKInt(3)),
       DK( dkDoLoop,
         DK( dkCode,
-          DK( dkVariableStmt, DKVar("x"), DK( dkRemoveOp ), DKInt(1) ),
+          DKVarStmt("x", dkRemoveOp, DKInt(1)),
         ), DK( dkCondition, DK( dkComparison,
           DK( dkCompGt ), DKVar("x"), DKInt(0)
         ))
       ),
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(5) ),
+      DKVarStmt("x", dkAssignOp, DKInt(5)),
     )
-
-    var x: DeliNode
-
-    x = nextVar("x")
-    check:
-      x.intVal == 3
-
+    check nextVar("x") == 3
     next() # setup do
     check:
       engine.nextLen() > 1
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 2
-
-    x = nextVar("x")
-    check:
-      x.intVal == 1
-
-    x = nextVar("x")
-    check:
-      x.intVal == 0
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 5
-
+      nextVar("x") == 2
+      nextVar("x") == 1
+      nextVar("x") == 0
+      nextVar("x") == 5
 
   test "while loop":
     script(
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(3) ),
+      DKVarStmt("x", dkAssignOp, DKInt(3)),
       DK( dkWhileLoop,
         DK( dkCondition, DK( dkComparison,
           DK( dkCompGt ), DKVar("x"), DKInt(0)
         )),
         DK( dkCode,
-          DK( dkVariableStmt, DKVar("x"), DK( dkRemoveOp ), DKInt(1) ),
+          DKVarStmt("x", dkRemoveOp, DKInt(1)),
         ),
       ),
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKInt(5) ),
+      DKVarStmt("x", dkAssignOp, DKInt(5)),
     )
-    var x: DeliNode
-
     next() # setup while
     check:
       engine.nextLen() > 1
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 3
-
-    x = nextVar("x")
-    check:
-      x.intVal == 2
-
-    x = nextVar("x")
-    check:
-      x.intVal == 1
-
-    x = nextVar("x")
-    check:
-      x.intVal == 0
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 5
+      nextVar("x") == 3
+      nextVar("x") == 2
+      nextVar("x") == 1
+      nextVar("x") == 0
+      nextVar("x") == 5
 
   test "conditionals":
     script(
-      DK( dkVariableStmt, DKVar("y"), DK( dkAssignOp ), DKExpr( DeliNode(kind: dkBoolean, boolVal: false) ) ),
-      DK( dkVariableStmt, DKVar("x"), DK( dkAssignOp ), DKExpr( DKInt(1) ) ),
+      DKVarStmt("y", dkAssignOp, DKFalse),
+      DKVarStmt("x", dkAssignOp, DKInt(1)),
       DK( dkConditional,
         DK( dkCondition, DK( dkComparison,
           DK( dkCompGt ), DKVar("x"), DKInt(0)
         )),
         DK( dkCode,
-          DK( dkVariableStmt, DKVar("y"), DK( dkAssignOp ), DKExpr( DeliNode(kind: dkBoolean, boolVal: true) ) ),
+          DKVarStmt("y", dkAssignOp, DKTrue),
         )
       )
     )
-    var x,y: DeliNode
-
-    y = nextVar("y")
     check:
-      y.kind == dkBoolean
-      y.boolVal == false
-
-    x = nextVar("x")
-    check:
-      x.kind == dkInteger
-      x.intVal == 1
-
+      nextVar("y") == false
+      nextVar("x") == 1
     next()
-    y = nextVar("y")
-
-    check:
-      y.kind == dkBoolean
-      y.boolVal == true
+    check nextVar("y") == true
 

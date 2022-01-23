@@ -69,6 +69,12 @@ proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
 proc DKVar*(varName: string): DeliNode =
   return DeliNode(kind: dkVariable, varName: varName)
 
+proc DKVarStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
+  return DK( dkVariableStmt, DKVar(v), DK( op ), DKExpr(val) )
+
+proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
+  return DK( dkLocalStmt, DKVar(v), DK( op ), DKExpr(val) )
+
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
 
@@ -84,6 +90,9 @@ proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
     node.line = line
     sons.add(node)
   return DeliNode(kind: dkInner, sons: sons, line: line)
+
+let DKTrue*  = DeliNode(kind: dkBoolean, boolVal: true)
+let DKFalse* = DeliNode(kind: dkBoolean, boolVal: false)
 
 proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
   return DeliNode(kind: dkObject, table: table.toTable)
