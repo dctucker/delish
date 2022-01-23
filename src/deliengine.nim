@@ -8,6 +8,7 @@ import sequtils
 import stacks
 import deliargs
 import deliscript
+import deliparser
 
 type
   Engine* = ref object
@@ -24,8 +25,20 @@ type
     writehead:  DeliListNode
     returns:    Stack[ DeliListNode ]
 
+
+proc evaluate(engine: Engine, val: DeliNode): DeliNode
+proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
+proc doStmt(engine: Engine, s: DeliNode)
+proc initArguments(engine: Engine, script: DeliNode)
+proc loadScript(engine: Engine, script: DeliNode)
+
+
 proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList
+
+proc setup*(engine: Engine, script: DeliNode) =
+  engine.initArguments(script)
+  engine.loadScript(script)
 
 proc newEngine*(debug: int): Engine =
   result = Engine(
@@ -43,20 +56,9 @@ proc newEngine*(debug: int): Engine =
   result.readhead  = result.statements.head
   result.writehead = result.statements.head
 
-proc initArguments(engine: Engine, script: DeliNode)
-proc loadScript(engine: Engine, script: DeliNode)
-
-proc setup*(engine: Engine, script: DeliNode) =
-  engine.initArguments(script)
-  engine.loadScript(script)
-
 proc newEngine*(script: DeliNode, debug: int): Engine =
   result = newEngine(debug)
   result.setup(script)
-
-proc evaluate(engine: Engine, val: DeliNode): DeliNode
-proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
-proc doStmt(engine: Engine, s: DeliNode)
 
 
 ### Engine ###
@@ -127,6 +129,13 @@ proc lineInfo*(engine: Engine): string =
   let source = " \27[0;34;4m" & sline
   let parsed = "\27[1;24m " & repr(engine.current)
   return linenum & source & parsed & "\27[0m"
+
+proc doInclude(engine: Engine, included: DeliNode) =
+  let filename = engine.evaluate(included).toString()
+  let script = loadScript(filename)
+  let parser = Parser(script: script, debug: engine.debug)
+  let parsed = parser.parse()
+  engine.loadScript(parsed)
 
 proc debugNext(engine: Engine) =
   if engine.debug < 3: return
@@ -812,6 +821,8 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.popLocals()
   of dkStreamStmt:
     engine.doStream(s.sons)
+  of dkIncludeStmt:
+    engine.doInclude(s.sons[0])
   of dkInner:
     for s in s.sons:
       engine.doStmt(s)

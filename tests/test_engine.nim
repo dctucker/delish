@@ -114,7 +114,24 @@ suite "engine":
       u.strVal == "no mayonaise"
 
   test "include":
-    skip
+    script(
+      DK( dkIncludeStmt, DKStr("tests/fixtures/test_include.deli") ),
+    )
+    var x,y: DeliNode
+
+    next() # include
+
+    x = nextVar("x")
+    check:
+      x.kind == dkInteger
+      x.intVal == 6
+
+    y = nextVar("y")
+    check:
+      y.kind == dkInteger
+      y.intVal == 2
+
+
 
   test "stream":
     skip
