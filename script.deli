@@ -40,6 +40,7 @@ if --yes {
 }
 
 $input = open < ./input.txt
+out $input
 $log = open > ./log.txt
 $log.out "hello"
 

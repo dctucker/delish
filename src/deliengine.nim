@@ -160,6 +160,12 @@ proc nextLen*(engine: Engine): int =
     result += 1
     head = head.next
 
+proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
+  engine.readhead.next = nil
+  stderr.write("\27[1;31m")
+  stderr.write(msg)
+  stderr.write("\n")
+  quit(1)
 
 ### Environment ###
 
@@ -256,7 +262,7 @@ proc getVariable*(engine: Engine, name: string): DeliNode =
   elif engine.envars.contains(name):
     return DeliNode(kind: dkString, strVal: engine.envars[name])
   else:
-    raise newException( Exception, "Unknown variable: $" & name )
+    engine.runtimeError("Unknown variable: $" & name)
 
 proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
   #echo "evalVarDeref ", vard.repr
@@ -284,7 +290,7 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
       else:
         result = deliNone()
     else:
-      todo "evalVarDeref Variable using ", son.kind
+      todo "evalVarDeref ", result.kind, " using ", son.kind
 
 proc assignVariable(engine: Engine, key: string, value: DeliNode) =
   engine.debugn "  "
@@ -416,7 +422,7 @@ proc initArguments(engine: Engine, script: DeliNode) =
     if arg.isFlag():
       let f = findArgument(engine.arguments, arg)
       if f.isNone():
-        raise newException(Exception, "Unknown argument: " & arg.long_name)
+        engine.runtimeError("Unknown argument: " & arg.long_name)
       else:
         if arg.value.isNone():
           arg.value = DeliNode(kind: dkBoolean, boolVal: true)
@@ -474,12 +480,15 @@ proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
     #echo s.kind
     result = engine.evaluate(s)
 
+proc getStreamNumber(node: DeliNode): int =
+  return node.intVal
+
 proc evaluateStream(engine: Engine, stream: DeliNode): File =
   #let num = if stream.sons.len() > 0:
   #  engine.variables[stream.sons[0].varName].intVal
   #else:
   #  stream.intVal
-  let num = engine.evaluate(stream).intVal
+  let num = engine.evaluate(stream).getStreamNumber()
   if engine.fds.contains(num):
     return engine.fds[num]
 
@@ -553,6 +562,7 @@ proc getRedirOpenMode(node: DeliNode): FileMode =
     todo "redir open mode ", node.kind
 
 proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
+  result = deliNone()
   var variable: string
   var mode = fmReadWrite
   var path: string
@@ -566,28 +576,48 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
       mode = getRedirOpenMode(node.sons[0])
     else:
       todo "open ", node.kind
-  todo "open file and assign file descriptor"
-  result = DeliNode(kind: dkStream, intVal: 1)
-  engine.variables[variable] = result
+  try:
+    let file = open(path, mode)
+    let num = file.getOsFileHandle()
+    engine.fds[num] = file
+    result = DeliNode(kind: dkStream, intVal: num)
+    engine.variables[variable] = result
+  except IOError:
+    engine.runtimeError("Unable to open: " & path)
 
 proc doStream(engine: Engine, nodes: seq[DeliNode]) =
   var fd: File
   let first_node = nodes[0]
   if first_node.kind == dkVariable:
-    let num = engine.variables[first_node.varName].intVal
+    let num = engine.variables[first_node.varName].getStreamNumber()
     if engine.fds.contains(num):
       fd = engine.fds[num]
   elif first_node.kind == dkStream:
     fd = engine.evaluateStream(first_node)
 
+  var str: string
   let last_node = nodes[^1]
   for expr in last_node.sons:
     #echo expr.repr
     let eval = engine.evaluate(expr)
     #echo eval.repr
-    let str = eval.toString()
-    #echo str.repr
-    fd.write(str, "\n")
+    case eval.kind
+    of dkStream:
+      let input = engine.fds[eval.intVal]
+      const buflen = 4096
+      var buffer: array[buflen,char]
+      while true:
+        let bytes = input.readChars(buffer)
+        let written = fd.writeChars(buffer, 0, bytes)
+        if written < bytes:
+          todo "handle underrun"
+        if bytes < buflen:
+          break
+      fd.flushFile()
+    else:
+      str = eval.toString()
+      #echo str.repr
+      fd.write(str, "\n")
 
 
 ### Functions ###

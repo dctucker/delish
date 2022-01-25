@@ -72,14 +72,6 @@ type DeliT = object
   length: csize_t
   parser: Parser
 
-proc parseStreamInt(str: string): int =
-  case str
-  of "in":  return 0
-  of "out": return 1
-  of "err": return 2
-  else:
-    return str.parseInt()
-
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
   of dkStrLiteral,

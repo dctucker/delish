@@ -17,6 +17,13 @@ packdeli: src/packcc.c Makefile
 	cd src ; packcc -o packcc delish.packcc ; cd ..
 	gcc -Og src/packcc.c -o packdeli
 
-test:
-	nim c -r tests/test_parser.nim
-	nim c -r tests/test_engine.nim
+#SOURCES=$(wildcard src/*.nim)
+#tests/%.nim: $(SOURCES)
+
+#tests/bin/%: tests/%.nim
+#	nim c -o=tests/bin/ $^
+
+test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
+	for f in tests/*.nim; do nim c -o=tests/bin/ $$f ; done
+	for f in tests/bin/*; do $$f ; done
+
