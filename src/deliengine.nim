@@ -1,6 +1,7 @@
 import std/tables
 import std/lists
 import os
+import std/streams
 import deliops
 import deliast
 import strutils
@@ -11,6 +12,11 @@ import deliscript
 import deliparser
 
 type
+  FileDesc = ref object
+    file:       File
+    handle:     FileHandle
+    stream:     Stream
+
   Engine* = ref object
     debug*:     int
     arguments:  seq[Argument]
@@ -19,12 +25,18 @@ type
     envars:     Table[string, string]
     functions:  DeliTable
     current:    DeliNode
-    fds:        Table[int, File]
+    fds:        Table[int, FileDesc]
     statements: DeliList
     readhead:   DeliListNode
     writehead:  DeliListNode
     returns:    Stack[ DeliListNode ]
 
+proc initFd(file: File): FileDesc =
+  FileDesc(
+    file: file,
+    stream: newFileStream(file),
+    handle: file.getOsFileHandle(),
+  )
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
 proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
@@ -52,9 +64,9 @@ proc newEngine*(debug: int): Engine =
   )
   result.clearStatements()
   result.locals.push(initTable[string, DeliNode]())
-  result.fds[0] = stdin
-  result.fds[1] = stdout
-  result.fds[2] = stderr
+  result.fds[0] = initFd(stdin)
+  result.fds[1] = initFd(stdout)
+  result.fds[2] = initFd(stderr)
   result.readhead  = result.statements.head
   result.writehead = result.statements.head
 
@@ -483,7 +495,7 @@ proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
 proc getStreamNumber(node: DeliNode): int =
   return node.intVal
 
-proc evaluateStream(engine: Engine, stream: DeliNode): File =
+proc evaluateStream(engine: Engine, stream: DeliNode): FileDesc =
   #let num = if stream.sons.len() > 0:
   #  engine.variables[stream.sons[0].varName].intVal
   #else:
@@ -579,14 +591,14 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
   try:
     let file = open(path, mode)
     let num = file.getOsFileHandle()
-    engine.fds[num] = file
+    engine.fds[num] = initFd(file)
     result = DeliNode(kind: dkStream, intVal: num)
     engine.variables[variable] = result
   except IOError:
     engine.runtimeError("Unable to open: " & path)
 
 proc doStream(engine: Engine, nodes: seq[DeliNode]) =
-  var fd: File
+  var fd: FileDesc
   let first_node = nodes[0]
   if first_node.kind == dkVariable:
     let num = engine.variables[first_node.varName].getStreamNumber()
@@ -607,17 +619,17 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
       const buflen = 4096
       var buffer: array[buflen,char]
       while true:
-        let bytes = input.readChars(buffer)
-        let written = fd.writeChars(buffer, 0, bytes)
+        let bytes = input.file.readChars(buffer)
+        let written = fd.file.writeChars(buffer, 0, bytes)
         if written < bytes:
           todo "handle underrun"
         if bytes < buflen:
           break
-      fd.flushFile()
+      fd.file.flushFile()
     else:
       str = eval.toString()
       #echo str.repr
-      fd.write(str, "\n")
+      fd.file.write(str, "\n")
 
 
 ### Functions ###
