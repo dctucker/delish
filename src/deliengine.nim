@@ -20,6 +20,7 @@ type
   Engine* = ref object
     debug*:     int
     arguments:  seq[Argument]
+    argnum:     int
     variables:  DeliTable
     locals:     Stack[ DeliTable ]
     envars:     Table[string, string]
@@ -38,6 +39,7 @@ proc initFd(file: File): FileDesc =
     handle: file.getOsFileHandle(),
   )
 
+proc close(fd: FileDesc)
 proc evaluate(engine: Engine, val: DeliNode): DeliNode
 proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
 proc doStmt(engine: Engine, s: DeliNode)
@@ -56,6 +58,7 @@ proc setup*(engine: Engine, script: DeliNode) =
 
 proc newEngine*(debug: int): Engine =
   result = Engine(
+    argnum: 1,
     arguments:  newSeq[Argument](),
     variables:  initTable[string, DeliNode](),
     statements: @[deliNone()].toSinglyLinkedList,
@@ -130,10 +133,11 @@ proc lineInfo*(engine: Engine): string =
   var filename: string
   var sline: string
 
+  let line = engine.current.line
   sline = getOneliner(engine.current)
   if engine.current.script != nil:
     filename = engine.current.script.filename
-  let line = engine.current.line
+    sline = engine.current.script.getLine(abs(line))
 
   let delim = if line > 0:
     ":"
@@ -178,6 +182,10 @@ proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
   stderr.write(msg)
   stderr.write("\n")
   quit(1)
+
+proc teardown(engine: Engine) =
+  for k,v in engine.fds.pairs():
+    v.close()
 
 ### Environment ###
 
@@ -425,6 +433,7 @@ proc initArguments(engine: Engine, script: DeliNode) =
   engine.arguments = @[]
   for stmt in script.sons:
     engine.doArgStmts(stmt)
+  engine.argnum = 1
 
   engine.printArguments()
   debug engine, "checking user arguments"
@@ -631,6 +640,12 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
       #echo str.repr
       fd.file.write(str, "\n")
 
+proc close(fd: FileDesc) =
+  fd.stream.flush
+  fd.stream.close
+
+proc doClose(engine: Engine, v: DeliNode) =
+  engine.evaluateStream(v).close
 
 ### Functions ###
 
@@ -836,11 +851,24 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.debugNext()
   of dkVariableStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
+  of dkCloseStmt:
+    engine.doClose(s.sons[0])
   of dkArgStmt:
-    if nsons > 1:
-      engine.doArg(s.sons[0].sons, s.sons[2].sons[0])
+    if s.sons[0].kind == dkVariable:
+      var shifted = nth(engine.argnum)
+      inc engine.argnum
+      var value = if shifted.kind != dkNone:
+        shifted
+      elif nsons > 1:
+        s.sons[2].sons[0]
+      else:
+        deliNone()
+      engine.assignVariable(s.sons[0].varName, value)
     else:
-      engine.doArg(s.sons[0].sons, deliNone())
+      if nsons > 1:
+        engine.doArg(s.sons[0].sons, s.sons[2].sons[0])
+      else:
+        engine.doArg(s.sons[0].sons, deliNone())
     engine.printVariables()
   of dkEnvStmt:
     if nsons > 1:

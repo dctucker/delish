@@ -121,36 +121,24 @@ proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
   debug_tree parser, $result, " createNode1 ", $kind, " ", $s1
   let node = DeliNode(kind: kind, sons: @[])
-
-  let son1 = parser.getNode(s1)
-  node.sons.add(son1)
-
+  node.sons.add(parser.getNode(s1))
   parser.nodes.add(node)
 
 proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
   debug_tree parser, $result, " createNode2 ", $kind, " ", $s1, " ", $s2
   var node = DeliNode(kind: kind, sons: @[])
-
-  let son1 = parser.getNode(s1)
-  node.sons.add(son1)
-  let son2 = parser.getNode(s2)
-  node.sons.add(son2)
-
+  node.sons.add(parser.getNode(s1))
+  node.sons.add(parser.getNode(s2))
   parser.nodes.add(node)
 
 proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
   debug_tree parser, $result, " createNode3 ", $kind, " ", $s1, " ", $s2, " ", $s3
   var node = DeliNode(kind: kind, sons: @[])
-
-  let son1 = parser.getNode(s1)
-  node.sons.add(son1)
-  let son2 = parser.getNode(s2)
-  node.sons.add(son2)
-  let son3 = parser.getNode(s3)
-  node.sons.add(son3)
-
+  node.sons.add(parser.getNode(s1))
+  node.sons.add(parser.getNode(s2))
+  node.sons.add(parser.getNode(s3))
   parser.nodes.add(node)
 
 proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =

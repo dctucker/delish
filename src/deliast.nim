@@ -200,6 +200,8 @@ proc getOneliner*(node: DeliNode): string =
     return "nop"
   of dkVariableStmt:
     return "$" & node.sons[0].varName & " " & node.sons[1].toString() & " " & node.sons[2].toString()
+  of dkCloseStmt:
+    return "close $" & node.sons[0].varName
   of dkLocalStmt:
     result = "local $" & node.sons[0].varName
     if node.sons.len > 1:

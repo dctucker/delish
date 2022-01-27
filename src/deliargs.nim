@@ -64,6 +64,15 @@ proc shift*(): Argument =
   result = user_args[0]
   user_args = user_args[1 .. ^1]
 
+proc nth*(n: int): DeliNode =
+  var i = 0
+  for arg in user_args:
+    if not arg.isFlag():
+      inc i
+      if i == n:
+        return arg.value
+  return deliNone()
+
 proc matchNames(a, b: Argument): bool =
   if a.short_name != "" and a.short_name == b.short_name:
     return true

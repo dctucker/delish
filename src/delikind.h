@@ -21,6 +21,7 @@ enum DeliKind {
 	dkAssignExpr,
 	dkAppendExpr,
 	dkOpenExpr,
+	dkCloseStmt,
 	dkLocalStmt,
 	dkArgStmt,
 	dkEnvStmt,

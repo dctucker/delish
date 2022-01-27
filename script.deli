@@ -7,14 +7,24 @@ arg --default
 arg    --help    |= """
 some documentation
 """
+arg $mustard
+
 #arg $filename
 env $SANDO |= "chicken parm"
 out $SANDO
 $SANDO = "meatball"
 out $SANDO
 
+out $mustard
+
 $found = run find . -name "disk*" | grep "sdb"
 
+$obj = [
+  "a": "b"
+  func: {
+    out "obj func"
+  }
+]
 
 #assert = {
 #  arg $assertion
@@ -43,6 +53,7 @@ $input = open < ./input.txt
 out $input
 $log = open > ./log.txt
 $log.out "hello"
+$log.close
 
 #$background = async redir in<$input out>$log run dd if=/dev/random bs=10G of=/dev/null count=1 oflag=dsync
 

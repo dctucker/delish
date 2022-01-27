@@ -63,6 +63,7 @@ Block         <-
 Statement     <-
               (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
               /  a:EnvStmt      /  a:IncludeStmt  /  a:StreamStmt
+              /  a:CloseStmt
               /  a:RunStmt      /  a:FunctionStmt /  a:BreakStmt
               /  a:ContinueStmt /  a:ReturnStmt   /  a:Push / a:Pop
               )                                                      { DK( Statement  , a ); SL(a); }
@@ -90,12 +91,17 @@ VariableStmt  <- &'$' v:Variable Blank*
 AssignExpr    <- ( e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt )     { $$ = e; }
 AppendExpr    <- ( e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr )    { $$ = e; }
 OpenExpr      <- "open" (Blank+ o:RedirOp)? Blank+ p:Path            { DK( OpenExpr, p, o); }
+CloseStmt     <-
+               ( "close" Blank+ v:Variable
+               / v:Variable ".close"
+               )                                                     { DK( CloseStmt, v ); }
 LocalStmt     <- "local" Blank+ v:Variable                           { DK( LocalStmt, v ); }
               (  Blank* o:AssignOp Blank* e:Expr                     { NA( $$, o ); NA( $$, e ); }
               )?
 ArgStmt       <- "arg"
                  ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { DK( ArgStmt, a, o, d); }
                  / a:ArgNames                                        { DK( ArgStmt, a); }
+                 / Blank+ v:Variable                                 { DK( ArgStmt, v); }
                  )
 EnvStmt       <- "env" Blank+ v:Variable                             { DK( EnvStmt, v ); }
                  (Blank* o:DefaultOp Blank* e:EnvDefault             { NA( $$, o ); NA( $$, e ); }
@@ -208,13 +214,14 @@ Object        <- '['                                                 { DK( Objec
                  Blank* ','? _
               )+ ']'
 Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { DK( Pair, k, v ); }
+              /  i:Identifier Blank* ":" Blank* "{" _ c:Code _ "}"   { DK( Pair, i, c ); }
 JsonBlock     <- "json" Blank+ s:StrBlock                            { DK( JsonBlock, s ); }
 Keyword       <- "json" / "sub"   / "if"  / "do" / "while" / "for"
                / "in"   / "out"   / "err" / "include"
                / "true" / "false" / "env" / "arg" / "local"
                / "return" / "break" / "continue"
                / "async" / "redir" / "and" / "or" / "not"
-               / "push" / "pop"
+               / "push" / "pop" / "open" / "close"
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }
 Command       <- < W ( W / '-' )* >                                  { NS( String ); }
