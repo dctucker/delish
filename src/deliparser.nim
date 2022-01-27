@@ -15,14 +15,14 @@ type Parser* = ref object
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
 proc debug(parser: Parser, msg: varargs[string]) =
-  if parser.debug == 0:
+  if parser.debug < 2:
     return
   for m in msg:
     stdout.write(m)
   stdout.write("\n")
 
 proc debug_tree(parser: Parser, msg: varargs[string]) =
-  if parser.debug < 2:
+  if parser.debug < 3:
     return
   for m in msg:
     stdout.write(m)
@@ -39,21 +39,21 @@ proc parse*(parser: Parser): DeliNode =
 
   var cstr = parser.script.source.cstring
   parser.nodes = @[deliNone()]
-  discard packcc_main(cstr, parser.script.source.len.cint, parser)
+  let pos = packcc_main(cstr, parser.script.source.len.cint, parser)
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
   return parser.entry_point
 
 proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
-  debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
+  #debug parser, "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
   parser.symbol_stack.push(k)
 
 proc leave(parser: Parser, k: DeliKind, pos: int, matchStr: string) =
   discard parser.symbol_stack.pop()
   if matchStr.len > 0:
     debug parser, parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr.replace("\\\n"," ").replace("\n","\\n"), "\27[0m"
-  else:
-    debug parser, parser.indent("\27[30;1m< "), $k, "\27[0m"
+  #else:
+  #  debug parser, parser.indent("\27[30;1m< "), $k, " ", $pos, "\27[0m"
 
 proc printSons(node: DeliNode, level: int) =
   for son in node.sons:

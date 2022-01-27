@@ -45,6 +45,7 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
 proc doStmt(engine: Engine, s: DeliNode)
 proc initArguments(engine: Engine, script: DeliNode)
 proc initIncludes(engine: Engine, script: DeliNode)
+proc initFunctions(engine: Engine, script: DeliNode)
 proc loadScript(engine: Engine, script: DeliNode)
 
 
@@ -54,6 +55,7 @@ proc clearStatements*(engine: Engine) =
 proc setup*(engine: Engine, script: DeliNode) =
   engine.initArguments(script)
   engine.initIncludes(script)
+  engine.initFunctions(script)
   engine.loadScript(script)
 
 proc newEngine*(debug: int): Engine =
@@ -182,6 +184,13 @@ proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
   stderr.write(msg)
   stderr.write("\n")
   quit(1)
+
+proc setupError(engine: Engine, msg: varargs[string,`$`]) =
+  engine.readhead.next = nil
+  stderr.write("\27[31m(setup) ")
+  stderr.write(msg)
+  stderr.write("\n")
+  quit(2)
 
 proc teardown(engine: Engine) =
   for k,v in engine.fds.pairs():
@@ -404,16 +413,6 @@ proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode) =
     #engine.printArguments()
     #echo "\n"
 
-proc doIncludes(engine: Engine, node: DeliNode) =
-  case node.kind:
-  of dkScript, dkCode, dkStatement:
-    for n in node.sons:
-      engine.doIncludes(n)
-  of dkIncludeStmt:
-    engine.doStmt(node)
-  else:
-    discard
-
 proc doArgStmts(engine: Engine, node: DeliNode) =
   case node.kind
   of dkStatement:
@@ -425,6 +424,38 @@ proc doArgStmts(engine: Engine, node: DeliNode) =
       engine.doArgStmts(son)
   else:
     discard
+
+proc doIncludes(engine: Engine, node: DeliNode) =
+  case node.kind:
+  of dkScript, dkCode, dkStatement:
+    for n in node.sons:
+      engine.doIncludes(n)
+  of dkIncludeStmt:
+    engine.doStmt(node)
+  else:
+    discard
+
+proc doFunctionDefs(engine: Engine, node: DeliNode) =
+  case node.kind:
+  of dkFunction:
+    engine.doStmt(node)
+  else:
+    for son in node.sons:
+      engine.doFunctionDefs(son)
+
+proc checkFunctionCalls(engine: Engine, node: DeliNode) =
+  case node.kind:
+  of dkFunctionStmt:
+    let id = node.sons[0].id
+    if id notin engine.functions:
+      engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
+  else:
+    for son in node.sons:
+      engine.checkFunctionCalls(son)
+
+proc initFunctions(engine: Engine, script: DeliNode) =
+  engine.doFunctionDefs(script)
+  engine.checkFunctionCalls(script)
 
 proc initIncludes(engine: Engine, script: DeliNode) =
   engine.doIncludes(script)
@@ -443,7 +474,7 @@ proc initArguments(engine: Engine, script: DeliNode) =
     if arg.isFlag():
       let f = findArgument(engine.arguments, arg)
       if f.isNone():
-        engine.runtimeError("Unknown argument: " & arg.long_name)
+        engine.setupError("Unknown argument: " & arg.long_name)
       else:
         if arg.value.isNone():
           arg.value = DeliNode(kind: dkBoolean, boolVal: true)
@@ -650,10 +681,14 @@ proc doClose(engine: Engine, v: DeliNode) =
 ### Functions ###
 
 proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
+  if id.id in engine.functions:
+    return
   engine.functions[id.id] = code
   debug engine, "define ", engine.functions
 
 proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
+  if id.id notin engine.functions:
+    engine.runtimeError("Unknown function: " & id.id)
   let code = engine.functions[id.id]
 
   var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)

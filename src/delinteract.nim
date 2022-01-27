@@ -1,7 +1,7 @@
 import deliengine
 import std/terminal
 
-type Nteract = ref object
+type Nteract* = ref object
   engine: Engine
   filename: string
   line: int

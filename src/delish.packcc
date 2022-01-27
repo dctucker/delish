@@ -19,6 +19,10 @@
 			deli_event(auxil, event, dk##rule, level, pos, buffer, length)
 	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
 	#define PCC_BUFFERSIZE 1024
+	#define PCC_ERROR(auxil) pcc_error(); return 0;
+	static void pcc_error(void) {
+		fprintf(stderr, "Syntax error\n");
+	}
 
 	#define NS(K)       __ = nodeString( auxil->parser, dk##K   , _1s, _1e, _1)
 	#define CN(N, K, ...) __ = createNode##N( auxil->parser, dk##K, __VA_ARGS__ )
@@ -28,6 +32,7 @@
 	#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
 	#define NA(P,S)     nodeAppend( auxil->parser, P, S )
 	#define SL(X)       setLine( auxil->parser, X, _0s )
+	#define ER(MSG)     fprintf(stderr, "Parsing error: %s\n", MSG)
 
 	#define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
 	#define DK(...) GET_DK( __VA_ARGS__, CN3, CN2, CN1, CN0)(__VA_ARGS__)
@@ -64,9 +69,12 @@ Statement     <-
               (  a:VariableStmt /  a:LocalStmt    /  a:ArgStmt
               /  a:EnvStmt      /  a:IncludeStmt  /  a:StreamStmt
               /  a:CloseStmt
-              /  a:RunStmt      /  a:FunctionStmt /  a:BreakStmt
+              /  a:RunStmt
+              /  a:FunctionStmt
+              /  a:BreakStmt
               /  a:ContinueStmt /  a:ReturnStmt   /  a:Push / a:Pop
               )                                                      { DK( Statement  , a ); SL(a); }
+                                                                    ~{ ER("Invalid statement"); }
 Conditional   <- "if" Blank+ e:Condition
                  Blank+ "{" _ c:Code? _ "}" _                        { DK( Conditional, e, c ); }
 WhileLoop     <- "while" Blank+ e:Condition
@@ -148,7 +156,8 @@ Expr          <-
               /  s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
               /  s:BoolExpr
               /  s:Path     / s:JsonBlock  / s:Stream
-              )                                                      { DK( Expr, s); }
+              )                                                   # ~{ ER("Invalid expression"); }
+                                                                     { DK( Expr, s); }
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
 Condition     <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
 MathExpr      <- a:AddExpr                                           { $$ = a; }

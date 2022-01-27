@@ -51,13 +51,16 @@ when isMainModule:
     stderr.write("\n*** ERROR: Stopped parsing at pos ", parser.parsed_len, "/", script.source.len(), "\n")
     let num = script.line_number(parser.parsed_len)
     let errline = script.getLine(num)
-    stderr.write("Syntax error in ", filename, ":", num, " near ", errline, "\n\n")
+    stderr.write("Syntax error in ", filename, ":", num, " near \"", errline, "\"\n\n")
     quit 1
 
-  var engine: Engine = newEngine(parsed, debug)
-  var nteract = newNteract(engine)
+  var engine: Engine
+  var nteract: Nteract
+  benchmark "engine setup":
+    engine = newEngine(parsed, debug)
+    nteract = newNteract(engine)
 
-  proc mainloop() =
+  benchmark "executing":
     for line in engine.tick():
       if debug > 0:
         echo engine.lineInfo()
@@ -66,7 +69,4 @@ when isMainModule:
         nteract.filename = engine.sourceFile()
         if line > 0:
           discard nteract.getUserInput()
-
-  benchmark "executing":
-    mainloop()
 

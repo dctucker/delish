@@ -9,6 +9,8 @@ some documentation
 """
 arg $mustard
 
+#unrecognized $statement
+
 #arg $filename
 env $SANDO |= "chicken parm"
 out $SANDO
