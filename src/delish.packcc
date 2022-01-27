@@ -81,6 +81,8 @@ Subshell      <- "sub" Blank+ "{" _ c:Code? _ "}" _                  { DK( Subsh
 BreakStmt     <- "break"                                             { DK( BreakStmt ); }
 ContinueStmt  <- "continue"                                          { DK( ContinueStmt ); }
 ReturnStmt    <- "return"                                            { DK( ReturnStmt ); }
+              (  Blank+ e:Expr                                       { NA( $$, e ); }
+              )?
 Push          <- "push"                                              { DK( Push ); }
 Pop           <- "pop"                                               { DK( Pop ); }
 VariableStmt  <- &'$' v:Variable Blank*
@@ -92,20 +94,20 @@ AssignExpr    <- ( e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt )     { $$ = e; }
 AppendExpr    <- ( e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr )    { $$ = e; }
 OpenExpr      <- "open" (Blank+ o:RedirOp)? Blank+ p:Path            { DK( OpenExpr, p, o); }
 CloseStmt     <-
-               ( "close" Blank+ v:Variable
-               / v:Variable ".close"
-               )                                                     { DK( CloseStmt, v ); }
+              (  "close" Blank+ v:Variable
+              /  v:Variable ".close"
+              )                                                      { DK( CloseStmt, v ); }
 LocalStmt     <- "local" Blank+ v:Variable                           { DK( LocalStmt, v ); }
               (  Blank* o:AssignOp Blank* e:Expr                     { NA( $$, o ); NA( $$, e ); }
               )?
 ArgStmt       <- "arg"
-                 ( a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault { DK( ArgStmt, a, o, d); }
-                 / a:ArgNames                                        { DK( ArgStmt, a); }
-                 / Blank+ v:Variable                                 { DK( ArgStmt, v); }
-                 )
+              (  a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault   { DK( ArgStmt, a, o, d); }
+              /  a:ArgNames                                          { DK( ArgStmt, a); }
+              /  Blank+ v:Variable                                   { DK( ArgStmt, v); }
+              )
 EnvStmt       <- "env" Blank+ v:Variable                             { DK( EnvStmt, v ); }
-                 (Blank* o:DefaultOp Blank* e:EnvDefault             { NA( $$, o ); NA( $$, e ); }
-                 )?
+              (  Blank* o:DefaultOp Blank* e:EnvDefault              { NA( $$, o ); NA( $$, e ); }
+              )?
 IncludeStmt   <- "include" Blank+ s:StrLiteral                       { DK( IncludeStmt, s ); }
 StreamStmt    <-
               (  v:Variable "." s:Stream Blank+ l:ExprList           { DK( StreamStmt,  v, s, l ); }
@@ -123,13 +125,13 @@ RunFlags      <-
               /  (f1:AsyncFlag f2:RedirFlag)                         { DK( RunFlags, f1, f2 ); }
               )
 FunctionStmt  <- i:Identifier                                        { DK( FunctionStmt, i ); SL(i); }
-               ( Blank+ e:Expr                                       { NA( $$, e ); }
-               )*
+              (  Blank+ e:Expr                                       { NA( $$, e ); }
+              )*
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
 EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }
 ExprList      <- e:Expr                                              { DK( ExprList, e ); }
-               ( Blank* ',' Blank* e:Expr Blank*                     { NA( $$, e ); }
-               )*
+              (  Blank* ',' Blank* e:Expr Blank*                     { NA( $$, e ); }
+              )*
 Invocation    <- c:Command                                           { DK( Invocation, c ); }
               (  Blank+ !'|' (e:Expr / e:String)                     { NA( $$, e ); }
               )*
@@ -139,14 +141,14 @@ ConstExpr     <-
               /  e:Boolean / e:Array / e:Object
               /  e:Path / e:JsonBlock
               )                                                      { $$ = e; }
-Expr          <- (
-                 "(" Blank* s:MathExpr Blank* ")"
-               / s:Array / s:Object
-               / s:Arg / s:VarDeref
-               / s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
-               / s:BoolExpr
-               / s:Path     / s:JsonBlock  / s:Stream
-               )                                                     { DK( Expr, s); }
+Expr          <-
+              (  "(" Blank* s:MathExpr Blank* ")"
+              /  s:Array / s:Object
+              /  s:Arg / s:VarDeref
+              /  s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
+              /  s:BoolExpr
+              /  s:Path     / s:JsonBlock  / s:Stream
+              )                                                      { DK( Expr, s); }
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
 Condition     <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
 MathExpr      <- a:AddExpr                                           { $$ = a; }
@@ -178,9 +180,10 @@ CompExpr      <-
               (  s:VarDeref / s:StrBlock / s:StrLiteral
               /  s:Integer / s:Boolean / s:Path
               )                                                      { $$ = s; }
-Comparator    <- ( o:CompGe / o:CompGt
-               /   o:CompLe / o:CompLt
-               /   o:CompEq / o:CompNe )                             { $$ = o; }
+Comparator    <-
+              (  o:CompGe / o:CompGt / o:CompLe / o:CompLt
+              /  o:CompEq / o:CompNe
+              )                                                      { $$ = o; }
 CompGe        <- ">="                                                { DK( CompGe ); }
 CompGt        <- ">"                                                 { DK( CompGt ); }
 CompLe        <- "<="                                                { DK( CompLe ); }
@@ -217,11 +220,11 @@ Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { DK( Pair,
               /  i:Identifier Blank* ":" Blank* "{" _ c:Code _ "}"   { DK( Pair, i, c ); }
 JsonBlock     <- "json" Blank+ s:StrBlock                            { DK( JsonBlock, s ); }
 Keyword       <- "json" / "sub"   / "if"  / "do" / "while" / "for"
-               / "in"   / "out"   / "err" / "include"
-               / "true" / "false" / "env" / "arg" / "local"
-               / "return" / "break" / "continue"
-               / "async" / "redir" / "and" / "or" / "not"
-               / "push" / "pop" / "open" / "close"
+              /  "in"   / "out"   / "err" / "include"
+              /  "true" / "false" / "env" / "arg" / "local"
+              /  "return" / "break" / "continue"
+              /  "async" / "redir" / "and" / "or" / "not"
+              /  "push" / "pop" / "open" / "close"
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }
 Command       <- < W ( W / '-' )* >                                  { NS( String ); }
