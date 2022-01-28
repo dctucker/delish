@@ -82,15 +82,10 @@ proc newEngine*(script: DeliNode, debug: int): Engine =
 
 ### Engine ###
 
-proc debugn(engine: Engine, msg: varargs[string, `$`]) =
-  if engine.debug < 3: return
-  stdout.write("\27[30;1m")
-  for m in msg:
-    stdout.write(m)
-proc debug(engine: Engine, msg: varargs[string, `$`]) =
-  if engine.debug < 3: return
-  debugn engine, msg
-  stdout.write("\n\27[0m")
+template debug(level: int, code: untyped) =
+  if engine.debug >= level:
+    code
+    #stdout.write("\27[0m")
 
 proc setHeads(engine: Engine, list: DeliListNode) =
   engine.readhead = list
@@ -120,7 +115,8 @@ proc loadScript(engine: Engine, script: DeliNode) =
     for s2 in s.sons:
       engine.insertStmt(s2)
   engine.insertStmt(DKInner(0, deliNone()))
-  debug engine, engine.statements
+  debug 3:
+    echo engine.statements
   engine.setHeads(engine.statements.head.next)
 
 proc sourceFile*(engine: Engine): string =
@@ -159,17 +155,17 @@ proc doInclude(engine: Engine, included: DeliNode) =
     engine.insertStmt(s.sons)
 
 proc debugNext(engine: Engine) =
-  if engine.debug < 3: return
-  stdout.write("\27[30;1m  next = ")
-  var head = engine.readhead.next
-  while head != nil:
-    let l = head.value.line
-    var line = ":" & $l
-    if l < 0:
-      line = "." & $(-l)
-    stdout.write("\27[4m", line, "\27[24m ")
-    head = head.next
-  stdout.write("\27[0m\n")
+  debug 3:
+    stdout.write("\27[30;1m  next = ")
+    var head = engine.readhead.next
+    while head != nil:
+      let l = head.value.line
+      var line = ":" & $l
+      if l < 0:
+        line = "." & $(-l)
+      stdout.write("\27[4m", line, "\27[24m ")
+      head = head.next
+    stdout.write("\27[0m\n")
 
 proc nextLen*(engine: Engine): int =
   result = 0
@@ -199,12 +195,12 @@ proc teardown(engine: Engine) =
 ### Environment ###
 
 proc printEnvars(engine: Engine) =
-  if engine.debug < 2: return
-  debug engine, "ENV = ", $(engine.envars)
-  #echo "--- available envars ---"
-  #for k,v in envPairs():
-  #  stdout.write(k, " ")
-  #stdout.write("\n")
+  debug 2:
+    echo "ENV = ", $(engine.envars)
+    #echo "--- available envars ---"
+    #for k,v in envPairs():
+    #  stdout.write(k, " ")
+    #stdout.write("\n")
 
 proc assignEnvar(engine: Engine, key: string, value: string) =
   putEnv(key, value)
@@ -226,16 +222,17 @@ proc doEnv(engine: Engine, name: DeliNode, default: DeliNode = deliNone()) =
 
 proc printLocals(engine: Engine) =
   let layer = engine.locals.peek()
-  if engine.debug < 2: return
-  echo "\27[36m== Local Variables (", layer.len(), ") =="
-  for k,v in layer:
-    stdout.write("  $", k, " = ")
-    stdout.write(printValue(v))
-    stdout.write("\n")
+  debug 2:
+    echo "\27[36m== Local Variables (", layer.len(), ") =="
+    for k,v in layer:
+      stdout.write("  $", k, " = ")
+      stdout.write(printValue(v))
+      stdout.write("\n")
 
 proc pushLocals(engine: Engine) =
   engine.locals.push(engine.locals.peek())
-  debug engine, "  push locals ", engine.locals
+  debug 3:
+    echo "  push locals ", engine.locals
 
 proc setupPush(engine: Engine, line: int, table: DeliTable) =
   var inner = DKInner(line, DK(dkPush))
@@ -245,7 +242,8 @@ proc setupPush(engine: Engine, line: int, table: DeliTable) =
 
 proc popLocals(engine: Engine) =
   discard engine.locals.pop()
-  debug engine, "  pop locals ", engine.locals
+  debug 3:
+    echo "  pop locals ", engine.locals
 
 proc setupPop(engine: Engine, line: int) =
   engine.insertStmt( DKInner(line, DK(dkPop)) )
@@ -254,7 +252,8 @@ proc assignLocal(engine: Engine, key: string, value: DeliNode) =
   var locals = engine.locals.pop()
   locals[key] = value
   engine.locals.push(locals)
-  debug engine, "  locals = ", $(engine.locals)
+  debug 3:
+    echo "  locals = ", $(engine.locals)
 
 proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   var locals = engine.locals.pop()
@@ -273,12 +272,12 @@ proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
 ### Variables ###
 
 proc printVariables(engine: Engine) =
-  if engine.debug < 2: return
-  echo "\27[36m== Engine Variables (", engine.variables.len(), ") =="
-  for k,v in engine.variables:
-    stdout.write("  $", k, " = ")
-    stdout.write(printValue(v))
-    stdout.write("\n")
+  debug 2:
+    echo "\27[36m== Engine Variables (", engine.variables.len(), ") =="
+    for k,v in engine.variables:
+      stdout.write("  $", k, " = ")
+      stdout.write(printValue(v))
+      stdout.write("\n")
 
 proc getVariable*(engine: Engine, name: string): DeliNode =
   var stack = engine.locals.toSeq()
@@ -322,16 +321,19 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
       todo "evalVarDeref ", result.kind, " using ", son.kind
 
 proc assignVariable(engine: Engine, key: string, value: DeliNode) =
-  engine.debugn "  "
+  debug 3:
+    stdout.write "  "
   if engine.locals.peek().contains(key):
     engine.assignLocal(key, value)
-    engine.debugn "local "
+    debug 3:
+      stdout.write "local "
   elif engine.envars.contains(key):
     engine.assignEnvar(key, value.toString())
     engine.variables[key] = value
   else:
     engine.variables[key] = value
-  debug engine, "$", key, " = ", value.kind, " ", printValue(value)
+  debug 3:
+    echo "$", key, " = ", value.kind, " ", printValue(value)
 
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
   let val = if expr.kind == dkExpr:
@@ -349,7 +351,8 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       engine.evalVarDeref(val)
     else:
       val
-    debug engine, variable, " += ", value.repr
+    debug 3:
+      echo variable, " += ", value.repr
     let out_value = variable + value
     engine.assignVariable(key.varName, out_value)
   of dkRemoveOp:
@@ -358,7 +361,8 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       engine.evalVarDeref(val)
     else:
       val
-    debug engine, variable, " -= ", value.repr
+    debug 3:
+      echo variable, " -= ", value.repr
     let out_value = variable - value
     engine.assignVariable(key.varName, out_value)
   else:
@@ -368,24 +372,24 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
 ### Arguments ###
 
 proc printArguments(engine: Engine) =
-  if engine.debug < 2: return
-  echo "\27[36m== Engine Arguments =="
-  let longest = engine.arguments.map(proc(x:Argument):int = x.long_name.len()).max()
-  for arg in engine.arguments:
-    stdout.write("  ")
-    if arg.short_name != "":
-      stdout.write("-", arg.short_name)
-    else:
+  debug 2:
+    echo "\27[36m== Engine Arguments =="
+    let longest = engine.arguments.map(proc(x:Argument):int = x.long_name.len()).max()
+    for arg in engine.arguments:
       stdout.write("  ")
-    if arg.long_name != "":
-      stdout.write(" --", arg.long_name)
-    else:
-      stdout.write("   ")
-    stdout.write(repeat(" ", longest-arg.long_name.len()))
-    stdout.write("  = ")
-    stdout.write($(arg.value))
-    stdout.write("\n")
-  stdout.write("\27[0m")
+      if arg.short_name != "":
+        stdout.write("-", arg.short_name)
+      else:
+        stdout.write("  ")
+      if arg.long_name != "":
+        stdout.write(" --", arg.long_name)
+      else:
+        stdout.write("   ")
+      stdout.write(repeat(" ", longest-arg.long_name.len()))
+      stdout.write("  = ")
+      stdout.write($(arg.value))
+      stdout.write("\n")
+    stdout.write("\27[0m")
 
 proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
   case arg.kind
@@ -467,10 +471,12 @@ proc initArguments(engine: Engine, script: DeliNode) =
   engine.argnum = 1
 
   engine.printArguments()
-  debug engine, "checking user arguments"
+  debug 3:
+    echo "checking user arguments"
 
   for arg in user_args:
-    debug engine, arg
+    debug 3:
+      echo arg
     if arg.isFlag():
       let f = findArgument(engine.arguments, arg)
       if f.isNone():
@@ -479,8 +485,8 @@ proc initArguments(engine: Engine, script: DeliNode) =
         if arg.value.isNone():
           arg.value = DeliNode(kind: dkBoolean, boolVal: true)
         f.value = arg.value
-
-  if engine.debug > 2: engine.printArguments()
+  debug 3:
+    engine.printArguments()
 
 
 ### Processes ###
@@ -573,10 +579,12 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   of dkVarDeref:
     return engine.evalVarDeref(val)
   of dkArg:
-    debugn engine, "  dereference ", val.sons[0]
+    debug 3:
+      stdout.write "  dereference ", val.sons[0]
     let arg = engine.getArgument(val.sons[0])
     result = engine.evaluate(arg)
-    debug engine, " = ", $result
+    debug 3:
+      echo " = ", $result
   of dkArgExpr:
     let arg = val.sons[0]
     let aval = engine.evalExpression(val.sons[1])
@@ -684,7 +692,8 @@ proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   if id.id in engine.functions:
     return
   engine.functions[id.id] = code
-  debug engine, "define ", engine.functions
+  debug 3:
+    echo "define ", engine.functions
 
 proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
   if id.id notin engine.functions:
@@ -740,7 +749,8 @@ proc doConditional(engine: Engine, cond: DeliNode) =
   let jump_false = cond.sons[3]
 
   let eval = engine.evaluate(condition)
-  debug engine, "  condition: ", $eval
+  debug 3:
+    echo "  condition: ", $eval
   let ok = engine.isTruthy(eval)
 
   if ok:
@@ -982,7 +992,8 @@ proc doNext*(engine: Engine): int =
     engine.readCurrent()
 
 iterator tick*(engine: Engine): int =
-  debug engine, "\nRunning program..."
+  debug 3:
+    echo "\nRunning program..."
   while true:
     engine.readCurrent()
     if engine.debug > 1:

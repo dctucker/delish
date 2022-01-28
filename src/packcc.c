@@ -25,7 +25,7 @@ static size_t pcc_strnlen(const char *str, size_t maxlen) {
 
 #define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) \
         if( !( dk##rule == dkComment || dk##rule == dkVLine || dk##rule > dkDefaultOp ) ) \
-                deli_event(auxil, event, dk##rule, level, pos, buffer, length)
+                deli_event(auxil->parser, event, dk##rule, level, pos, buffer, length)
 #define PCC_GETCHAR(auxil) deli_get_character( auxil )
 #define PCC_BUFFERSIZE 1024
 #define PCC_ERROR(auxil) pcc_error(); return 0;

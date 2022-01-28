@@ -54,13 +54,13 @@ when isMainModule:
     stderr.write("Syntax error in ", filename, ":", num, " near \"", errline, "\"\n\n")
     quit 1
 
-  var engine: Engine
-  var nteract: Nteract
-  benchmark "engine setup":
+  benchmark "executing":
+    var engine: Engine
+    var nteract: Nteract
+    #benchmark "engine setup":
     engine = newEngine(parsed, debug)
     nteract = newNteract(engine)
 
-  benchmark "executing":
     for line in engine.tick():
       if debug > 0:
         echo engine.lineInfo()
