@@ -76,16 +76,16 @@ Statement     <-
               )                                                      { DK( Statement  , a ); SL(a); }
                                                                     ~{ ER("Invalid statement"); }
 Conditional   <- "if" Blank+ e:Condition
-                 Blank+ "{" _ c:Code? _ "}" _                        { DK( Conditional, e, c ); }
+                 Blank+ c:Body _                                     { DK( Conditional, e, c ); }
 WhileLoop     <- "while" Blank+ e:Condition
-                 Blank+ "{" _ c:Code? _ "}" _                        { DK( WhileLoop  , e, c ); }
-DoLoop        <- "do" Blank+ "{" _ c:Code? _ "}" _
+                 Blank+ c:Body _                                     { DK( WhileLoop  , e, c ); }
+DoLoop        <- "do" Blank+ c:Body _
                  "while" Blank+ e:Condition                          { DK( DoLoop     , c, e ); }
 ForLoop       <- "for" Blank+ v:Variable Blank+ "in" Blank+ e:IterExpr
-                 Blank+ "{" _ c:Code? _ "}" _                        { DK( ForLoop    , v, e, c ); }
+                 Blank+ c:Body _                                     { DK( ForLoop    , v, e, c ); }
 Function      <- !Keyword i:Identifier Blank*        "="
-                 Blank* "{" _ c:Code? _ "}" _                        { DK( Function   , i, c ); }
-Subshell      <- "sub" Blank+ "{" _ c:Code? _ "}" _                  { DK( Subshell   , c ); }
+                 Blank* c:Body _                                     { DK( Function   , i, c ); }
+Subshell      <- "sub" Blank+ c:Body _                               { DK( Subshell   , c ); }
 BreakStmt     <- "break"                                             { DK( BreakStmt ); }
 ContinueStmt  <- "continue"                                          { DK( ContinueStmt ); }
 ReturnStmt    <- "return"                                            { DK( ReturnStmt ); }
@@ -226,7 +226,8 @@ Object        <- '['                                                 { DK( Objec
                  Blank* ','? _
               )+ ']'
 Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { DK( Pair, k, v ); }
-              /  i:Identifier Blank* ":" Blank* "{" _ c:Code _ "}"   { DK( Pair, i, c ); }
+              /  i:Identifier Blank* ":" Blank* c:Body               { DK( Pair, i, c ); }
+Body          <- "{" _ c:Code _ "}"                                  { $$ = c; }
 JsonBlock     <- "json" Blank+ s:StrBlock                            { DK( JsonBlock, s ); }
 Keyword       <- "json" / "sub"   / "if"  / "do" / "while" / "for"
               /  "in"   / "out"   / "err" / "include"

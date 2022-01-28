@@ -39,15 +39,14 @@ proc initFd(file: File): FileDesc =
     handle: file.getOsFileHandle(),
   )
 
-proc close(fd: FileDesc)
-proc evaluate(engine: Engine, val: DeliNode): DeliNode
-proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode
-proc doStmt(engine: Engine, s: DeliNode)
-proc initArguments(engine: Engine, script: DeliNode)
-proc initIncludes(engine: Engine, script: DeliNode)
-proc initFunctions(engine: Engine, script: DeliNode)
-proc loadScript(engine: Engine, script: DeliNode)
-
+proc close         (fd: FileDesc)
+proc evaluate      (engine: Engine, val: DeliNode): DeliNode
+proc doOpen        (engine: Engine, nodes: seq[DeliNode]): DeliNode
+proc doStmt        (engine: Engine, s: DeliNode)
+proc initArguments (engine: Engine, script: DeliNode)
+proc initIncludes  (engine: Engine, script: DeliNode)
+proc initFunctions (engine: Engine, script: DeliNode)
+proc loadScript    (engine: Engine, script: DeliNode)
 
 proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList

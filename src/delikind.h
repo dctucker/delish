@@ -70,6 +70,7 @@ enum DeliKind {
 	dkArray,
 	dkObject,
 	dkPair,
+	dkBody,
 	dkJsonBlock,
 	dkKeyword,
 	dkStrBlock,
