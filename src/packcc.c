@@ -5990,11 +5990,15 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Expr(deli_context_t *ctx) {
     {
         const size_t p = ctx->cur;
         const size_t n = chunk->thunks.len;
-        if (
-            pcc_refill_buffer(ctx, 1) < 1 ||
-            ctx->buffer.buf[ctx->cur] != '('
-        ) goto L0002;
-        ctx->cur++;
+        {
+            int u;
+            const size_t n = pcc_get_char_as_utf32(ctx, &u);
+            if (n == 0) goto L0002;
+            if (!(
+                u == 0x000028
+            )) goto L0002;
+            ctx->cur += n;
+        }
         {
             int i;
             for (i = 0;; i++) {
@@ -6024,11 +6028,15 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_Expr(deli_context_t *ctx) {
                 break;
             }
         }
-        if (
-            pcc_refill_buffer(ctx, 1) < 1 ||
-            ctx->buffer.buf[ctx->cur] != ')'
-        ) goto L0002;
-        ctx->cur++;
+        {
+            int u;
+            const size_t n = pcc_get_char_as_utf32(ctx, &u);
+            if (n == 0) goto L0002;
+            if (!(
+                u == 0x000029
+            )) goto L0002;
+            ctx->cur += n;
+        }
         goto L0001;
     L0002:;
         ctx->cur = p;

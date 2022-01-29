@@ -75,14 +75,14 @@ Statement     <-
               /  a:ContinueStmt /  a:ReturnStmt   /  a:Push / a:Pop
               )                                                      { DK( Statement  , a ); SL(a); }
                                                                     ~{ ER("Invalid statement"); }
-Conditional   <- "if" Blank+ e:Condition
-                 Blank+ c:Body _                                     { DK( Conditional, e, c ); }
+Conditional   <- "if"    Blank+ e:Condition
+                         Blank+ c:Body _                             { DK( Conditional, e, c ); }
 WhileLoop     <- "while" Blank+ e:Condition
-                 Blank+ c:Body _                                     { DK( WhileLoop  , e, c ); }
-DoLoop        <- "do" Blank+ c:Body _
+                         Blank+ c:Body _                             { DK( WhileLoop  , e, c ); }
+DoLoop        <- "do"    Blank+ c:Body _
                  "while" Blank+ e:Condition                          { DK( DoLoop     , c, e ); }
-ForLoop       <- "for" Blank+ v:Variable Blank+ "in" Blank+ e:IterExpr
-                 Blank+ c:Body _                                     { DK( ForLoop    , v, e, c ); }
+ForLoop       <- "for"   Blank+ v:Variable Blank+
+                 "in"    Blank+ e:IterExpr Blank+ c:Body _           { DK( ForLoop    , v, e, c ); }
 Function      <- !Keyword i:Identifier Blank*        "="
                  Blank* c:Body _                                     { DK( Function   , i, c ); }
 Subshell      <- "sub" Blank+ c:Body _                               { DK( Subshell   , c ); }
@@ -150,14 +150,13 @@ ConstExpr     <-
               /  e:Path / e:JsonBlock
               )                                                      { $$ = e; }
 Expr          <-
-              (  "(" Blank* s:MathExpr Blank* ")"
+              (  [(] Blank* s:MathExpr Blank* [)]
               /  s:Array / s:Object
               /  s:Arg / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Integer / s:Boolean
               /  s:BoolExpr
               /  s:Path     / s:JsonBlock  / s:Stream
-              )                                                   # ~{ ER("Invalid expression"); }
-                                                                     { DK( Expr, s); }
+              )                                                      { DK( Expr, s); }
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
 Condition     <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
 MathExpr      <- a:AddExpr                                           { $$ = a; }

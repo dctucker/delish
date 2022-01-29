@@ -168,28 +168,28 @@ proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize
   of dkS.ord, dkW.ord, dkU.ord, dkBlank.ord, dkVLine.ord, dkComment.ord: return
   else: discard
 
-  var e = ""
-  var capture = ""
-
   parser.parsed_len = max(parser.parsed_len, pos.int)
 
-  case event
-    of peEvaluate.ord:
-      e = "> "
-      #parser.enter( DeliKind(rule), pos.int, capture )
-    of peMatch.ord:
-      e = "\27[1m< "
-      capture = newString(length)
-      if length > 0:
-        for i in 0 .. length - 1:
-          capture[i] = buffer[i].char
-      #parser.leave( DeliKind(rule), pos.int, capture )
-    of peNoMatch.ord:
-      e = "< "
-      #parser.leave( DeliKind(rule), pos.int, capture )
-    else: e = "  "
+  #var e = ""
+  #var capture = ""
+  #
+  #case event
+  #  of peEvaluate.ord:
+  #    e = "> "
+  #    #parser.enter( DeliKind(rule), pos.int, capture )
+  #  of peMatch.ord:
+  #    e = "\27[1m< "
+  #    capture = newString(length)
+  #    if length > 0:
+  #      for i in 0 .. length - 1:
+  #        capture[i] = buffer[i].char
+  #    #parser.leave( DeliKind(rule), pos.int, capture )
+  #  of peNoMatch.ord:
+  #    e = "< "
+  #    #parser.leave( DeliKind(rule), pos.int, capture )
+  #  else: e = "  "
 
-  #let k = DeliKind(rule)
-  #echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
+  ##let k = DeliKind(rule)
+  ##echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
 
 {.compile: "packcc.c" .}
