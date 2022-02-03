@@ -70,3 +70,5 @@ when isMainModule:
         if line > 0:
           discard nteract.getUserInput()
 
+    quit engine.retval().intVal
+

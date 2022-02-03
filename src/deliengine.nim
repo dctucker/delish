@@ -30,7 +30,9 @@ type
     statements: DeliList
     readhead:   DeliListNode
     writehead:  DeliListNode
+    tail:       DeliListNode
     returns:    Stack[ DeliListNode ]
+    retval:     DeliNode
 
 proc initFd(file: File): FileDesc =
   FileDesc(
@@ -38,6 +40,9 @@ proc initFd(file: File): FileDesc =
     stream: newFileStream(file),
     handle: file.getOsFileHandle(),
   )
+
+proc retval*(engine: Engine): DeliNode =
+  engine.retval
 
 proc close         (fd: FileDesc)
 proc evaluate      (engine: Engine, val: DeliNode): DeliNode
@@ -47,6 +52,7 @@ proc initArguments (engine: Engine, script: DeliNode)
 proc initIncludes  (engine: Engine, script: DeliNode)
 proc initFunctions (engine: Engine, script: DeliNode)
 proc loadScript    (engine: Engine, script: DeliNode)
+proc assignVariable(engine: Engine, key: string, value: DeliNode)
 
 proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList
@@ -64,6 +70,7 @@ proc newEngine*(debug: int): Engine =
     variables:  initTable[string, DeliNode](),
     statements: @[deliNone()].toSinglyLinkedList,
     current:    deliNone(),
+    retval:     DKInt(0),
     debug:      debug
   )
   result.clearStatements()
@@ -113,10 +120,13 @@ proc loadScript(engine: Engine, script: DeliNode) =
   for s in script.sons:
     for s2 in s.sons:
       engine.insertStmt(s2)
+  engine.tail = engine.writehead
   engine.insertStmt(DKInner(0, deliNone()))
   debug 3:
     echo engine.statements
   engine.setHeads(engine.statements.head.next)
+
+  engine.assignVariable(".return", DeliNode( kind: dkJump, node: engine.tail ))
 
 proc sourceFile*(engine: Engine): string =
   result = ""
@@ -187,9 +197,14 @@ proc setupError(engine: Engine, msg: varargs[string,`$`]) =
   stderr.write("\n")
   quit(2)
 
+proc exit(engine: Engine, errcode: int) =
+  engine.readhead.next = nil
+  quit(errcode)
+
 proc teardown(engine: Engine) =
   for k,v in engine.fds.pairs():
     v.close()
+
 
 ### Environment ###
 
@@ -393,9 +408,9 @@ proc printArguments(engine: Engine) =
 proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
   case arg.kind
   of dkArgShort:
-    return findArgument(engine.arguments, Argument(short_name:arg.argName)).value
+    return findArgument(engine.arguments, Argument(short_name: arg.argName)).value
   of dkArgLong:
-    return findArgument(engine.arguments, Argument(long_name:arg.argName)).value
+    return findArgument(engine.arguments, Argument(long_name: arg.argName)).value
   else:
     todo "getArgument ", arg.kind
 
@@ -685,6 +700,7 @@ proc close(fd: FileDesc) =
 proc doClose(engine: Engine, v: DeliNode) =
   engine.evaluateStream(v).close
 
+
 ### Functions ###
 
 proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
@@ -715,12 +731,12 @@ proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
 ### Flow ###
 
 proc doConditional(engine: Engine, cond: DeliNode) =
+  #echo cond.repr
+
   let condition = cond.sons[0]
   let code = cond.sons[1]
   let top_line = -cond.line
   let end_line = -code.sons[^1].line
-
-  #echo cond.repr
 
   if cond.node == nil:
     var jump_true  = DK(dkJump)
@@ -944,6 +960,8 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.setHeads(to.node)
   of dkReturnStmt:
     var to = engine.getVariable(".return")
+    if nsons > 0:
+      engine.retval = engine.evaluate(s.sons[0])
     engine.setHeads(to.node)
   of dkPush:
     engine.pushLocals()

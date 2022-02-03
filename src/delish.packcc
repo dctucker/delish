@@ -210,7 +210,9 @@ RedirFlag     <- "redir"                                             { DK( Redir
                ( o:VarDeref / o:Path / o:Stream )                    { NA( r, i ); NA( r, o ); NA( $$, r ); }
               )+
 AsyncFlag     <- "async"                                             { DK( AsyncFlag ); }
-ArgNames      <- ( Blank+ a:Arg )+                                   { DK( ArgNames, a); }
+ArgNames      <- Blank+ a:Arg                                        { DK( ArgNames, a); }
+              (  Blank+ a:Arg                                        { NA( $$, a); }
+              )*
 Arg           <- &'-'
               (  l:ArgLong                                           { DK( Arg, l ); }
               /  s:ArgShort                                          { DK( Arg, s ); }

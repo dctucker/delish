@@ -4,11 +4,13 @@ arg -y --yes     |= false
 arg -n           |= true
 arg -v --verbose |= false
 arg --default
-arg    --help    |= """
-some documentation
-"""
+arg -h --help
 arg $mustard
 
+if --help {
+  out "usage: "
+  return 1
+}
 #unrecognized $statement
 
 #arg $filename
@@ -37,7 +39,7 @@ $obj = [
 #}
 
 func = {
-  local $message
+  arg $message
   $message = "hello from func"
   out $message
 }
