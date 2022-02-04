@@ -19,7 +19,7 @@ type
 
   Engine* = ref object
     debug*:     int
-    arguments:  seq[Argument]
+    argstack:   Stack[ seq[Argument] ]
     argnum:     int
     variables:  DeliTable
     locals:     Stack[ DeliTable ]
@@ -32,7 +32,7 @@ type
     writehead:  DeliListNode
     tail:       DeliListNode
     returns:    Stack[ DeliListNode ]
-    retval:     DeliNode
+    retvals:    Stack[ DeliNode ]
 
 proc initFd(file: File): FileDesc =
   FileDesc(
@@ -42,7 +42,15 @@ proc initFd(file: File): FileDesc =
   )
 
 proc retval*(engine: Engine): DeliNode =
-  engine.retval
+  engine.retvals.peek()
+
+proc arguments(engine: Engine): seq[Argument] =
+  engine.argstack.peek()
+
+proc addArgument(engine: Engine, arg: Argument) =
+  var arguments = engine.argstack.pop()
+  arguments.add(arg)
+  engine.argstack.push(arguments)
 
 proc close         (fd: FileDesc)
 proc evaluate      (engine: Engine, val: DeliNode): DeliNode
@@ -66,15 +74,15 @@ proc setup*(engine: Engine, script: DeliNode) =
 proc newEngine*(debug: int): Engine =
   result = Engine(
     argnum: 1,
-    arguments:  newSeq[Argument](),
     variables:  initTable[string, DeliNode](),
     statements: @[deliNone()].toSinglyLinkedList,
     current:    deliNone(),
-    retval:     DKInt(0),
     debug:      debug
   )
+  result.argstack.push(newSeq[Argument]())
   result.clearStatements()
   result.locals.push(initTable[string, DeliNode]())
+  result.retvals.push(DKInt(0))
   result.fds[0] = initFd(stdin)
   result.fds[1] = initFd(stdout)
   result.fds[2] = initFd(stderr)
@@ -221,14 +229,15 @@ proc assignEnvar(engine: Engine, key: string, value: string) =
   engine.envars[key] = value
   engine.printEnvars()
 
-proc doEnv(engine: Engine, name: DeliNode, default: DeliNode = deliNone()) =
+proc doEnv(engine: Engine, name: DeliNode, op: DeliKind = dkNone, default: DeliNode = deliNone()) =
   let key = name.varName
   let def = if default.isNone():
     ""
   else:
     engine.evaluate(default).toString()
-  let value = getEnv(key, def)
-  engine.envars[ name.varName ] = value
+  if op == dkAssignOp:
+    putEnv(key, def)
+  engine.envars[ name.varName ] = getEnv(key, def)
   engine.printEnvars()
 
 
@@ -245,6 +254,10 @@ proc printLocals(engine: Engine) =
 
 proc pushLocals(engine: Engine) =
   engine.locals.push(engine.locals.peek())
+  engine.argnum = 1
+  var arguments: seq[Argument] = @[]
+  engine.argstack.push(arguments)
+  engine.retvals.push(deliNone())
   debug 3:
     echo "  push locals ", engine.locals
 
@@ -256,6 +269,9 @@ proc setupPush(engine: Engine, line: int, table: DeliTable) =
 
 proc popLocals(engine: Engine) =
   discard engine.locals.pop()
+  discard engine.argstack.pop()
+  discard engine.retvals.pop()
+  engine.argnum = 1
   debug 3:
     echo "  pop locals ", engine.locals
 
@@ -414,6 +430,14 @@ proc getArgument(engine: Engine, arg: DeliNode): DeliNode =
   else:
     todo "getArgument ", arg.kind
 
+proc shift(engine: Engine): DeliNode =
+  if engine.argstack.len == 1:
+    result = nth(engine.argnum)
+  else:
+    let args = engine.getVariable(".args")
+    result = args.sons[engine.argnum - 1]
+  inc engine.argnum
+
 proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode) =
   let arg = Argument()
   for name in names:
@@ -427,7 +451,7 @@ proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode) =
 
   if eng_arg.isNone():
     arg.value = engine.evaluate(default)
-    engine.arguments.add(arg)
+    engine.addArgument(arg)
     #engine.printArguments()
     #echo "\n"
 
@@ -479,7 +503,6 @@ proc initIncludes(engine: Engine, script: DeliNode) =
   engine.doIncludes(script)
 
 proc initArguments(engine: Engine, script: DeliNode) =
-  engine.arguments = @[]
   for stmt in script.sons:
     engine.doArgStmts(stmt)
   engine.argnum = 1
@@ -716,8 +739,13 @@ proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
   let code = engine.functions[id.id]
 
   var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
+
+  #for a in args:
+  #  arguments.add(Argument(value: a))
+
   engine.setupPush( -code.sons[0].line + 1, {
-    ".return": jump_return
+    ".return": jump_return,
+    ".args": DeliNode(kind: dkArray, sons: args),
   }.toTable)
 
   for s in code.sons:
@@ -915,11 +943,10 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.doClose(s.sons[0])
   of dkArgStmt:
     if s.sons[0].kind == dkVariable:
-      var shifted = nth(engine.argnum)
-      inc engine.argnum
+      var shifted = engine.shift()
       var value = if shifted.kind != dkNone:
         shifted
-      elif nsons > 1:
+      elif nsons > 1: # DefaultOp ArgDefault Expr
         s.sons[2].sons[0]
       else:
         deliNone()
@@ -932,7 +959,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.printVariables()
   of dkEnvStmt:
     if nsons > 1:
-      engine.doEnv(s.sons[0], s.sons[2])
+      engine.doEnv(s.sons[0], s.sons[1].kind, s.sons[2])
     else:
       engine.doEnv(s.sons[0])
   of dkLocalStmt:
@@ -961,7 +988,8 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkReturnStmt:
     var to = engine.getVariable(".return")
     if nsons > 0:
-      engine.retval = engine.evaluate(s.sons[0])
+      discard engine.retvals.pop()
+      engine.retvals.push( engine.evaluate(s.sons[0]) )
     engine.setHeads(to.node)
   of dkPush:
     engine.pushLocals()

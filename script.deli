@@ -40,7 +40,6 @@ $obj = [
 
 func = {
   arg $message
-  $message = "hello from func"
   out $message
 }
 

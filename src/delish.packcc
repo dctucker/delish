@@ -115,6 +115,7 @@ ArgStmt       <- "arg"
               )
 EnvStmt       <- "env" Blank+ v:Variable                             { DK( EnvStmt, v ); }
               (  Blank* o:DefaultOp Blank* e:EnvDefault              { NA( $$, o ); NA( $$, e ); }
+              /  Blank* o:AssignOp  Blank* e:Expr                    { NA( $$, o ); NA( $$, e ); }
               )?
 IncludeStmt   <- "include" Blank+ s:StrLiteral                       { DK( IncludeStmt, s ); }
 StreamStmt    <-
