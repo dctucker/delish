@@ -36,19 +36,14 @@ $validator = [
     arg $value
     arg --min
     arg --max
-    local $regex = $validator.int
-    if not match $regex $value {
+    if $value =~ $validator.int {
       return false
     }
-    if --min {
-      if $value < --min {
-        return false
-      }
+    if --min and $value < --min {
+      return false
     }
-    if --max {
-      if $value > --max {
-        return false
-      }
+    if --max and $value > --max {
+      return false
     }
     return true
   }

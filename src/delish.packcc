@@ -109,7 +109,6 @@ LocalStmt     <- "local" Blank+ v:Variable                           { DK( Local
               )?
 AssignExpr    <-
               (  e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt
-              /  e:MatchExpr
               )                                                      { $$ = e; }
 ArgStmt       <- "arg"
               (  a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault   { DK( ArgStmt, a, o, d); }
@@ -136,10 +135,6 @@ RunFlags      <-
               /  f:RedirFlag                                         { DK( RunFlags, f ); }
               /  (f1:AsyncFlag f2:RedirFlag)                         { DK( RunFlags, f1, f2 ); }
               )
-MatchExpr     <- "match"    Blank+
-              (  r:Regex    Blank+ v:Variable
-              /  r:Variable Blank+ v:Variable
-              )                                                      { DK( MatchExpr, r, v); }
 FunctionStmt  <- !Keyword i:Identifier                               { DK( FunctionStmt, i ); SL(i); }
               (  Blank+ e:Expr                                       { NA( $$, e ); }
               )*
@@ -167,11 +162,14 @@ Expr          <-
               /  s:Path     / s:JsonBlock  / s:Stream
               )                                                      { DK( Expr, s); }
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
-Condition     <-
-              (  s:Arg / s:BoolExpr / s:VarDeref / s:Boolean
-              /  s:MatchExpr
-              )                                                      { $$ = s; }
-              /  o:BoolNot Blank+ c:Condition                        { $$ = o; NA($$, c); }
+Condition     <- a:OrExpr                                            { $$ = a; }
+OrExpr        <- l:OrExpr  Blank+ o:BoolOr  Blank+ r:AndExpr         { DK( CondExpr, o, l, r); }
+               /                                   r:AndExpr         { $$ = r; }
+AndExpr       <- l:AndExpr Blank+ o:BoolAnd Blank+ r:NotExpr         { DK( CondExpr, o, l, r); }
+               /                                   r:NotExpr         { $$ = r; }
+NotExpr       <- o:BoolNot Blank+ r:CondExpr                         { $$ = o; NA($$, r); }
+               /                  r:CondExpr                         { $$ = r; }
+CondExpr      <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
 MathExpr      <- a:AddExpr                                           { $$ = a; }
 AddExpr       <- l:AddExpr Blank+ ( o:AddOp / o:SubOp )
                            Blank+ r:MulExpr                          { DK( MathExpr, o, l, r ); }
@@ -187,10 +185,9 @@ AddOp         <- "+"                                                 { DK( AddOp
 SubOp         <- "-"                                                 { DK( SubOp ); }
 BoolExpr      <-
               (  n:BoolNot Blank+ c:Comparison                       { DK( BoolExpr, DK( BoolNot, c ) ); }
-              /  c:Comparison                                        { DK( BoolExpr, c ); }
+              /                   c:Comparison                       { DK( BoolExpr, c ); }
               )
-              (  Blank+ o:BoolOp2 Blank+ c:Comparison                { DK( BoolExpr, o, $$, c ); }
-              /  Blank+ o:BoolOp2 Blank+ n:BoolNot c:Comparison      { DK( BoolExpr, o, $$, DK( BoolNot, c ) ); }
+              (  Blank+ o:BoolOp2 Blank+ b:BoolExpr                  { DK( BoolExpr, o, $$, c); }
               )*
 BoolOp2       <- o:BoolOr / o:BoolAnd                                { DK( BoolOp2, o ); }
 BoolNot       <- "not"
@@ -198,12 +195,12 @@ BoolOr        <- "or"                                                { DK( BoolO
 BoolAnd       <- "and"                                               { DK( BoolAnd ); }
 Comparison    <- e1:CompExpr Blank+ o:Comparator Blank+ e2:CompExpr  { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
-              (  s:VarDeref / s:StrBlock / s:StrLiteral
+              (  s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
               /  s:Integer / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
 Comparator    <-
               (  o:CompGe / o:CompGt / o:CompLe / o:CompLt
-              /  o:CompEq / o:CompNe
+              /  o:CompEq / o:CompNe / o:CompMatch
               )                                                      { $$ = o; }
 CompGe        <- ">="                                                { DK( CompGe ); }
 CompGt        <- ">"                                                 { DK( CompGt ); }
@@ -211,6 +208,7 @@ CompLe        <- "<="                                                { DK( CompL
 CompLt        <- "<"                                                 { DK( CompLt ); }
 CompEq        <- "=="                                                { DK( CompEq ); }
 CompNe        <- "!="                                                { DK( CompNe ); }
+CompMatch     <- "=~"                                                { DK( CompMatch ); }
 VarDeref      <- &'$' n:Variable                                     { DK( VarDeref, n ); }
               (  "."
                ( s:StrLiteral / s:Integer
@@ -248,18 +246,18 @@ Keyword       <- ( "json" / "sub"   / "if"  / "do" / "while" / "for"
               /  "true" / "false" / "env" / "arg" / "local"
               /  "return" / "break" / "continue"
               /  "async" / "redir" / "and" / "or" / "not"
-              /  "push" / "pop" / "open" / "close" / "match" )
+              /  "push" / "pop" / "open" / "close" )
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }
 Command       <- < W ( W / '-' )* >                                  { NS( String ); }
-Identifier    <- < ( W / '-' / '_' )+ >                     { NS( Identifier); }
+Identifier    <- < W ( W / '-' )* >                                  { NS( Identifier); }
 ArgShort      <- '-' < W+ >                                          { NS( ArgShort ); }
 ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLong ); }
 String        <- < S+ >                                              { NS( String ); }
 Regex         <- 'r/' < ( '\/' / !'/' . )+ > '/'                     { NS( Regex ); }
 Integer       <- < [0-9]+ >                                          { NS( Integer ); }
 Path          <- < ("."* "/" S+ ) / "." >                            { NS( Path ); }
-Variable      <- '$' < (W / '-')+ >                                  { NS( Variable ); }
+Variable      <- '$' < W (W / '-')* >                                { NS( Variable ); }
 Boolean       <- < "true" / "false" >                                { NS( Boolean ); }
 Stream        <- &[ioe] ( s:StreamIn / s:StreamOut / s:StreamErr )   { DK( Stream, s ); }
 StreamIn      <- "in"                                                { DK( StreamIn ); }
@@ -278,7 +276,7 @@ RedirWriteOp  <- ">"                                                 { DK( Redir
 RedirDuplexOp <- "<>"                                                { DK( RedirDuplexOp ); }
 DefaultOp     <- "|="                                                { DK( DefaultOp ); }
 S             <- [^ \n\r\t]
-W             <- [A-Za-z0-9-]
+W             <- [A-Za-z0-9_]
 _             <- [ \n\r\t]*
 
 %%
