@@ -94,7 +94,7 @@ suite "engine":
       DK( dkFunction, id, DK( dkCode,
         DKVarStmt("x", dkAssignOp, DKInt(1)),
       )),
-      DK( dkFunctionStmt, id ),
+      DK( dkFunctionStmt, DK( dkFunctionCall, id ) ),
     )
     check:
       engine.nextLen == 3

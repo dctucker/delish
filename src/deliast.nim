@@ -6,8 +6,8 @@ import deligrammar
 import deliscript
 
 ### AST representation
-grammarToEnum( @["None","Inner","Ran","Jump","Lazy","S","W","U"])
-grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","S","W","_"])
+grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","S","W","U"])
+grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","S","W","_"])
 
 type
   DeliNode* = ref DeliNodeObj
@@ -34,7 +34,7 @@ type
        dkArgLong,
        dkArg:          argName*:    string
     of dkArgStmt:      short_name*, long_name*, default_value*: DeliNode
-    of dkFunctionStmt: funcName*:   DeliNode
+    of dkFunctionCall: funcName*:   DeliNode
     of dkJump,
        dkWhileLoop,
        dkDoLoop,

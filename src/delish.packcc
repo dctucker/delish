@@ -108,7 +108,10 @@ LocalStmt     <- "local" Blank+ v:Variable                           { DK( Local
               (  Blank* o:AssignOp Blank* e:AssignExpr               { NA( $$, o ); NA( $$, e ); }
               )?
 AssignExpr    <-
-              (  e:OpenExpr / e:ArgExpr / e:Expr / e:RunStmt
+              (  e:OpenExpr / e:ArgExpr
+              /  e:RunStmt
+              /  e:FunctionCall
+              /  e:Expr
               )                                                      { $$ = e; }
 ArgStmt       <- "arg"
               (  a:ArgNames Blank* o:DefaultOp Blank* d:ArgDefault   { DK( ArgStmt, a, o, d); }
@@ -135,7 +138,11 @@ RunFlags      <-
               /  f:RedirFlag                                         { DK( RunFlags, f ); }
               /  (f1:AsyncFlag f2:RedirFlag)                         { DK( RunFlags, f1, f2 ); }
               )
-FunctionStmt  <- !Keyword i:Identifier                               { DK( FunctionStmt, i ); SL(i); }
+FunctionStmt  <- !Keyword c:FunctionCall                             { DK( FunctionStmt, c ); SL(c); }
+FunctionCall  <-
+              (  i:Identifier                                        { DK( FunctionCall, i ); }
+              /  v:Variable '.' i:Identifier                         { NA( v, i ); DK( FunctionCall, v ); }
+              )
               (  Blank+ e:Expr                                       { NA( $$, e ); }
               )*
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
@@ -160,6 +167,7 @@ Expr          <-
               /  s:Integer / s:Boolean
               /  s:BoolExpr
               /  s:Path     / s:JsonBlock  / s:Stream
+              /  s:Cast
               )                                                      { DK( Expr, s); }
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
 Condition     <- a:OrExpr                                            { $$ = a; }
@@ -247,10 +255,22 @@ Keyword       <- ( "json" / "sub"   / "if"  / "do" / "while" / "for"
               /  "return" / "break" / "continue"
               /  "async" / "redir" / "and" / "or" / "not"
               /  "push" / "pop" / "open" / "close" )
+Cast          <- t:Type Blank* "(" e:Expr ")"                        { DK( Cast, t, e ); }
+Type          <- "Integer"                                           { DK( Integer ); }
+              /  "Arg"                                               { DK( Arg ); }
+              /  "Array"                                             { DK( Array ); }
+              /  "Boolean"                                           { DK( Boolean ); }
+              /  "Identifier"                                        { DK( Identifier ); }
+              /  "Path"                                              { DK( Path ); }
+              /  "Object"                                            { DK( Object ); }
+              /  "Regex"                                             { DK( Regex ); }
+              /  "Stream"                                            { DK( Stream ); }
+              /  "String"                                            { DK( String ); }
+              /  "Variable"                                          { DK( Variable ); }
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }
 Command       <- < W ( W / '-' )* >                                  { NS( String ); }
-Identifier    <- < W ( W / '-' )* >                                  { NS( Identifier); }
+Identifier    <- < A ( W / '-' )* >                                  { NS( Identifier); }
 ArgShort      <- '-' < W+ >                                          { NS( ArgShort ); }
 ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLong ); }
 String        <- < S+ >                                              { NS( String ); }
@@ -276,6 +296,7 @@ RedirWriteOp  <- ">"                                                 { DK( Redir
 RedirDuplexOp <- "<>"                                                { DK( RedirDuplexOp ); }
 DefaultOp     <- "|="                                                { DK( DefaultOp ); }
 S             <- [^ \n\r\t]
+A             <- [A-Za-z]
 W             <- [A-Za-z0-9_]
 _             <- [ \n\r\t]*
 

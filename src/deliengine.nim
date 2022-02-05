@@ -488,7 +488,7 @@ proc doFunctionDefs(engine: Engine, node: DeliNode) =
 proc checkFunctionCalls(engine: Engine, node: DeliNode) =
   case node.kind:
   of dkFunctionStmt:
-    let id = node.sons[0].id
+    let id = node.sons[0].sons[0].id
     if id notin engine.functions:
       engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
   else:
@@ -978,7 +978,8 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkFunction:
     engine.doFunctionDef(s.sons[0], s.sons[1])
   of dkFunctionStmt:
-    engine.doFunctionCall(s.sons[0], s.sons[1 .. ^1])
+    let call = s.sons[0]
+    engine.doFunctionCall(call.sons[0], call.sons[1 .. ^1])
   of dkContinueStmt:
     var to = engine.getVariable(".continue")
     engine.setHeads(to.node)

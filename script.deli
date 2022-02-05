@@ -47,6 +47,13 @@ $validator = [
     }
     return true
   }
+  as-int: {
+    arg $value
+    local $is-int = $validator.is-int $value
+    if $is-int {
+      return Integer($value)
+    }
+  }
 ]
 
 #assert = {
