@@ -3,6 +3,7 @@ import stacks
 import deliast
 import deliscript
 
+const deepDebug {.booldefine.}: bool = false
 
 type Parser* = ref object
   debug*:       int
@@ -36,20 +37,21 @@ proc parse*(parser: Parser): DeliNode =
   parser.entry_point.script = parser.script
   return parser.entry_point
 
-#proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
-#  #debug 2:
-#  #  echo "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
-#  parser.symbol_stack.push(k)
-#
-#proc leave(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
-#  discard parser.symbol_stack.pop()
-#  if matchStr.len > 0:
-#    #matchStr.replace("\\\n"," ").replace("\n","\\n")
-#    debug 2:
-#      echo parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr, "\27[0m"
-#  #else:
-#  #  debug 2:
-#  #    echo parser.indent("\27[30;1m< "), $k, " ", $pos, "\27[0m"
+when deepDebug:
+  proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
+    debug 2:
+      echo "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
+    parser.symbol_stack.push(k)
+
+  proc leave(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
+    discard parser.symbol_stack.pop()
+    if matchStr.len > 0:
+      #matchStr.replace("\\\n"," ").replace("\n","\\n")
+      debug 2:
+        echo parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr, "\27[0m"
+    else:
+      debug 2:
+        echo parser.indent("\27[30;1m< "), $k, " ", $pos, "\27[0m"
 
 proc printSons(node: DeliNode, level: int) =
   for son in node.sons:
@@ -170,24 +172,25 @@ proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize
 
   parser.parsed_len = max(parser.parsed_len, pos.int)
 
-  #var e = ""
-  #var capture = ""
-  #
-  #case event
-  #  of peEvaluate.ord:
-  #    e = "> "
-  #    #parser.enter( DeliKind(rule), pos.int, capture )
-  #  of peMatch.ord:
-  #    e = "\27[1m< "
-  #    capture = newString(length)
-  #    if length > 0:
-  #      for i in 0 .. length - 1:
-  #        capture[i] = buffer[i].char
-  #    #parser.leave( DeliKind(rule), pos.int, capture )
-  #  of peNoMatch.ord:
-  #    e = "< "
-  #    #parser.leave( DeliKind(rule), pos.int, capture )
-  #  else: e = "  "
+  when deepDebug:
+    var e = ""
+    var capture = ""
+    
+    case event
+      of peEvaluate.ord:
+        e = "> "
+        parser.enter( DeliKind(rule), pos.int, capture )
+      of peMatch.ord:
+        e = "\27[1m< "
+        capture = newString(length)
+        if length > 0:
+          for i in 0 .. length - 1:
+            capture[i] = buffer[i].char
+        parser.leave( DeliKind(rule), pos.int, capture )
+      of peNoMatch.ord:
+        e = "< "
+        parser.leave( DeliKind(rule), pos.int, capture )
+      else: e = "  "
 
   ##let k = DeliKind(rule)
   ##echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"

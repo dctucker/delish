@@ -30,6 +30,30 @@ $obj = [
   }
 ]
 
+$validator = [
+  $int: r/^[0-9]+$/
+  is-int: {
+    arg $value
+    arg --min
+    arg --max
+    local $regex = $validator.int
+    if not match $regex $value {
+      return false
+    }
+    if --min {
+      if $value < --min {
+        return false
+      }
+    }
+    if --max {
+      if $value > --max {
+        return false
+      }
+    }
+    return true
+  }
+]
+
 #assert = {
 #  arg $assertion
 #  if not $assertion {

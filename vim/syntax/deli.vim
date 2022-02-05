@@ -11,7 +11,7 @@ syn region deliString matchgroup=deliStringDelimiter start=+'+ end=+'+ fold
 syn region deliFunction   start=+\w*(+ end=+)+ fold contains=deliString,deliDollarVar,deliMacro,deliReserved,deliPath
 syn region deliRunStatement start=+\s*run&\? + end=+$+ fold contains=deliString,deliDollarVar,deliArgument
 
-syn keyword deliReserved for if assert exit arg redir async include and or not set env local run prompt pipe open
+syn keyword deliReserved for if assert exit arg redir async include and or not set env local run prompt pipe open match
 syn keyword deliMacro in out err true false
 
 hi def link deliReserved         Keyword
