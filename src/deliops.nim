@@ -145,3 +145,21 @@ proc `/`*(a, b: DeliNode): DeliNode =
       todo "div ", a.kind, " / ", b.kind
       return deliNone()
   return deliNone()
+
+proc `and`*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkBoolean:
+      return DKBool( a.boolVal and b.boolVal )
+    else:
+      todo "con ", a.kind, " and ", b.kind
+
+proc `or`*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkBoolean:
+      return DKBool( a.boolVal and b.boolVal )
+    else:
+      todo "dis ", a.kind, " or ", b.kind
+
+

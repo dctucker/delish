@@ -31,12 +31,12 @@ $obj = [
 ]
 
 $validator = [
-  $int: r/^[0-9]+$/
+  "int": r/^[0-9]+$/
   is-int: {
     arg $value
     arg --min
     arg --max
-    if $value =~ $validator.int {
+    if not $value =~ $validator.int {
       return false
     }
     if --min and $value < --min {
@@ -55,6 +55,9 @@ $validator = [
     }
   }
 ]
+
+$intval = $validator.as-int "123"
+out $intval
 
 #assert = {
 #  arg $assertion

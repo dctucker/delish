@@ -78,6 +78,12 @@ proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
 
+proc DKBool*(boolVal: bool): DeliNode =
+  return DeliNode(kind: dkBoolean, boolVal: boolVal)
+
+proc deliTrue* (): DeliNode = DKBool(true)
+proc deliFalse*(): DeliNode = DKBool(false)
+
 proc DKStr*(strVal: string): DeliNode =
   return DeliNode(kind: dkString, strVal: strVal)
 
@@ -245,12 +251,21 @@ proc printSons*(node: DeliNode, level: int): string =
       result &= indent($son, 4*level)
       result &= printSons(son, level+1)
 
+proc printObject(node: DeliNode): string =
+  for k,v in node.table.pairs():
+    result &= k & ": " & $v
+    result &= "; "
+
 proc printValue*(v: DeliNode): string =
   result = "\27[30;1m"
   if( v.sons.len() > 0 ):
     result &= "("
     result &= printSons(v)
     result &= ")"
+  if v.kind == dkObject:
+    result &= "["
+    result &= printObject(v)
+    result &= "]"
   result &= "\27[0m"
 
 

@@ -141,7 +141,7 @@ RunFlags      <-
 FunctionStmt  <- !Keyword c:FunctionCall                             { DK( FunctionStmt, c ); SL(c); }
 FunctionCall  <-
               (  i:Identifier                                        { DK( FunctionCall, i ); }
-              /  v:Variable '.' i:Identifier                         { NA( v, i ); DK( FunctionCall, v ); }
+              /  v:Variable '.' i:Identifier                         { DK( FunctionCall, DK( VarDeref, v, i ) ); }
               )
               (  Blank+ e:Expr                                       { NA( $$, e ); }
               )*
@@ -192,13 +192,13 @@ ModOp         <- "%"                                                 { DK( ModOp
 AddOp         <- "+"                                                 { DK( AddOp ); }
 SubOp         <- "-"                                                 { DK( SubOp ); }
 BoolExpr      <-
-              (  n:BoolNot Blank+ c:Comparison                       { DK( BoolExpr, DK( BoolNot, c ) ); }
+              (  n:BoolNot Blank+ c:Comparison                       { DK( BoolExpr, n ); NA(n, c); }
               /                   c:Comparison                       { DK( BoolExpr, c ); }
               )
               (  Blank+ o:BoolOp2 Blank+ b:BoolExpr                  { DK( BoolExpr, o, $$, c); }
               )*
 BoolOp2       <- o:BoolOr / o:BoolAnd                                { DK( BoolOp2, o ); }
-BoolNot       <- "not"
+BoolNot       <- "not"                                               { DK( BoolNot ); }
 BoolOr        <- "or"                                                { DK( BoolOr ); }
 BoolAnd       <- "and"                                               { DK( BoolAnd ); }
 Comparison    <- e1:CompExpr Blank+ o:Comparator Blank+ e2:CompExpr  { DK( Comparison, o, e1, e2 ); }
@@ -245,7 +245,7 @@ Object        <- '['                                                 { DK( Objec
               (  _ p:Pair                                            { NA( $$, p ); }
                  Blank* ','? _
               )+ ']'
-Pair          <- k:Expr Blank* ':' Blank* v:Expr                     { DK( Pair, k, v ); }
+Pair          <- k:Expr       Blank* ':' Blank* v:Expr               { DK( Pair, k, v ); }
               /  i:Identifier Blank* ":" Blank* c:Body               { DK( Pair, i, c ); }
 Body          <- "{" _ c:Code _ "}"                                  { $$ = c; }
 JsonBlock     <- "json" Blank+ s:StrBlock                            { DK( JsonBlock, s ); }

@@ -3,6 +3,7 @@ import std/lists
 import os
 import std/streams
 import deliops
+import delicast
 import deliast
 import strutils
 import sequtils
@@ -252,6 +253,13 @@ proc printLocals(engine: Engine) =
       stdout.write(printValue(v))
       stdout.write("\n")
 
+proc assignLocal(engine: Engine, key: string, value: DeliNode) =
+  var locals = engine.locals.pop()
+  locals[key] = value
+  engine.locals.push(locals)
+  debug 3:
+    echo "  locals = ", $(engine.locals)
+
 proc pushLocals(engine: Engine) =
   engine.locals.push(engine.locals.peek())
   engine.argnum = 1
@@ -270,20 +278,13 @@ proc setupPush(engine: Engine, line: int, table: DeliTable) =
 proc popLocals(engine: Engine) =
   discard engine.locals.pop()
   discard engine.argstack.pop()
-  discard engine.retvals.pop()
+  engine.assignLocal(".returned", engine.retvals.pop())
   engine.argnum = 1
   debug 3:
     echo "  pop locals ", engine.locals
 
 proc setupPop(engine: Engine, line: int) =
   engine.insertStmt( DKInner(line, DK(dkPop)) )
-
-proc assignLocal(engine: Engine, key: string, value: DeliNode) =
-  var locals = engine.locals.pop()
-  locals[key] = value
-  engine.locals.push(locals)
-  debug 3:
-    echo "  locals = ", $(engine.locals)
 
 proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   var locals = engine.locals.pop()
@@ -338,6 +339,8 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
     case result.kind
     of dkObject:
       let str = son.toString()
+      if str notin result.table:
+        engine.runtimeError("Object does not contain \"" & str & "\"")
       result = result.table[str]
     of dkArray:
       #echo engine.evaluate(son.repr).repr
@@ -536,6 +539,52 @@ proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   }.toTable)
 
 
+### Functions ###
+
+proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
+  if id.id in engine.functions:
+    return
+  engine.functions[id.id] = code
+  debug 3:
+    echo "define ", engine.functions
+
+proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
+  result = DK( dkLazy, deliNone() )
+  var code: DeliNode
+
+  case fun.kind
+  of dkIdentifier:
+    if fun.id notin engine.functions:
+      engine.runtimeError("Unknown function: " & fun.id)
+    code = engine.functions[fun.id]
+  of dkVarDeref:
+    code = engine.evaluate(fun)
+  else:
+    todo "evalFunctionCall ", fun
+
+  var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
+
+  #for a in args:
+  #  arguments.add(Argument(value: a))
+
+  engine.setupPush( -code.sons[0].line + 1, {
+    ".return": jump_return,
+    ".args"  : DeliNode(kind: dkArray, sons: args),
+    ".revtal": result,
+  }.toTable)
+
+  for s in code.sons:
+    engine.insertStmt(s)
+
+  jump_return.node = engine.writehead
+  engine.setupPop( -code.sons[^1].line - 1 )
+  #engine.insertStmt( DKInner(call.line,
+  #  DK( dkVariableStmt, counter, DK(dkAssignOp), result ),
+  #)
+
+  engine.debugNext()
+
+
 ### Evaluation ###
 
 proc isTruthy(engine: Engine, node: DeliNode): bool =
@@ -568,6 +617,21 @@ proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
     false
   return DeliNode(kind: dkBoolean, boolVal: val)
 
+proc evalCondExpr(engine: Engine, op: DeliNode, v1: DeliNode, v2: DeliNode): DeliNode =
+  case op.kind
+  of dkBoolAnd:
+    let v1 = engine.evaluate(v1).toBoolean()
+    if v1.boolVal == false:
+      return v1
+    return engine.evaluate(v2).toBoolean()
+  of dkBoolOr:
+    let v1 = engine.evaluate(v1).toBoolean()
+    if v1.boolVal == true:
+      return v1
+    return engine.evaluate(v2).toBoolean()
+  else:
+    todo "evalCondExpr ", op.kind
+
 proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
   result = expr
   while result.kind == dkExpr:
@@ -587,9 +651,18 @@ proc evaluateStream(engine: Engine, stream: DeliNode): FileDesc =
   if engine.fds.contains(num):
     return engine.fds[num]
 
+proc evalPairKey(engine: Engine, k: DeliNode): string =
+  case k.kind
+  of dkString:     k.strVal
+  of dkIdentifier: k.id
+  of dkExpr:       engine.evalPairKey( engine.evaluate(k) )
+  else:
+    todo "evaluate Object with key ", k.kind
+    ""
+
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkJump, dkNone:
+  of dkBoolean, dkString, dkIdentifier, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkJump, dkNone, dkRegex, dkCode:
     return val
   of dkLazy:
     return val.sons[0]
@@ -605,6 +678,13 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     result = DeliNode(kind: dkArray)
     for son in val.sons:
       result.sons.add(engine.evaluate(son))
+    return result
+  of dkObject:
+    result = DK( dkObject )
+    for pair in val.sons:
+      let str = engine.evalPairKey( pair.sons[0] )
+      result.table[str] = engine.evaluate(pair.sons[1])
+    echo printValue(result)
     return result
   of dkRunStmt:
     let ran = engine.doRun(val.sons)
@@ -629,7 +709,11 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   of dkOpenExpr:
     return engine.doOpen(val.sons)
   of dkBoolNot:
-    return not engine.evaluate( val.sons[0] )
+    return not engine.evaluate( val.sons[0] ).toBoolean()
+  of dkCondExpr:
+    let v1 = val.sons[1]
+    let v2 = val.sons[2]
+    return engine.evalCondExpr( val.sons[0], v1, v2 )
   of dkComparison:
     let v1 = engine.evaluate(val.sons[1])
     let v2 = engine.evaluate(val.sons[2])
@@ -638,6 +722,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     let v1 = engine.evaluate(val.sons[1])
     let v2 = engine.evaluate(val.sons[2])
     return engine.evalMath(val.sons[0], v1, v2)
+  of dkFunctionCall:
+    return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
   else:
     todo "evaluate ", val.kind
     return deliNone()
@@ -722,38 +808,6 @@ proc close(fd: FileDesc) =
 
 proc doClose(engine: Engine, v: DeliNode) =
   engine.evaluateStream(v).close
-
-
-### Functions ###
-
-proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
-  if id.id in engine.functions:
-    return
-  engine.functions[id.id] = code
-  debug 3:
-    echo "define ", engine.functions
-
-proc doFunctionCall(engine: Engine, id: DeliNode, args: seq[DeliNode]) =
-  if id.id notin engine.functions:
-    engine.runtimeError("Unknown function: " & id.id)
-  let code = engine.functions[id.id]
-
-  var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
-
-  #for a in args:
-  #  arguments.add(Argument(value: a))
-
-  engine.setupPush( -code.sons[0].line + 1, {
-    ".return": jump_return,
-    ".args": DeliNode(kind: dkArray, sons: args),
-  }.toTable)
-
-  for s in code.sons:
-    engine.insertStmt(s)
-
-  jump_return.node = engine.writehead
-  engine.setupPop( -code.sons[^1].line - 1 )
-  engine.debugNext()
 
 
 ### Flow ###
@@ -979,7 +1033,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.doFunctionDef(s.sons[0], s.sons[1])
   of dkFunctionStmt:
     let call = s.sons[0]
-    engine.doFunctionCall(call.sons[0], call.sons[1 .. ^1])
+    discard engine.evalFunctionCall(call.sons[0], call.sons[1 .. ^1])
   of dkContinueStmt:
     var to = engine.getVariable(".continue")
     engine.setHeads(to.node)

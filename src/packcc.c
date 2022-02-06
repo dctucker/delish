@@ -1866,7 +1866,7 @@ static void pcc_action_FunctionCall_1(deli_context_t *__pcc_ctx, pcc_thunk_t *__
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    NA( v, i ); DK( FunctionCall, v );
+    DK( FunctionCall, DK( VarDeref, v, i ) );
 #undef _0e
 #undef _0s
 #undef _0
@@ -2380,7 +2380,7 @@ static void pcc_action_BoolExpr_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_
 #define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
 #define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
 #define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
-    DK( BoolExpr, DK( BoolNot, c ) );
+    DK( BoolExpr, n ); NA(n, c);
 #undef _0e
 #undef _0s
 #undef _0
@@ -2440,6 +2440,20 @@ static void pcc_action_BoolOp2_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_i
 #undef _0s
 #undef _0
 #undef o
+#undef __
+#undef auxil
+}
+
+static void pcc_action_BoolNot_0(deli_context_t *__pcc_ctx, pcc_thunk_t *__pcc_in, pcc_value_t *__pcc_out) {
+#define auxil (__pcc_ctx->auxil)
+#define __ (*__pcc_out)
+#define _0 pcc_get_capture_string(__pcc_ctx, &__pcc_in->data.leaf.capt0)
+#define _0s ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.start))
+#define _0e ((const size_t)(__pcc_ctx->pos + __pcc_in->data.leaf.capt0.range.end))
+    DK( BoolNot );
+#undef _0e
+#undef _0s
+#undef _0
 #undef __
 #undef auxil
 }
@@ -7617,6 +7631,12 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_BoolNot(deli_context_t *ctx) {
         (ctx->buffer.buf + ctx->cur)[2] != 't'
     ) goto L0000;
     ctx->cur += 3;
+    {
+        pcc_thunk_t *const thunk = pcc_thunk__create_leaf(ctx->auxil, pcc_action_BoolNot_0, 0, 0);
+        thunk->data.leaf.capt0.range.start = chunk->pos;
+        thunk->data.leaf.capt0.range.end = ctx->cur;
+        pcc_thunk_array__add(ctx->auxil, &chunk->thunks, thunk);
+    }
     ctx->level--;
     PCC_DEBUG(ctx->auxil, PCC_DBG_MATCH, BoolNot, ctx->level, chunk->pos, (ctx->buffer.buf + chunk->pos), (ctx->cur - chunk->pos));
     return chunk;
