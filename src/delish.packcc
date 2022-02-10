@@ -186,11 +186,6 @@ MulExpr       <- l:MulExpr Blank+ (o:MulOp / o:DivOp / o:ModOp)
                            Blank+ r:PrimExpr                         { DK( MathExpr, o, l, r ); }
                /                  r:PrimExpr                         { $$ = r; }
 PrimExpr      <- e:Expr                                              { $$ = e; }
-MulOp         <- "*"                                                 { DK( MulOp ); }
-DivOp         <- "/"                                                 { DK( DivOp ); }
-ModOp         <- "%"                                                 { DK( ModOp ); }
-AddOp         <- "+"                                                 { DK( AddOp ); }
-SubOp         <- "-"                                                 { DK( SubOp ); }
 BoolExpr      <-
               (  n:BoolNot Blank+ c:Comparison                       { DK( BoolExpr, n ); NA(n, c); }
               /                   c:Comparison                       { DK( BoolExpr, c ); }
@@ -198,9 +193,6 @@ BoolExpr      <-
               (  Blank+ o:BoolOp2 Blank+ b:BoolExpr                  { DK( BoolExpr, o, $$, c); }
               )*
 BoolOp2       <- o:BoolOr / o:BoolAnd                                { DK( BoolOp2, o ); }
-BoolNot       <- "not"                                               { DK( BoolNot ); }
-BoolOr        <- "or"                                                { DK( BoolOr ); }
-BoolAnd       <- "and"                                               { DK( BoolAnd ); }
 Comparison    <- e1:CompExpr Blank+ o:Comparator Blank+ e2:CompExpr  { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
               (  s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
@@ -210,13 +202,32 @@ Comparator    <-
               (  o:CompGe / o:CompGt / o:CompLe / o:CompLt
               /  o:CompEq / o:CompNe / o:CompMatch
               )                                                      { $$ = o; }
-CompGe        <- ">="                                                { DK( CompGe ); }
-CompGt        <- ">"                                                 { DK( CompGt ); }
-CompLe        <- "<="                                                { DK( CompLe ); }
+NegOp         <- "-"                                                 { DK( NegOp ); }
+BoolNot       <- "not"                                               { DK( BoolNot ); }
+BitNot        <- "¬"                                                 { DK( BitNot ); }
+
+MulOp         <- "*"                                                 { DK( MulOp ); }
+DivOp         <- "/"                                                 { DK( DivOp ); }
+ModOp         <- "%"                                                 { DK( ModOp ); }
+AddOp         <- "+"                                                 { DK( AddOp ); }
+SubOp         <- "-"                                                 { DK( SubOp ); }
+ShlOp         <- "shl"                                               { DK( ShlOp ); }
+ShrOp         <- "shr"                                               { DK( ShrOp ); }
+
 CompLt        <- "<"                                                 { DK( CompLt ); }
+CompLe        <- "<="                                                { DK( CompLe ); }
+CompGt        <- ">"                                                 { DK( CompGt ); }
+CompGe        <- ">="                                                { DK( CompGe ); }
 CompEq        <- "=="                                                { DK( CompEq ); }
 CompNe        <- "!="                                                { DK( CompNe ); }
 CompMatch     <- "=~"                                                { DK( CompMatch ); }
+BitAnd        <- "∧"                                                 { DK( BitAnd ); }
+BitOr         <- "∨"                                                 { DK( BitOr ); }
+BitXor        <- "⊻"                                                 { DK( BitXor ); }
+BoolOr        <- "or"                                                { DK( BoolOr ); }
+BoolAnd       <- "and"                                               { DK( BoolAnd ); }
+BoolXor       <- "xor"                                               { DK( BoolXor ); }
+
 VarDeref      <- &'$' n:Variable                                     { DK( VarDeref, n ); }
               (  "."
                ( s:StrLiteral / s:Integer
@@ -304,6 +315,31 @@ _             <- [ \n\r\t]*
 
 int packcc_main(const char *input, int len, void *p)
 {
+/*
+### operator precedence ###
+
+FunctionCall
+VarDeref
+ConstExpr
+
+NegOp
+BoolNot
+BitNot
+Cast
+
+MulOp DivOp ModOp
+AddOp SubOp
+ShlOp ShrOp
+CompLt CompLe
+CompGt CompGe
+CompEq CompNe
+BitAnd
+BitXor
+BitOr
+BoolAnd
+BoolOr
+
+*/
 	struct deli_t auxil = {
 		input: input,
 		offset: 0,
