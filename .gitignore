@@ -1,3 +1,5 @@
 delish
-tests/test_*
-!tests/*.nim
+*
+!*.*
+!*/
+massif.out.*
