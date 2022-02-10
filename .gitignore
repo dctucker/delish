@@ -2,4 +2,7 @@ delish
 *
 !*.*
 !*/
+.swp
+*.swp
+**/*.swp
 massif.out.*

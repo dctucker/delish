@@ -3,71 +3,66 @@ import streams
 import std/strutils
 import nimgraphviz
 
-proc exportSvg(graph: Graph): string =
-  let output = graph.exportDot().split("\n")
-  let style = """
-    rankdir=LR
-    bgcolor=transparent
-    color=lightgrey
-    node [
-      color=gray40
-      fontcolor="#dddddd"
-      fillcolor="#110844"
-      style=filled
-      shape=Mrecord
-      fontname="Menlo"
-      fontsize=10
-    ]
-    edge [
-      color="#99aaff"
-      splines=true
-    ]
-  """
-  #echo output[0]
-  #echo style
-  #for line in output[1 .. ^1]:
-  #  echo line
+proc pipe(i,o: Stream) =
+  while not i.atEnd():
+    let x = i.readChar()
+    o.write(x)
+  o.flush()
 
-  let process = try:
-    startProcess("dot", args=[
-      "-Kdot",
-      "-Tsvg",
-    ], options={poUsePath})
+
+proc icat(input: Stream, output: Stream = newFileStream(stdout)): Process =
+  let icat = try:
+    startProcess("kitty", args=["+kitten", "icat", "--align","left"], options={poUsePath})
   except OSError:
     raise
-  let pin = process.inputStream
-  let err = process.errorStream
-  pin.write(output[0])
-  pin.write(style)
-  for line in output[1 .. ^1]:
-    pin.write(line)
-    pin.write("\n")
-  pin.close()
-  let code = process.waitForExit()
-  let svg = process.outputStream.readAll()
-  let errout = err.readAll()
-  process.close()
+  icat.inputStream.write(input.readAll())
+  #icat.inputStream.pipe(input)
+  icat.inputStream.close()
+  #discard icat.waitForExit()
+  #output.write(icat.outputStream.readAll())
+  result = icat
 
-  stderr.write(errout)
-  result = svg
-
-proc icat(image: string) =
-  let process = try:
-    startProcess("kitty", args=[
-      "+kitten",
-      "icat",
-    ], options={poUsePath})
+proc rsvg(input: Stream, output: Stream = newFileStream(stdout)): Process =
+  let rsvg = try:
+    startProcess("rsvg-convert", args=["-d144", "-p144"], options={poUsePath})
   except OSError:
     raise
-  let pin = process.inputStream
-  let err = process.errorStream
-  pin.write(image)
-  pin.close()
-  let code = process.waitForExit()
-  stdout.write(process.outputStream.readAll())
-  let errout = err.readAll()
-  stderr.write(errout)
+  rsvg.inputStream.write(input.readAll())
+  #rsvg.inputStream.pipe(input)
+  rsvg.inputStream.close()
+  #discard rsvg.waitForExit()
+  #output.write(rsvg.outputStream.readAll())
+  result = rsvg
 
+proc dot(input: Stream, format: string = "png"): Process =
+  let dot =
+    try:
+      startProcess("dot", args=[
+        "-Kdot",
+        "-T" & format,
+        "-s144",
+        "-Grankdir=LR",
+        "-Gbgcolor=transparent",
+        "-Gcolor=lightgrey",
+        "-Ncolor=gray40",
+        "-Nfontcolor=#dddddd",
+        "-Nfillcolor=#110844",
+        "-Nstyle=filled",
+        "-Nshape=Mrecord",
+        "-Nfontname=Menlo",
+        "-Nfontsize=10",
+        "-Ecolor=#99aaff",
+        "-Esplines=true",
+      ], options={poUsePath})
+    except OSError:
+      raise
+  dot.inputStream.write(input.readAll())
+  dot.inputStream.close()
+  result = dot
+
+proc dot(graph: Graph): Process =
+  let stream = newStringStream(graph.exportDot())
+  return dot(stream)
 
 # create a directed graph
 let graph = newGraph[Arrow]()
@@ -83,4 +78,15 @@ graph.addNode("c", ("color", "blue"),   ("shape", "box"),
 graph.addNode("d", ("label", "node 'd'"))
 
 #graph.exportImage("test_graph.png")
-icat graph.exportSvg()
+
+var procs: seq[Process] = @[]
+
+procs.add( graph.dot() )
+#procs.add( rsvg( procs[^1].outputStream ) )
+procs.add( icat( procs[^1].outputStream ) )
+
+for p in procs:
+  stderr.write(p.errorStream.readAll())
+  discard p.waitForExit()
+  p.close()
+
