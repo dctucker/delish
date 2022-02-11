@@ -1,13 +1,16 @@
+# investigate https://github.com/Vindaar/shell/blob/master/shell.nim
+
 import osproc
 import streams
-#import std/strutils
+import std/strutils
 import nimgraphviz
 
 import deliast
 
+let icatargs = @["+kitten", "icat", "--align","left"]
 proc icat(input: Stream): Process =
   let icat = try:
-    startProcess("kitty", args=["+kitten", "icat", "--align","left"], options={poUsePath})
+    startProcess("kitty", args=icatargs, options={poUsePath})
   except OSError:
     raise
   icat.inputStream.write(input.readAll())
@@ -23,26 +26,27 @@ proc rsvg(input: Stream): Process =
   rsvg.inputStream.close()
   result = rsvg
 
+let dotargs = @[
+  "-Kdot",
+  "-Tpng",
+  "-s144",
+  "-Grankdir=LR",
+  "-Gbgcolor=transparent",
+  "-Gcolor=lightgrey",
+  "-Ncolor=gray40",
+  "-Nfontcolor=#dddddd",
+  "-Nfillcolor=#110844",
+  "-Nstyle=filled",
+  "-Nshape=Mrecord",
+  "-Nfontname=Menlo",
+  "-Nfontsize=10",
+  "-Ecolor=#99aaff",
+  "-Esplines=true",
+]
 proc dot(input: Stream, format: string = "png"): Process =
   let dot =
     try:
-      startProcess("dot", args=[
-        "-Kdot",
-        "-T" & format,
-        "-s144",
-        "-Grankdir=LR",
-        "-Gbgcolor=transparent",
-        "-Gcolor=lightgrey",
-        "-Ncolor=gray40",
-        "-Nfontcolor=#dddddd",
-        "-Nfillcolor=#110844",
-        "-Nstyle=filled",
-        "-Nshape=Mrecord",
-        "-Nfontname=Menlo",
-        "-Nfontsize=10",
-        "-Ecolor=#99aaff",
-        "-Esplines=true",
-      ], options={poUsePath})
+      startProcess("dot", args=dotargs, options={poUsePath})
     except OSError:
       raise
   dot.inputStream.write(input.readAll())
@@ -74,6 +78,7 @@ proc buildGraph(node: DeliNode, graph: Graph[Arrow] = nil): Graph[Arrow] =
 
 proc renderGraph(graph: Graph[Arrow]): string =
   let fout = open("output.data", fmWrite)
+  #discard dup2(fout.getFileHandle())
   stdout = fout
 
   var procs: seq[Process] = @[]
@@ -109,4 +114,6 @@ when isMainModule:
   graph.addNode("d", ("label", "node 'd'"))
 
   discard graph.renderGraph()
+  #let cmd = "dot " & dotargs.join(" ") & "| kitty " & icatargs.join(" ")
+  #let (output, exitCode) = execCmdEx(cmd, options = {poEvalCommand}, input = graph.exportDot())
 
