@@ -12,6 +12,11 @@ import deliargs
 import deliscript
 import deliparser
 
+const deepDebug {.booldefine.}: bool = false
+
+when deepDebug:
+  import graphics
+
 type
   FileDesc = ref object
     file:       File

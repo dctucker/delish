@@ -114,14 +114,14 @@ proc createNode0(parser: Parser, kind: DeliKind): cint {.exportc.} =
   result = parser.nodes.len.cint
   debug 3:
     echo $result, " createNode0 ", $kind
-  let node = DeliNode(kind: kind)
+  let node = DeliNode(kind: kind, node_id: result)
   parser.nodes.add(node)
 
 proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
   result = parser.nodes.len.cint
   debug 3:
     echo $result, " createNode1 ", $kind, " ", $s1
-  let node = DeliNode(kind: kind, sons: @[])
+  let node = DeliNode(kind: kind, sons: @[], node_id: result)
   node.sons.add(parser.getNode(s1))
   parser.nodes.add(node)
 
@@ -129,7 +129,7 @@ proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.}
   result = parser.nodes.len.cint
   debug 3:
     echo $result, " createNode2 ", $kind, " ", $s1, " ", $s2
-  var node = DeliNode(kind: kind, sons: @[])
+  var node = DeliNode(kind: kind, sons: @[], node_id: result)
   node.sons.add(parser.getNode(s1))
   node.sons.add(parser.getNode(s2))
   parser.nodes.add(node)
@@ -138,7 +138,7 @@ proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.expor
   result = parser.nodes.len.cint
   debug 3:
     echo $result, " createNode3 ", $kind, " ", $s1, " ", $s2, " ", $s3
-  var node = DeliNode(kind: kind, sons: @[])
+  var node = DeliNode(kind: kind, sons: @[], node_id: result)
   node.sons.add(parser.getNode(s1))
   node.sons.add(parser.getNode(s2))
   node.sons.add(parser.getNode(s3))

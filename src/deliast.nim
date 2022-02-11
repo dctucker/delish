@@ -45,6 +45,7 @@ type
     sons*: seq[DeliNode]
     line*: int
     script*:     DeliScript
+    node_id*: int
 
 proc isNone*(node: DeliNode):bool =
   if node.kind == dkNone:
@@ -192,13 +193,16 @@ proc todo*(msg: varargs[string, `$`]) =
 
 proc repr*(node: DeliNode): string =
   result = ""
-  result &= $node
   if node.sons.len() > 0:
+    result &= ($node.kind)[2..^1]
     result &= "( "
     for n in node.sons:
-      result &= repr(n)
+      result &= repr(n) & ", "
+    result = result[0..^3]
     result &= ")"
-  result &= " "
+  else:
+    result &= $node
+  result &= ""
 
 proc getOneliner*(node: DeliNode): string =
   case node.kind

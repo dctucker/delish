@@ -1,37 +1,26 @@
 import osproc
 import streams
-import std/strutils
+#import std/strutils
 import nimgraphviz
 
-proc pipe(i,o: Stream) =
-  while not i.atEnd():
-    let x = i.readChar()
-    o.write(x)
-  o.flush()
+import deliast
 
-
-proc icat(input: Stream, output: Stream = newFileStream(stdout)): Process =
+proc icat(input: Stream): Process =
   let icat = try:
     startProcess("kitty", args=["+kitten", "icat", "--align","left"], options={poUsePath})
   except OSError:
     raise
   icat.inputStream.write(input.readAll())
-  #icat.inputStream.pipe(input)
   icat.inputStream.close()
-  #discard icat.waitForExit()
-  #output.write(icat.outputStream.readAll())
   result = icat
 
-proc rsvg(input: Stream, output: Stream = newFileStream(stdout)): Process =
+proc rsvg(input: Stream): Process =
   let rsvg = try:
     startProcess("rsvg-convert", args=["-d144", "-p144"], options={poUsePath})
   except OSError:
     raise
   rsvg.inputStream.write(input.readAll())
-  #rsvg.inputStream.pipe(input)
   rsvg.inputStream.close()
-  #discard rsvg.waitForExit()
-  #output.write(rsvg.outputStream.readAll())
   result = rsvg
 
 proc dot(input: Stream, format: string = "png"): Process =
@@ -64,29 +53,60 @@ proc dot(graph: Graph): Process =
   let stream = newStringStream(graph.exportDot())
   return dot(stream)
 
-# create a directed graph
-let graph = newGraph[Arrow]()
-let sub = newGraph(graph)
+proc nodeId(node: DeliNode): string =
+  return $node.kind & $node.node_id
 
-graph.addEdge("a"->"b", ("label", "A to B"))
-graph.addEdge("c"->"b", ("style", "dotted"))
-graph.addEdge("b"->"a")
-sub.addEdge("x"->"y")
+proc buildGraph(node: DeliNode, graph: Graph[Arrow] = nil): Graph[Arrow] =
+  result = if graph == nil:
+    newGraph[Arrow]()
+  else:
+    graph
 
-graph.addNode("c", ("color", "blue"),   ("shape", "box"),
-                   ("style", "filled"), ("fontcolor", "white"))
-graph.addNode("d", ("label", "node 'd'"))
+  case node.kind
+  of dkCode, dkBlock:
+    let node_id = node_id(node)
+    for son in node.sons:
+      let son_id = node_id(son)
+      graph.addEdge( node_id -> son_id )
+      discard buildGraph(son, graph)
+  else:
+    discard
 
-#graph.exportImage("test_graph.png")
+proc renderGraph(graph: Graph[Arrow]): string =
+  let fout = open("output.data", fmWrite)
+  stdout = fout
 
-var procs: seq[Process] = @[]
+  var procs: seq[Process] = @[]
 
-procs.add( graph.dot() )
-#procs.add( rsvg( procs[^1].outputStream ) )
-procs.add( icat( procs[^1].outputStream ) )
+  procs.add( graph.dot() )
+  #procs.add( rsvg( procs[^1].outputStream ) )
+  procs.add( icat( procs[^1].outputStream ) )
 
-for p in procs:
+  for p in procs[0..^2]:
+    stderr.write(p.errorStream.readAll())
+    discard p.waitForExit()
+    p.close()
+
+  let p = procs[^1]
+  let outp = outputStream(p)
   stderr.write(p.errorStream.readAll())
   discard p.waitForExit()
   p.close()
+  fout.close()
+
+when isMainModule:
+  # create a directed graph
+  let graph = newGraph[Arrow]()
+  let sub = newGraph(graph)
+
+  graph.addEdge("a"->"b", ("label", "A to B"))
+  graph.addEdge("c"->"b", ("style", "dotted"))
+  graph.addEdge("b"->"a")
+  sub.addEdge("x"->"y")
+
+  graph.addNode("c", ("color", "blue"),   ("shape", "box"),
+                     ("style", "filled"), ("fontcolor", "white"))
+  graph.addNode("d", ("label", "node 'd'"))
+
+  discard graph.renderGraph()
 
