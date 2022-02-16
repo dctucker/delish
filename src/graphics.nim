@@ -3,6 +3,9 @@
 import osproc
 import streams
 import std/strutils
+import std/base64
+import std/tables
+import std/sequtils
 import nimgraphviz
 
 import deliast
@@ -99,6 +102,36 @@ proc renderGraph(graph: Graph[Arrow]): string =
   p.close()
   fout.close()
 
+proc serialize_gr_command(payload: string, cmd: var Table[string, string]): string =
+  #cmd = ",".join(f'{k}={v}' for k, v in cmd.items())
+  let params = cmd.pairs().toSeq().map(proc(p:(string, string)):string =
+    p[0] & "=" & p[1]
+  ).join(",")
+  var ans: seq[string] = @[]
+  ans.add("\27_G")
+  ans.add(params)
+  if payload.len > 0:
+    ans.add(";")
+    ans.add(payload)
+  ans.add("\27\\")
+  return ans.join("")
+
+proc write_chunked(data: var string, cmd: var Table[string, string]) =
+  #var data = encode(image)
+  var remain = data.len()
+  while remain > 0:
+    remain = min( 4096, data.len() )
+    let chunk = data[0..remain-1]
+    data = data[remain..^1]
+    let m = if remain < 4096: "0"
+    else: "1"
+    cmd["m"] = m
+    stdout.write(serialize_gr_command(chunk, cmd))
+    stdout.flushFile()
+    cmd.clear()
+    if remain < 4096: break
+  stdout.write("\n")
+
 when isMainModule:
   # create a directed graph
   let graph = newGraph[Arrow]()
@@ -113,7 +146,15 @@ when isMainModule:
                      ("style", "filled"), ("fontcolor", "white"))
   graph.addNode("d", ("label", "node 'd'"))
 
-  discard graph.renderGraph()
-  #let cmd = "dot " & dotargs.join(" ") & "| kitty " & icatargs.join(" ")
-  #let (output, exitCode) = execCmdEx(cmd, options = {poEvalCommand}, input = graph.exportDot())
+  #discard graph.renderGraph()
+  #echo graph.exportDot()
+
+  let cmd = "dot " & dotargs.join(" ") & " | base64"  # & " | kitty " & icatargs.join(" ")
+  #echo cmd
+  var b64png = execCmdEx(cmd, input = graph.exportDot()).output.strip()
+  #stdout.write( png )
+  var params = {"a": "T", "f": "100"}.toTable
+  write_chunked(b64png, params)
+  #discard execCmdEx("kitty " & icatargs.join(" "), input=png)
+  #echo ""
 
