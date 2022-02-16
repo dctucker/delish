@@ -82,7 +82,7 @@ proc parseCapture(node: DeliNode, capture: string) =
     if node.cmd == "":
       node.cmd     = capture
     else:
-      node.sons.add(DeliNode(kind:dkString, strVal: capture))
+      node.sons.add(DeliNode(kind: dkString, strVal: capture))
   of dkBoolean:    node.boolVal = capture == "true"
   #of dkStream:     node.intVal  = parseStreamInt(capture)
   of dkInteger:    node.intVal  = parseInt(capture)
@@ -93,7 +93,7 @@ proc parseCapture(node: DeliNode, capture: string) =
 
 proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: cstring): cint {.exportc.} =
   result = parser.nodes.len.cint
-  var node = DeliNode(kind: kind)
+  var node = DeliNode(kind: kind, node_id: result)
 
   let length = rend - rstart
   var capture = newString(length)

@@ -32,7 +32,8 @@ proc rsvg(input: Stream): Process =
 let dotargs = @[
   "-Kdot",
   "-Tpng",
-  "-s144",
+  #"-s144",
+  "-Gdpi=72",
   "-Grankdir=LR",
   "-Gbgcolor=transparent",
   "-Gcolor=lightgrey",
@@ -42,65 +43,74 @@ let dotargs = @[
   "-Nstyle=filled",
   "-Nshape=Mrecord",
   "-Nfontname=Menlo",
-  "-Nfontsize=10",
+  "-Nfontsize=14",
   "-Ecolor=#99aaff",
   "-Esplines=true",
+  "-q3",
 ]
-proc dot(input: Stream, format: string = "png"): Process =
-  let dot =
-    try:
-      startProcess("dot", args=dotargs, options={poUsePath})
-    except OSError:
-      raise
-  dot.inputStream.write(input.readAll())
-  dot.inputStream.close()
-  result = dot
-
-proc dot(graph: Graph): Process =
-  let stream = newStringStream(graph.exportDot())
-  return dot(stream)
+#proc dot(input: Stream, format: string = "png"): Process =
+#  let dot =
+#    try:
+#      startProcess("dot", args=dotargs, options={poUsePath})
+#    except OSError:
+#      raise
+#  dot.inputStream.write(input.readAll())
+#  dot.inputStream.close()
+#  result = dot
+#
+#proc dot(graph: Graph): Process =
+#  let stream = newStringStream(graph.exportDot())
+#  return dot(stream)
 
 proc nodeId(node: DeliNode): string =
   return $node.kind & $node.node_id
 
-proc buildGraph(node: DeliNode, graph: Graph[Arrow] = nil): Graph[Arrow] =
-  result = if graph == nil:
-    newGraph[Arrow]()
+proc basicLabel(node: DeliNode): string =
+  result = if node.sons.len < 1:
+    "{" & ($node).replace(" ","|") & "}"
   else:
-    graph
+    ($node.kind)[2..^1]
+
+proc recordLabel(node: DeliNode): string =
+  result = "{" & basicLabel(node) & "|{" & node.sons.map(
+    proc(x:DeliNode):string =
+      basicLabel(x)
+  ).join("|") & "}}"
+
+proc buildGraph(graph: var Graph[Arrow], node: DeliNode) =
+  let node_id = nodeId(node)
+  var label = basicLabel(node)
 
   case node.kind
-  of dkCode, dkBlock:
-    let node_id = node_id(node)
-    for son in node.sons:
-      let son_id = node_id(son)
-      graph.addEdge( node_id -> son_id )
-      discard buildGraph(son, graph)
+  of dkComparison,
+     dkCode,
+     dkConditional:
+    label = recordLabel(node)
   else:
-    discard
+    if ($node.kind)[^4..^1] == "Stmt":
+      label = recordLabel(node)
+    elif ($node.kind)[^4..^1] == "Loop":
+      label = recordLabel(node)
 
-proc renderGraph(graph: Graph[Arrow]): string =
-  let fout = open("output.data", fmWrite)
-  #discard dup2(fout.getFileHandle())
-  stdout = fout
+  graph.addNode(node_id, ("label", label))
+  if node.sons.len < 1:
+    return
 
-  var procs: seq[Process] = @[]
+  var sub: Graph[Arrow]
+  if node.sons.len > 1:
+    sub = newGraph(graph)
+    sub.graphAttr["rank"] = "same"
+    sub.name = "order_" & $node_id
 
-  procs.add( graph.dot() )
-  #procs.add( rsvg( procs[^1].outputStream ) )
-  procs.add( icat( procs[^1].outputStream ) )
+  var prevson: DeliNode = nil
+  for son in node.sons:
+    let son_id = nodeId(son)
+    graph.addEdge( node_id -> son_id )
+    graph.buildGraph(son)
 
-  for p in procs[0..^2]:
-    stderr.write(p.errorStream.readAll())
-    discard p.waitForExit()
-    p.close()
-
-  let p = procs[^1]
-  let outp = outputStream(p)
-  stderr.write(p.errorStream.readAll())
-  discard p.waitForExit()
-  p.close()
-  fout.close()
+    if prevson != nil:
+      sub.addEdge( nodeId(prevson) -> son_id )
+    prevson = son
 
 proc serialize_gr_command(payload: string, cmd: var Table[string, string]): string =
   #cmd = ",".join(f'{k}={v}' for k, v in cmd.items())
@@ -116,7 +126,8 @@ proc serialize_gr_command(payload: string, cmd: var Table[string, string]): stri
   ans.add("\27\\")
   return ans.join("")
 
-proc write_chunked(data: var string, cmd: var Table[string, string]) =
+proc write_chunked(data: var string, cmd: var Table[string, string]): string =
+  result = ""
   #var data = encode(image)
   var remain = data.len()
   while remain > 0:
@@ -126,11 +137,29 @@ proc write_chunked(data: var string, cmd: var Table[string, string]) =
     let m = if remain < 4096: "0"
     else: "1"
     cmd["m"] = m
-    stdout.write(serialize_gr_command(chunk, cmd))
-    stdout.flushFile()
+    result = result & serialize_gr_command(chunk, cmd)
+    #stdout.flushFile()
     cmd.clear()
     if remain < 4096: break
-  stdout.write("\n")
+
+
+proc kittyGraphics(input: var string): string =
+  var params = {"a": "T", "f": "100"}.toTable
+  return write_chunked(input, params)
+
+proc graphviz(input: string): string =
+  let cmd = "dot " & dotargs.join(" ") & " | base64 | tr -d '\n'"  # & " | kitty " & icatargs.join(" ")
+  return execCmdEx(cmd, input = input).output.strip()
+
+proc renderGraph(graph: Graph[Arrow]): string =
+  var png = graphviz(graph.exportDot())
+  return kittyGraphics(png)
+
+proc renderGraph*(node: DeliNode): string =
+  var graph = newGraph[Arrow]()
+  graph.buildGraph(node)
+  #return graph.exportDot()
+  return "\n" & graph.renderGraph()
 
 when isMainModule:
   # create a directed graph
@@ -146,15 +175,16 @@ when isMainModule:
                      ("style", "filled"), ("fontcolor", "white"))
   graph.addNode("d", ("label", "node 'd'"))
 
-  #discard graph.renderGraph()
+  echo graph.renderGraph()
   #echo graph.exportDot()
 
-  let cmd = "dot " & dotargs.join(" ") & " | base64"  # & " | kitty " & icatargs.join(" ")
-  #echo cmd
-  var b64png = execCmdEx(cmd, input = graph.exportDot()).output.strip()
-  #stdout.write( png )
-  var params = {"a": "T", "f": "100"}.toTable
-  write_chunked(b64png, params)
-  #discard execCmdEx("kitty " & icatargs.join(" "), input=png)
-  #echo ""
+
+  #let cmd = "dot " & dotargs.join(" ") & " | base64 | tr -d '\n'"  # & " | kitty " & icatargs.join(" ")
+  ##echo cmd
+  #var b64png = execCmdEx(cmd, input = graph.exportDot()).output.strip()
+  ##stdout.write( png )
+  #var params = {"a": "T", "f": "100"}.toTable
+  #echo write_chunked(b64png, params)
+  ##discard execCmdEx("kitty " & icatargs.join(" "), input=png)
+  ##echo ""
 
