@@ -44,17 +44,19 @@ Operators are symbols that have specific usage and meaning when placed next to o
 
 | Operator | Description             |
 |----------|-------------------------|
-| Assignment                         |
+|          | *Assignment*            |
 | `=`      | Direct assign           |
-| `|=`     | Default assign          |
+| `\|=`    | Default assign          |
 | `+=`     | Append                  |
 | `-=`     | Remove                  |
-| Redirection                        |
+|          |                         |
+|          | *Redirection*           |
 | `>>`     | Redirect append         |
 | `<`      | Redirect read           |
 | `>`      | Redirect write          |
 | `<>`     | Redirect duplex         |
-| Comparison                         |
+|          |                         |
+|          | *Comparison*            |
 | `>=`     | Greater or equal        |
 | `>`      | Greater                 |
 | `<=`     | Less or equal           |
@@ -62,11 +64,13 @@ Operators are symbols that have specific usage and meaning when placed next to o
 | `==`     | Equality                |
 | `!=`     | Inequality              |
 | `=~`     | Matching                |
-| Array / object access              |
+|          |                         |
+|          | *Array / object access* |
 | `.`      | Dereferencing           |
 | `:`      | Key/value separator     |
 | `,`      | Value separator         |
-| Mathematical                       |
+|          |                         |
+|          | *Mathematical*          |
 | `+`      | Addition                |
 | `-`      | Subtraction             |
 | `*`      | Multiplication          |
