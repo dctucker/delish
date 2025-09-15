@@ -592,7 +592,6 @@ proc isTruthy(engine: Engine, node: DeliNode): bool =
   of dkBoolean: return node.boolVal
   else:
     return false
-  return false
 
 proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
   case op.kind

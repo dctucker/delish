@@ -46,6 +46,15 @@ static void pcc_error(void) {
 #define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
 #define DK(...) GET_DK( __VA_ARGS__, CN3, CN2, CN1, CN0)(__VA_ARGS__)
 
+int nodeAppend(void*, int, int);
+int createNode0(void*, int);
+int createNode1(void*, int, int);
+int createNode2(void*, int, int, int);
+int createNode3(void*, int, int, int, int);
+int nodeString(void*, int, size_t, size_t, char*);
+int setLine(void*, int, int);
+void deli_event(void*, int, int, int, size_t, char*, size_t);
+
 int deli_get_character( struct deli_t *auxil )
 {
         if( auxil->offset >= auxil->length )

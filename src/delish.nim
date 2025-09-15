@@ -54,9 +54,9 @@ when isMainModule:
     stderr.write("Syntax error in ", filename, ":", num, " near \"", errline, "\"\n\n")
     quit 1
 
+  var engine: Engine
+  var nteract: Nteract
   benchmark "executing":
-    var engine: Engine
-    var nteract: Nteract
     #benchmark "engine setup":
     engine = newEngine(parsed, debug)
     nteract = newNteract(engine)
@@ -70,5 +70,5 @@ when isMainModule:
         if line > 0:
           discard nteract.getUserInput()
 
-    quit engine.retval().intVal
+  quit engine.retval().intVal
 

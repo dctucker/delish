@@ -1,4 +1,4 @@
-import system/io
+import system
 import strutils
 import sequtils
 import macros

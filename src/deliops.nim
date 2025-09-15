@@ -114,8 +114,6 @@ proc `+`*(a, b: DeliNode): DeliNode =
     todo "add ", a.kind, " + ", b.kind
     return a
 
-  return deliNone()
-
 proc `-`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
