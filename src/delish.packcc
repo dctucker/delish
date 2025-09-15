@@ -148,7 +148,7 @@ RunFlags      <-
               /  (f1:AsyncFlag f2:RedirFlag)                         { DK( RunFlags, f1, f2 ); }
               )
 FunctionStmt  <- !Keyword c:FunctionCall                             { DK( FunctionStmt, c ); SL(c); }
-FunctionCall  <-
+FunctionCall  <- !Keyword
               (  i:Identifier                                        { DK( FunctionCall, i ); }
               /  v:Variable '.' i:Identifier                         { DK( FunctionCall, DK( VarDeref, v, i ) ); }
               )
