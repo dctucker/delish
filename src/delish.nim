@@ -48,10 +48,15 @@ when isMainModule:
     parsed = parser.parse()
 
   if parser.parsed_len != script.source.len():
-    stderr.write("\n*** ERROR: Stopped parsing at pos ", parser.parsed_len, "/", script.source.len(), "\n")
-    let num = script.line_number(parser.parsed_len)
-    let errline = script.getLine(num)
-    stderr.write("Syntax error in ", filename, ":", num, " near \"", errline, "\"\n\n")
+    #stderr.write("\n*** ERROR: Stopped parsing at pos ", parser.parsed_len, "/", script.source.len(), "\n")
+    let row = script.line_number(parser.parsed_len)
+    let col = script.col_number(parser.parsed_len)
+    let errline = script.getLine(row)
+    stderr.write(filename, ":", row, ":", col, ": error")
+    for err in parser.errors:
+      stderr.write(": ", err)
+    stderr.write("\n ", errline, "\n ")
+    stderr.write(repeat(" ", col), "^\n")
     quit 1
 
   var engine: Engine

@@ -11,6 +11,11 @@ proc line_number*(script: DeliScript, pos: int): int =
     if offset > pos:
       return line - 1
 
+proc col_number*(script: DeliScript, pos: int): int =
+  let line = script.line_number(pos)
+  let line_pos = script.line_numbers[line]
+  return pos - line_pos
+
 iterator line_offsets(script: DeliScript): int =
   var start = 0
   let length = script.source.len()

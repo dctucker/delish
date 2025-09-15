@@ -12,6 +12,7 @@ type Parser* = ref object
   script*:      DeliScript
   symbol_stack: Stack[DeliKind]
   nodes:        seq[DeliNode]
+  errors*:      seq[string]
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
@@ -164,6 +165,13 @@ proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
   node.line = parser.script.line_number(l.int)
   node.script = parser.script
   parser.nodes[n] = node
+
+proc parserError(parser: Parser, msg: cstring) {.exportc.} =
+  let length = msg.len()
+  var errmsg = newString(length)
+  for i in 0 .. length - 1:
+    errmsg[i] = msg[i].char
+  parser.errors.add(errmsg)
 
 proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule

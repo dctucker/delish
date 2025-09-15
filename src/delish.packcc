@@ -32,7 +32,8 @@
 	#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
 	#define NA(P,S)     nodeAppend( auxil->parser, P, S )
 	#define SL(X)       setLine( auxil->parser, X, _0s )
-	#define ER(MSG)     fprintf(stderr, "Parsing error: %s\n", MSG)
+	#define ER(MSG)     parserError( auxil->parser, MSG );
+	//fprintf(stderr, "Parsing error: %s\n", MSG)
 
 	#define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
 	#define DK(...) GET_DK( __VA_ARGS__, CN3, CN2, CN1, CN0)(__VA_ARGS__)
@@ -43,6 +44,7 @@
 	int createNode2(void*, int, int, int);
 	int createNode3(void*, int, int, int, int);
 	int nodeString(void*, int, size_t, size_t, char*);
+	int parserError(void*, char*);
 	int setLine(void*, int, int);
 	void deli_event(void*, int, int, int, size_t, char*, size_t);
 
@@ -84,14 +86,16 @@ Statement     <-
               /  a:ContinueStmt /  a:ReturnStmt   /  a:Push / a:Pop
               )                                                      { DK( Statement  , a ); SL(a); }
                                                                     ~{ ER("Invalid statement"); }
-Conditional   <- "if"    Blank+ e:Condition
+Conditional   <- "if"    Blank+ e:Condition                         ~{ ER("Condition expected after `if`"); }
                          Blank+ c:Body _                             { DK( Conditional, e, c ); }
-WhileLoop     <- "while" Blank+ e:Condition
+WhileLoop     <- "while" Blank+ e:Condition                         ~{ ER("Condition expected after `while`"); }
                          Blank+ c:Body _                             { DK( WhileLoop  , e, c ); }
 DoLoop        <- "do"    Blank+ c:Body _
                  "while" Blank+ e:Condition                          { DK( DoLoop     , c, e ); }
-ForLoop       <- "for"   Blank+ v:Variable Blank+
-                 "in"    Blank+ e:IterExpr Blank+ c:Body _           { DK( ForLoop    , v, e, c ); }
+ForLoop       <- "for"   Blank+ v:Variable                          ~{ ER("expected variable after `for`"); }
+                         Blank+
+                 "in"    Blank+ e:IterExpr                          ~{ ER("expected iterable after `in`"); }
+                         Blank+ c:Body _                             { DK( ForLoop    , v, e, c ); }
 Function      <- !Keyword i:Identifier Blank*        "="
                  Blank* c:Body _                                     { DK( Function   , i, c ); }
 Subshell      <- "sub" Blank+ c:Body _                               { DK( Subshell   , c ); }
