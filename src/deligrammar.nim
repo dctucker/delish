@@ -14,11 +14,6 @@ import macros
 #  symlink
 #"""
 
-#let VLine = term("\n")
-#let Blank = sequence( term("\\"), term("\n") ) / term("\9") / term(" ")
-#let Code = sequence( +sequence( *Blank, VLine ), *Blank )
-#echo Code.repr
-
 const grammar_source_0 = staticRead("delish.packcc").replace('\n','\0')
 
 proc getGrammar*():string = grammar_source_0.replace('\0','\n')

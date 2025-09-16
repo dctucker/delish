@@ -20,10 +20,15 @@ packdeli: src/packcc.c Makefile
 #SOURCES=$(wildcard src/*.nim)
 #tests/%.nim: $(SOURCES)
 
-#tests/bin/%: tests/%.nim
-#	nim c -o=tests/bin/ $^
+tests/bin/%: tests/%.nim
+	nim c -o=tests/bin/ $^
 
 test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
-	for f in tests/*.nim; do nim c -o=tests/bin/ $$f ; done
+	#for f in tests/*.nim; do nim c -o=tests/bin/ $$f ; done
 	for f in tests/bin/*; do $$f ; done
 
+.PHONY: clean
+clean:
+	rm tests/bin/*
+	rm delish
+	rm src/packcc.*

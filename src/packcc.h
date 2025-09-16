@@ -11,6 +11,40 @@ struct deli_t {
         size_t length;
         void *parser;
 };
+
+#define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) \
+        if( !( dk##rule == dkComment || dk##rule == dkVLine || dk##rule > dkDefaultOp ) ) \
+                deli_event(auxil->parser, event, dk##rule, level, pos, buffer, length)
+#define PCC_GETCHAR(auxil) deli_get_character( auxil )
+#define PCC_BUFFERSIZE 1024
+#define PCC_ERROR(auxil) pcc_error(); return 0;
+static void pcc_error(void) {
+        fprintf(stderr, "Syntax error\n");
+}
+
+#define NS(K)       __ = nodeString( auxil->parser, dk##K   , _1s, _1e, _1)
+#define CN(N, K, ...) __ = createNode##N( auxil->parser, dk##K, __VA_ARGS__ )
+#define CN0(K) __ = createNode0( auxil->parser, dk##K )
+#define CN1(K, ...) CN(1, K, __VA_ARGS__ )
+#define CN2(K, ...) CN(2, K, __VA_ARGS__ )
+#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
+#define NA(P,S)     nodeAppend( auxil->parser, P, S )
+#define SL(X)       setLine( auxil->parser, X, _0s )
+#define ER(MSG)     parserError( auxil->parser, MSG );
+// fprintf(stderr, "Parsing error: %s\n", MSG)
+
+#define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
+#define DK(...) GET_DK( __VA_ARGS__, CN3, CN2, CN1, CN0)(__VA_ARGS__)
+
+int nodeAppend(void*, int, int);
+int createNode0(void*, int);
+int createNode1(void*, int, int);
+int createNode2(void*, int, int, int);
+int createNode3(void*, int, int, int, int);
+int nodeString(void*, int, size_t, size_t, char*);
+int parserError(void*, char*);
+int setLine(void*, int, int);
+void deli_event(void*, int, int, int, size_t, char*, size_t);
 #ifdef __cplusplus
 extern "C" {
 #endif

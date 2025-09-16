@@ -6,8 +6,8 @@ import deligrammar
 import deliscript
 
 ### AST representation
-grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","S","W","U"])
-grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","S","W","_"])
+grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])
+grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","C","S","W","_"])
 
 type
   DeliNode* = ref DeliNodeObj

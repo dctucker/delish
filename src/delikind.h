@@ -1,7 +1,6 @@
 enum DeliKind {
 	dkScript,
 	dkCode,
-	dkBlank,
 	dkVLine,
 	dkComment,
 	dkBlock,
@@ -112,6 +111,7 @@ enum DeliKind {
 	dkJump,
 	dkLazy,
 	dkA,
+	dkC,
 	dkS,
 	dkW,
 	dk_

@@ -1,3 +1,4 @@
 delish
 tests/test_*
+tests/bin
 !tests/*.nim

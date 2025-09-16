@@ -1,6 +1,6 @@
 Script        <- Code
 Code          <- ( Blank* VLine )+ Blank*
-Blank         <- ( "\\" \n ) / "\t" / ' '  #
+S             <- ( "\\" \n ) / "\t" / ' '  #
 VLine         <- \n / Comment / Block / Statement Comment* \n  #
 Comment       <- '#' (! \n .)* \n  #
 Block         <- !'$' (Conditional / WhileLoop / ForLoop / Function) / Subshell

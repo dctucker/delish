@@ -175,7 +175,7 @@ proc parserError(parser: Parser, msg: cstring) {.exportc.} =
 
 proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule
-  of dkS.ord, dkW.ord, dkU.ord, dkBlank.ord, dkVLine.ord, dkComment.ord: return
+  of dkC.ord, dkW.ord, dkU.ord, dkS.ord, dkVLine.ord, dkComment.ord: return
   else: discard
 
   parser.parsed_len = max(parser.parsed_len, pos.int)
