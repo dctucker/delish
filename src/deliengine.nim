@@ -11,6 +11,7 @@ import stacks
 import deliargs
 import deliscript
 import deliparser
+import deliprocess
 
 type
   FileDesc = ref object

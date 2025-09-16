@@ -3,6 +3,22 @@
 Delish is a line-oriented scripting language. A line may contain a statement or a block followed by a comment.
 Comments begin with the `#` character.
 
+## Data types
+
+| Type       | Description                         |
+|------------|-------------------------------------|
+| Arg        | Arguments and flags                 |
+| Boolean    | Logical true or false               |
+| Identifier | Object key or function name         |
+| Stream     | Standard input/output/error streams |
+| Variable   | Reference to runtime memory         |
+| Integer    | Numbers 0-9                         |
+| String     | Collection of characters            |
+| Path       | Absolute and relative filenames     |
+| Regex      | Regular expressions                 |
+| Array      | Zero-indexed collection             |
+| Object     | Key/value pair collection           |
+
 ## Keywords
 
 These are reserved words that cannot be used as a function name.
@@ -79,9 +95,87 @@ Operators are symbols that have specific usage and meaning when placed next to o
 
 ## Identifiers and variables
 
-Identifiers must start with letters, and can contain numbers, underscores and hyphens.
-Variables start with a `$`.
+Identifiers must start with letters, and can contain numbers, underscores and hyphens. Identifiers can be used as lookup values when dereferencing objects and arrays.
+
+Variables start with a `$`. Variables can also be used as lookup values.
+
+## Arguments and flags
+
+Arguments are always declared. This rule applies to both scripts and functions alike, and argument declarations will normally appear as the first few lines of a block. This encourages self-documenting code.
+
+Expected arguments are declared using the `arg` keyword. For string arguments, the variable name will be specified:
+```
+arg $message
+```
+
+Flags start with `-`. Long flags start with an additional `-`. They are also declared using the `arg` keyword:
+```
+arg -k --key
+```
+
+To specify a default value for an argument, use the `|=` assign default operator:
+```
+arg $message   |= ""
+arg -key --key |= false
+```
+
+## Strings
+
+Strings are collections of characters. Single-line string literals use '`' single quotes or `"` double quotes, while multi-line string literals use `"""` triple quotes.
 
 ## Paths
 
 Path names must begin with a dot or a slash.
+
+## Blocks
+
+Blocks begin with a keyword followed by `{`, some code, and finally `}`.
+
+## RegEx
+
+Regular expression literals use the `r/.../` syntax. They can be checked against a string using the `=~` matching operator.
+
+## Objects and Arrays
+
+Arrays and objects are similar in function. Objects are composed of key/value pairs, and arrays are generally treated as objects with zero-indexed integer keys.
+
+To create and assign an object, use the `[` `]` symbols. Let's create an empty object:
+```
+$obj = []
+```
+
+Now, let's create an array with two flags as elements:
+```
+$arr = [
+  --list
+  --color
+]
+```
+
+Dereferencing an object is done by using the `.` operator. Let's print the second element of the array we created:
+```
+out $arr.1
+```
+
+## Functions
+
+Functions are defined as an identifier followed by a block of code. Here is a simple "hello world" function:
+```
+hello = {
+  out "Hello world"
+}
+```
+
+Functions can receive arguments, which must be declared. Let's make our function accept an argument and print it out:
+```
+hello = {
+  arg $message
+  out $message
+}
+```
+
+Functions are called by name, followed by any arguments:
+```
+func "Hello world"
+```
+
