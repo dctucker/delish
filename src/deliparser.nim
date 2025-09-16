@@ -33,7 +33,7 @@ proc parse*(parser: Parser): DeliNode =
 
   var cstr = parser.script.source.cstring
   parser.nodes = @[deliNone()]
-  let pos = packcc_main(cstr, parser.script.source.len.cint, parser)
+  discard packcc_main(cstr, parser.script.source.len.cint, parser)
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
   return parser.entry_point

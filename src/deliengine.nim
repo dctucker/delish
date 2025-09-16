@@ -43,6 +43,13 @@ proc initFd(file: File): FileDesc =
     handle: file.getOsFileHandle(),
   )
 
+proc initFd(handle: FileHandle): FileDesc =
+  FileDesc(
+    file: nil,
+    stream: nil,
+    handle: handle,
+  )
+
 proc retval*(engine: Engine): DeliNode =
   engine.retvals.peek()
 
@@ -95,6 +102,9 @@ proc newEngine*(script: DeliNode, debug: int): Engine =
   result = newEngine(debug)
   result.setup(script)
 
+proc addFd(engine: Engine, fd: FileHandle): int =
+  result = cint fd
+  engine.fds[result] = initFd(fd)
 
 ### Engine ###
 
@@ -338,10 +348,11 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
 
   for son in vard.sons[1 .. ^1]:
     case result.kind
-    of dkObject:
+    of dkObject, dkRan:
+      let kind = ($result.kind)[2 .. ^1]
       let str = son.toString()
       if str notin result.table:
-        engine.runtimeError("Object does not contain \"" & str & "\"")
+        engine.runtimeError("$" & variable.varName & " does not contain \"" & str & "\"")
       result = result.table[str]
     of dkArray:
       #echo engine.evaluate(son.repr).repr
@@ -534,10 +545,30 @@ proc initArguments(engine: Engine, script: DeliNode) =
 
 proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
   todo "run and consume output"
-  return DeliNode(kind: dkRan, table: {
-    "out": DeliNode(kind: dkStream, intVal: 1),
-    "err": DeliNode(kind: dkStream, intVal: 2),
+  var args = newSeq[string]()
+  for inv in pipes[0].sons:
+    args.add inv.strVal
+  var p = newDeliProcess(args)
+
+  try:
+    p.start
+  except OSError as e:
+    p.exit = e.errorCode
+    engine.runtimeError(e.msg)
+
+  let i = engine.addFd(p.fds[0])
+  let o = engine.addFd(p.fds[1])
+  let e = engine.addFd(p.fds[2])
+
+  result = DeliNode(kind: dkRan, table: {
+    "id": DeliNode(kind: dkInteger, intVal: p.id),
+    "in":  DeliNode(kind: dkStream, intVal: i),
+    "out": DeliNode(kind: dkStream, intVal: o),
+    "err": DeliNode(kind: dkStream, intVal: e),
+    "exit": DeliNode(kind: dkInteger, intVal: p.exit),
   }.toTable)
+  p.wait
+  p.close
 
 
 ### Functions ###
@@ -1059,6 +1090,8 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkInner:
     for s in s.sons:
       engine.doStmt(s)
+  of dkRunStmt:
+    discard engine.doRun(s.sons)
   else:
     todo "run ", s.kind
 

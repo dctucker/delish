@@ -142,7 +142,13 @@ proc argFormat(node: DeliNode): string =
       result &= $son
     current_kind = son.kind
 
-proc toString*(node: DeliNode):string =
+proc objFormat(node: DeliNode): string =
+  result = "["
+  for key,value in node.table:
+    result &= key & ": " & $value & "; "
+  result &= "]"
+
+proc toString*(node: DeliNode): string =
   if node.kind == dkExpr:
     result = ""
     for s in node.sons:
@@ -177,7 +183,8 @@ proc toString*(node: DeliNode):string =
     "--" & node.argName
   of dkArgExpr:
     argFormat(node)
-  of dkObject:     $(node.table)
+  of dkObject, dkRan:
+    objFormat(node)
   else: ""
 
 proc `$`*(node: DeliNode): string =

@@ -21,7 +21,10 @@ out $SANDO
 
 out $mustard
 
-$found = run find . -name "disk*" | grep "sdb"
+$ls = run ls
+out $ls
+#$found = run find . -name "disk*" | grep "sdb"
+return
 
 $obj = [
   "a": "b"

@@ -4,7 +4,7 @@ src/packcc.c: src/delish.packcc src/packcc.h
 	cd src && packcc -o packcc delish.packcc && cd ..
 
 debug: src/packcc.c #src/delish.yy.c
-	nimble build -d:deepDebug
+	nimble build -d:deepDebug --verbose
 
 release:
 	nimble build -d:release --passC:-ffast-math --opt:size
