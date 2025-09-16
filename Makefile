@@ -1,9 +1,10 @@
 all: debug
 
-src/packcc.c: src/delish.packcc src/packcc.h
+src/packcc.h:
+src/packcc.c: src/delish.packcc
 	cd src && packcc -o packcc delish.packcc && cd ..
 
-debug: src/packcc.c #src/delish.yy.c
+debug: src/packcc.c
 	nimble build -d:deepDebug --verbose
 
 release:
@@ -20,8 +21,8 @@ packdeli: src/packcc.c Makefile
 #SOURCES=$(wildcard src/*.nim)
 #tests/%.nim: $(SOURCES)
 
-tests/bin/%: tests/%.nim
-	nim c -o=tests/bin/ $^
+tests/bin/%: tests/%.nim src/packcc.c src/packcc.h
+	nim c -o=tests/bin/ $<
 
 test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
 	#for f in tests/*.nim; do nim c -o=tests/bin/ $$f ; done
@@ -29,6 +30,6 @@ test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
 
 .PHONY: clean
 clean:
-	rm tests/bin/*
-	rm delish
-	rm src/packcc.*
+	rm -f tests/bin/*
+	rm -f delish
+	rm -f src/packcc.*
