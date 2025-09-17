@@ -62,10 +62,10 @@ Code          <-                                                     { DK( Code 
               )+ S*
 S             <- ( "\\" "\n" ) / "\t" / ' '
 VLine         <-
-              (  "\n"                                                { $$ = -1; }
+              (  ( "\n" / ";" )                                      { $$ = -1; }
               /  Comment                                             { $$ = -1; }
               /  a:Block                                             { $$ = a; }
-              /  a:Statement S* Comment* S* "\n"                     { $$ = a; }
+              /  a:Statement S* Comment* S* ( "\n" / ";" )           { $$ = a; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <-
@@ -378,10 +378,10 @@ RedirReadOp   <- "<"                                                 { DK( Redir
 RedirWriteOp  <- ">"                                                 { DK( RedirWriteOp ); }
 RedirDuplexOp <- "<>"                                                { DK( RedirDuplexOp ); }
 DefaultOp     <- "|="                                                { DK( DefaultOp ); }
-C             <- [^ \n\r\t]
+C             <- [^ \n\r\t;]
 A             <- [A-Za-z]
 W             <- [A-Za-z0-9_]
-_             <- [ \n\r\t]*
+_             <- [ \n\r\t;]*
 
 %%
 
