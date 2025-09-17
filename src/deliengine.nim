@@ -1,3 +1,4 @@
+import system/exceptions
 import std/tables
 import std/lists
 import os
@@ -12,7 +13,11 @@ import deliargs
 import deliscript
 import deliparser
 import deliprocess
-import delilog
+
+type DeliError* = object of CatchableError
+type RuntimeError* = ref object of DeliError
+type SetupError* = ref object of DeliError
+type InterruptError* = ref object of DeliError
 
 type
   FileDesc = ref object
@@ -204,23 +209,21 @@ proc nextLen*(engine: Engine): int =
     result += 1
     head = head.next
 
-proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
-  engine.readhead.next = nil
-  errlog.write("\27[1;31m")
-  errlog.write(msg)
-  errlog.write("\n")
-  quit(1)
-
-proc setupError(engine: Engine, msg: varargs[string,`$`]) =
-  engine.readhead.next = nil
-  errlog.write("\27[31m(setup) ")
-  errlog.write(msg)
-  errlog.write("\n")
-  quit(2)
-
 proc exit(engine: Engine, errcode: int) =
   engine.readhead.next = nil
   quit(errcode)
+
+proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
+  var message = ""
+  for m in msg:
+    message &= m
+  raise RuntimeError(msg: message)
+
+proc setupError(engine: Engine, msg: varargs[string,`$`]) =
+  var message = ""
+  for m in msg:
+    message &= m
+  raise SetupError(msg: "(setup) " & message)
 
 proc teardown(engine: Engine) =
   for k,v in engine.fds.pairs():
@@ -1151,16 +1154,3 @@ iterator tick*(engine: Engine): int =
     if engine.isEnd():
       break
     engine.advance()
-
-### do stuff with environment
-#
-#import std/os, sequtils
-#when isMainModule:
-#  stdout.write "$ "
-#  var cmdline = readLine(stdin)
-#
-#  if cmdline == "glob":
-#    let dir = toSeq(walkDir(".", relative=true))
-#    for f in dir:
-#      debug f
-

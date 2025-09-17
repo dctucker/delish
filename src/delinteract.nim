@@ -101,8 +101,7 @@ proc getUserInput*(nt: Nteract): string =
     let k = getch()
     case k
     of '\3':
-      echo "^C"
-      quit 127
+      raise InterruptError(msg: "^C")
     of '\7', '\127':
       if first:
         nt.clear()

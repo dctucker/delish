@@ -48,7 +48,6 @@
 }
 
 %source {
-
 	int deli_get_character( struct deli_t *auxil )
 	{
 		if( auxil->offset >= auxil->length )
@@ -137,7 +136,8 @@ CloseStmt     <-
 
 LocalStmt     <- "local" S+ v:Variable                              ~{ ER("expected variable after `local`"); }
                                                                      { DK( LocalStmt, v ); }
-              (  S* o:AssignOp S* e:AssignExpr                       { NA( $$, o ); NA( $$, e ); }
+              (  S* o:AssignOp S* e:AssignExpr                      ~{ ER("invalid expression after `=`"); }
+                                                                     { NA( $$, o ); NA( $$, e ); }
               )?
 AssignExpr    <-
               (  e:OpenExpr / e:ArgExpr /  e:RunStmt

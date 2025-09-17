@@ -17,6 +17,14 @@ template benchmark(benchmarkName: string, code: untyped) =
     if debug > 0:
       echo "CPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms"
 
+proc exception_handler*(e: ref Exception, debug: int) =
+  errlog.write("\27[31m")
+  if debug > 0:
+    errlog.write(e.getStackTrace())
+  errlog.write(e.msg)
+  errlog.write("\n")
+  errlog.write("\27[0m")
+
 proc delish_main*(cmdline: seq[string] = @[]): int =
   var interactive = false
   var debug = 0
@@ -72,17 +80,27 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
   var nteract: Nteract
   benchmark "executing":
     #benchmark "engine setup":
-    engine = newEngine(parsed, debug)
-    nteract = newNteract(engine)
+    try:
+      engine = newEngine(parsed, debug)
+      nteract = newNteract(engine)
 
-    for line in engine.tick():
-      if debug > 0:
-        echo engine.lineInfo()
-      if interactive:
-        nteract.line = line.abs
-        nteract.filename = engine.sourceFile()
-        if line > 0:
-          discard nteract.getUserInput()
+      for line in engine.tick():
+        if debug > 0:
+          echo engine.lineInfo()
+        if interactive:
+          nteract.line = line.abs
+          nteract.filename = engine.sourceFile()
+          if line > 0:
+            discard nteract.getUserInput()
+    except SetupError as e:
+      exception_handler(e, debug)
+      return 2
+    except RuntimeError as e:
+      exception_handler(e, debug)
+      return 1
+    except InterruptError as e:
+      exception_handler(e, debug)
+      return 127
 
   return engine.retval().intVal
 
