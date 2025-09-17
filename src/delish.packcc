@@ -121,10 +121,9 @@ Push          <- "push"                                              { DK( Push 
 Pop           <- "pop"                                               { DK( Pop ); }
 
 VariableStmt  <- &'$' v:Variable                                    ~{ ER("invalid variable name"); }
-                            S*
-              (  o:AssignOp S* e:AssignExpr                         ~{ ER("invalid expression after `=`"); }
-              /  o:AppendOp S* e:AppendExpr                         ~{ ER("invalid expression after `+=`"); }
-              /  o:RemoveOp S* e:AppendExpr                         ~{ ER("invalid expression after `-=`"); }
+              (  S* o:AssignOp S* e:AssignExpr                      ~{ ER("invalid expression after `=`"); }
+              /  S* o:AppendOp S* e:AppendExpr                      ~{ ER("invalid expression after `+=`"); }
+              /  S* o:RemoveOp S* e:AppendExpr                      ~{ ER("invalid expression after `-=`"); }
               )                                                      { DK( VariableStmt, v, o, e ); }
 
 AppendExpr    <- ( e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr )    { $$ = e; }

@@ -5677,23 +5677,23 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_VariableStmt(deli_context_t *ctx) {
     L0004:;
     }
     {
-        int i;
-        for (i = 0;; i++) {
-            const size_t p = ctx->cur;
-            const size_t n = chunk->thunks.len;
-            if (!pcc_apply_rule(ctx, pcc_evaluate_rule_S, &chunk->thunks, NULL)) goto L0005;
-            if (ctx->cur == p) break;
-            continue;
-        L0005:;
-            ctx->cur = p;
-            pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
-            break;
-        }
-    }
-    {
         const size_t p = ctx->cur;
         const size_t n = chunk->thunks.len;
-        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AssignOp, &chunk->thunks, &(chunk->values.buf[1]))) goto L0007;
+        {
+            int i;
+            for (i = 0;; i++) {
+                const size_t p = ctx->cur;
+                const size_t n = chunk->thunks.len;
+                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_S, &chunk->thunks, NULL)) goto L0007;
+                if (ctx->cur == p) break;
+                continue;
+            L0007:;
+                ctx->cur = p;
+                pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+                break;
+            }
+        }
+        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AssignOp, &chunk->thunks, &(chunk->values.buf[1]))) goto L0006;
         {
             int i;
             for (i = 0;; i++) {
@@ -5723,14 +5723,13 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_VariableStmt(deli_context_t *ctx) {
                 thunk->data.leaf.action(ctx, thunk, &null);
                 pcc_thunk__destroy(ctx->auxil, thunk);
             }
-            goto L0007;
+            goto L0006;
         L0010:;
         }
-        goto L0006;
-    L0007:;
+        goto L0005;
+    L0006:;
         ctx->cur = p;
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
-        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AppendOp, &chunk->thunks, &(chunk->values.buf[1]))) goto L0011;
         {
             int i;
             for (i = 0;; i++) {
@@ -5745,10 +5744,25 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_VariableStmt(deli_context_t *ctx) {
                 break;
             }
         }
+        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AppendOp, &chunk->thunks, &(chunk->values.buf[1]))) goto L0011;
         {
-            if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AppendExpr, &chunk->thunks, &(chunk->values.buf[2]))) goto L0013;
-            goto L0014;
-        L0013:;
+            int i;
+            for (i = 0;; i++) {
+                const size_t p = ctx->cur;
+                const size_t n = chunk->thunks.len;
+                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_S, &chunk->thunks, NULL)) goto L0013;
+                if (ctx->cur == p) break;
+                continue;
+            L0013:;
+                ctx->cur = p;
+                pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+                break;
+            }
+        }
+        {
+            if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AppendExpr, &chunk->thunks, &(chunk->values.buf[2]))) goto L0014;
+            goto L0015;
+        L0014:;
             {
                 pcc_value_t null;
                 pcc_thunk_t *const thunk = pcc_thunk__create_leaf(ctx->auxil, pcc_action_VariableStmt_2, 3, 0);
@@ -5761,31 +5775,45 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_VariableStmt(deli_context_t *ctx) {
                 pcc_thunk__destroy(ctx->auxil, thunk);
             }
             goto L0011;
-        L0014:;
+        L0015:;
         }
-        goto L0006;
+        goto L0005;
     L0011:;
         ctx->cur = p;
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
-        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_RemoveOp, &chunk->thunks, &(chunk->values.buf[1]))) goto L0015;
         {
             int i;
             for (i = 0;; i++) {
                 const size_t p = ctx->cur;
                 const size_t n = chunk->thunks.len;
-                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_S, &chunk->thunks, NULL)) goto L0016;
+                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_S, &chunk->thunks, NULL)) goto L0017;
                 if (ctx->cur == p) break;
                 continue;
-            L0016:;
+            L0017:;
+                ctx->cur = p;
+                pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
+                break;
+            }
+        }
+        if (!pcc_apply_rule(ctx, pcc_evaluate_rule_RemoveOp, &chunk->thunks, &(chunk->values.buf[1]))) goto L0016;
+        {
+            int i;
+            for (i = 0;; i++) {
+                const size_t p = ctx->cur;
+                const size_t n = chunk->thunks.len;
+                if (!pcc_apply_rule(ctx, pcc_evaluate_rule_S, &chunk->thunks, NULL)) goto L0018;
+                if (ctx->cur == p) break;
+                continue;
+            L0018:;
                 ctx->cur = p;
                 pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
                 break;
             }
         }
         {
-            if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AppendExpr, &chunk->thunks, &(chunk->values.buf[2]))) goto L0017;
-            goto L0018;
-        L0017:;
+            if (!pcc_apply_rule(ctx, pcc_evaluate_rule_AppendExpr, &chunk->thunks, &(chunk->values.buf[2]))) goto L0019;
+            goto L0020;
+        L0019:;
             {
                 pcc_value_t null;
                 pcc_thunk_t *const thunk = pcc_thunk__create_leaf(ctx->auxil, pcc_action_VariableStmt_3, 3, 0);
@@ -5797,15 +5825,15 @@ static pcc_thunk_chunk_t *pcc_evaluate_rule_VariableStmt(deli_context_t *ctx) {
                 thunk->data.leaf.action(ctx, thunk, &null);
                 pcc_thunk__destroy(ctx->auxil, thunk);
             }
-            goto L0015;
-        L0018:;
+            goto L0016;
+        L0020:;
         }
-        goto L0006;
-    L0015:;
+        goto L0005;
+    L0016:;
         ctx->cur = p;
         pcc_thunk_array__revert(ctx->auxil, &chunk->thunks, n);
         goto L0000;
-    L0006:;
+    L0005:;
     }
     {
         pcc_thunk_t *const thunk = pcc_thunk__create_leaf(ctx->auxil, pcc_action_VariableStmt_4, 3, 0);

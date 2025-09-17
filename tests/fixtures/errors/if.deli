@@ -1,0 +1,5 @@
+#!/usr/bin/deli
+
+if true {
+  out "hello"
+

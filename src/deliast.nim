@@ -4,6 +4,7 @@ import strutils
 #import stacks
 import deligrammar
 import deliscript
+import delilog
 
 ### AST representation
 grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])
@@ -195,7 +196,7 @@ proc `$`*(node: DeliNode): string =
     return ($(node.kind)).substr(2) & " " & value
 
 proc todo*(msg: varargs[string, `$`]) =
-  stderr.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")
+  errlog.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")
 
 proc repr*(node: DeliNode): string =
   result = ""

@@ -12,6 +12,7 @@ import deliargs
 import deliscript
 import deliparser
 import deliprocess
+import delilog
 
 type
   FileDesc = ref object
@@ -205,16 +206,16 @@ proc nextLen*(engine: Engine): int =
 
 proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
   engine.readhead.next = nil
-  stderr.write("\27[1;31m")
-  stderr.write(msg)
-  stderr.write("\n")
+  errlog.write("\27[1;31m")
+  errlog.write(msg)
+  errlog.write("\n")
   quit(1)
 
 proc setupError(engine: Engine, msg: varargs[string,`$`]) =
   engine.readhead.next = nil
-  stderr.write("\27[31m(setup) ")
-  stderr.write(msg)
-  stderr.write("\n")
+  errlog.write("\27[31m(setup) ")
+  errlog.write(msg)
+  errlog.write("\n")
   quit(2)
 
 proc exit(engine: Engine, errcode: int) =

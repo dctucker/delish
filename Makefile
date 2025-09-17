@@ -24,6 +24,7 @@ packdeli: src/packcc.c Makefile
 tests/bin/%: tests/%.nim src/packcc.c src/packcc.h
 	nim c -o=tests/bin/ $<
 
+test: debug
 test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
 	#for f in tests/*.nim; do nim c -o=tests/bin/ $$f ; done
 	for f in tests/bin/*; do $$f ; done

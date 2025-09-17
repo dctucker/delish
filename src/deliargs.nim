@@ -25,8 +25,8 @@ proc isFlag*(arg: Argument):bool =
 proc strVal(s:string): DeliNode =
   return DeliNode(kind: dkString, strVal: s)
 
-iterator parseCmdLine(): Argument =
-  var p = initOptParser()
+iterator parseCmdLine(cmdline: seq[string] = @[]): Argument =
+  var p = initOptParser(cmdline)
   while true:
     p.next()
     case p.kind
@@ -55,9 +55,9 @@ proc printUserArguments*() =
   for arg in user_args:
     echo arg
 
-proc initUserArguments*() =
+proc initUserArguments*(cmdline: seq[string] = @[]) =
   user_args = @[]
-  for arg in parseCmdLine():
+  for arg in parseCmdLine(cmdline):
     user_args.add(arg)
 
 proc shift*(): Argument =
