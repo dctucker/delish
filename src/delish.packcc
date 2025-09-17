@@ -57,16 +57,20 @@
 }
 
 Script        <- c:Code                                              { DK( Script, c ); }
+
 Code          <-                                                     { DK( Code ); }
               (  S* l:VLine                                          { if( l >= 0 ) NA( $$, l ); }
               )+ S*
+
 S             <- ( "\\" "\n" ) / "\t" / ' '
+
 VLine         <-
               (  ( "\n" / ";" )                                      { $$ = -1; }
               /  Comment                                             { $$ = -1; }
               /  a:Block                                             { $$ = a; }
               /  a:Statement S* Comment* S* ( "\n" / ";" )           { $$ = a; }
               )                                                      { if( $$ >= 0 ) SL($$); }
+
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <-
               (  !'$'
@@ -78,6 +82,7 @@ Block         <-
                )
               /  a:Subshell
               )                                                      { DK( Block    , a ); SL(a); }
+
 Statement     <-
               (  a:VariableStmt / a:LocalStmt   / a:ArgStmt
               /  a:EnvStmt      / a:IncludeStmt / a:StreamStmt

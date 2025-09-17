@@ -17,10 +17,21 @@ proc toInteger*(src: DeliNode): DeliNode =
     todo "toInteger ", src.kind
     deliNone()
 
-proc toKind*(dest: DeliKind, src: DeliNode): DeliNode =
+proc toPath*(src: DeliNode): DeliNode =
+  result = case src.kind
+  of dkString,
+     dkStrLiteral:
+    return DKPath( src.strVal )
+  else:
+    todo "toPath ", src.kind
+    deliNone()
+
+proc toKind*(src: DeliNode, dest: DeliKind): DeliNode =
   result = case dest
   of dkInteger: toInteger src
   of dkBoolean: toBoolean src
+  of dkPath:    toPath    src
+  #of dkString:  toString  src
   else:
     todo "cast ", src.kind, " as ", dest
     deliNone()

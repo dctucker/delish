@@ -761,7 +761,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   of dkFunctionCall:
     return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
   of dkCast:
-    return engine.evaluate(val.sons[1]).deliCast(val.sons[0].kind)
+    return engine.evaluate(val.sons[1]).toKind(val.sons[0].kind)
   else:
     todo "evaluate ", val.kind
     return deliNone()

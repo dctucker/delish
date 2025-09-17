@@ -159,18 +159,3 @@ proc `or`*(a,b: DeliNode): DeliNode =
       return DKBool( a.boolVal or b.boolVal )
     else:
       todo "dis ", a.kind, " or ", b.kind
-
-proc deliCast*(n: DeliNode, dk: DeliKind): DeliNode =
-  case dk
-  of dkPath:
-    case n.kind
-    of dkString,
-       dkStrLiteral:
-      return DKPath( n.strVal )
-    else:
-      discard
-  else:
-    discard
-
-  todo "cast ", n.kind, " as ", $dk
-  return n

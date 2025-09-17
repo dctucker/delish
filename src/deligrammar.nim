@@ -41,3 +41,11 @@ macro grammarToCEnum*(extra: static[seq[string]]) =
   let options = concat(symbols, extra.map(proc(x:string):string = "dk" & x))
   let stmt = "enum DeliKind {\n\t" & options.join(",\n\t") & "\n};\n";
   "src/delikind.h".writeFile(stmt)
+
+# TODO produce lists representing literals
+# Keyword
+# Type
+# Operator
+#   RedirOp
+#   Comparator
+#   MathOp (MulOp, DivOp, ModOp, AddOp, SubOp)

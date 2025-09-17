@@ -10,6 +10,20 @@ import delilog
 grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])
 grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","C","S","W","_"])
 
+const deliTypes* = {
+  dkInteger,
+  dkArg,
+  dkArray,
+  dkBoolean,
+  dkIdentifier,
+  dkPath,
+  dkObject,
+  dkRegex,
+  dkStream,
+  dkString,
+  dkVariable,
+}
+
 type
   DeliNode* = ref DeliNodeObj
   DeliList* = SinglyLinkedList[DeliNode]
@@ -24,6 +38,7 @@ type
        dkStrBlock,
        dkStrLiteral,
        dkString:       strVal*:     string
+    of dkRegex:        pattern*:    string
     of dkStream,
        dkInteger:      intVal*:     int
     of dkBoolean:      boolVal*:    bool
