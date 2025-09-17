@@ -88,7 +88,7 @@ proc `+`*(a, b: DeliNode): DeliNode =
     case a.kind
     of dkInteger:
       return DeliNode(kind: dkInteger, intVal: a.intVal + b.intval)
-    of dkString:
+    of dkString, dkPath:
       return DeliNode(kind: dkString, strVal: a.strVal & b.strVal)
     of dkArray:
       result = DeliNode(kind: dkArray)
@@ -156,8 +156,21 @@ proc `or`*(a,b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
     of dkBoolean:
-      return DKBool( a.boolVal and b.boolVal )
+      return DKBool( a.boolVal or b.boolVal )
     else:
       todo "dis ", a.kind, " or ", b.kind
 
+proc deliCast*(n: DeliNode, dk: DeliKind): DeliNode =
+  case dk
+  of dkPath:
+    case n.kind
+    of dkString,
+       dkStrLiteral:
+      return DKPath( n.strVal )
+    else:
+      discard
+  else:
+    discard
 
+  todo "cast ", n.kind, " as ", $dk
+  return n

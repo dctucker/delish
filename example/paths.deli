@@ -1,0 +1,5 @@
+#!/usr/bin/deli
+
+$path = ./log
+$path += Path(".txt")
+out $path

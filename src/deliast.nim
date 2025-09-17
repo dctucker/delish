@@ -88,6 +88,9 @@ proc deliFalse*(): DeliNode = DKBool(false)
 proc DKStr*(strVal: string): DeliNode =
   return DeliNode(kind: dkString, strVal: strVal)
 
+proc DKPath*(strVal: string): DeliNode =
+  return DeliNode(kind: dkPath, strVal: strVal)
+
 proc DKStmt*(kind: DeliKind, args: varargs[DeliNode]): DeliNode =
   return DK( dkStatement, DK( kind, args ) )
 

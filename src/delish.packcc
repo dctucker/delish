@@ -65,7 +65,7 @@ VLine         <-
               (  "\n"                                                { $$ = -1; }
               /  Comment                                             { $$ = -1; }
               /  a:Block                                             { $$ = a; }
-              /  a:Statement Comment* "\n"                           { $$ = a; }
+              /  a:Statement S* Comment* S* "\n"                     { $$ = a; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <-
@@ -120,14 +120,22 @@ Push          <- "push"                                              { DK( Push 
 Pop           <- "pop"                                               { DK( Pop ); }
 
 VariableStmt  <- &'$' v:Variable                                    ~{ ER("invalid variable name"); }
-              (  S* o:AssignOp S* e:AssignExpr                      ~{ ER("invalid expression after `=`"); }
-              /  S* o:AppendOp S* e:AppendExpr                      ~{ ER("invalid expression after `+=`"); }
-              /  S* o:RemoveOp S* e:AppendExpr                      ~{ ER("invalid expression after `-=`"); }
+              (  S* o:AssignOp S* e:AssignExpr S*                   ~{ ER("invalid expression after `=`"); }
+              /  S* o:AppendOp S* e:AppendExpr S*                   ~{ ER("invalid expression after `+=`"); }
+              /  S* o:RemoveOp S* e:AppendExpr S*                   ~{ ER("invalid expression after `-=`"); }
               )                                                      { DK( VariableStmt, v, o, e ); }
 
-AppendExpr    <- ( e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr )    { $$ = e; }
+AssignExpr    <-
+              (  e:OpenExpr / e:ArgExpr /  e:RunStmt
+              /  e:FunctionCall / e:Cast / e:Expr
+              )                                                      { $$ = e; }
 
-OpenExpr      <- "open" (S+ o:RedirOp)? S+ p:Path                   ~{ ER("expected path after `open`"); }
+AppendExpr    <-
+              (   e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr
+              /   e:Cast
+              )                                                      { $$ = e; }
+
+OpenExpr      <- "open" (S+ o:RedirOp)? S+ ( p:Path / p:VarDeref )  ~{ ER("expected path after `open`"); }
                                                                      { DK( OpenExpr, p, o); }
 CloseStmt     <-
               (  "close" S+ v:Variable                              ~{ ER("expected variable after `close`"); }
@@ -139,10 +147,6 @@ LocalStmt     <- "local" S+ v:Variable                              ~{ ER("expec
               (  S* o:AssignOp S* e:AssignExpr                      ~{ ER("invalid expression after `=`"); }
                                                                      { NA( $$, o ); NA( $$, e ); }
               )?
-AssignExpr    <-
-              (  e:OpenExpr / e:ArgExpr /  e:RunStmt
-              /  e:FunctionCall /  e:Expr
-              )                                                      { $$ = e; }
 
 ArgStmt       <- "arg"
               (  a:ArgNames S* o:DefaultOp S* d:ArgDefault           { DK( ArgStmt, a, o, d); }
@@ -183,8 +187,8 @@ RunFlags      <-
               /  (f1:AsyncFlag f2:RedirFlag)                         { DK( RunFlags, f1, f2 ); }
               )
 
-FunctionStmt  <- !Keyword c:FunctionCall                             { DK( FunctionStmt, c ); SL(c); }
-FunctionCall  <- !Keyword
+FunctionStmt  <- !Keyword !Type c:FunctionCall                       { DK( FunctionStmt, c ); SL(c); }
+FunctionCall  <- !Keyword !Type
               (  i:Identifier                                        { DK( FunctionCall, i ); }
               /  v:Variable '.' i:Identifier                         { DK( FunctionCall, DK( VarDeref, v, i ) ); }
               )
@@ -331,19 +335,20 @@ Keyword       <- ( "json" / "sub"   / "if"  / "do" / "while" / "for"
               /  "async" / "redir" / "and" / "or" / "not"
               /  "push" / "pop" / "open" / "close" / "run" )
 
-Cast          <- t:Type S* "(" e:Expr                               ~{ ER("expected expression within `()`"); }
-                                          ")"                        { DK( Cast, t, e ); }
-Type          <- "Integer"                                           { DK( Integer ); }
-              /  "Arg"                                               { DK( Arg ); }
-              /  "Array"                                             { DK( Array ); }
-              /  "Boolean"                                           { DK( Boolean ); }
+Cast          <- t:Type S* "(" S* e:Expr                            ~{ ER("expected expression within `()`"); }
+                               S*        ")"                         { DK( Cast, t, e ); }
+
+Type          <- "Integer"                                           { DK( Integer    ); }
+              /  "Arg"                                               { DK( Arg        ); }
+              /  "Array"                                             { DK( Array      ); }
+              /  "Boolean"                                           { DK( Boolean    ); }
               /  "Identifier"                                        { DK( Identifier ); }
-              /  "Path"                                              { DK( Path ); }
-              /  "Object"                                            { DK( Object ); }
-              /  "Regex"                                             { DK( Regex ); }
-              /  "Stream"                                            { DK( Stream ); }
-              /  "String"                                            { DK( String ); }
-              /  "Variable"                                          { DK( Variable ); }
+              /  "Path"                                              { DK( Path       ); }
+              /  "Object"                                            { DK( Object     ); }
+              /  "Regex"                                             { DK( Regex      ); }
+              /  "Stream"                                            { DK( Stream     ); }
+              /  "String"                                            { DK( String     ); }
+              /  "Variable"                                          { DK( Variable   ); }
 
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }

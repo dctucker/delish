@@ -400,7 +400,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       val
     debug 3:
       echo variable, " += ", value.repr
-    let out_value = variable + value
+    let out_value = variable + engine.evaluate(value)
     engine.assignVariable(key.varName, out_value)
   of dkRemoveOp:
     let variable = engine.getVariable(key.varName)
@@ -551,10 +551,10 @@ proc initArguments(engine: Engine, script: DeliNode) =
 
 ### Processes ###
 
-proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
+proc doRun(engine: Engine, run: DeliNode): DeliNode =
   todo "run and consume output"
   var args = newSeq[string]()
-  for inv in pipes[0].sons:
+  for inv in run.sons[0].sons:
     args.add inv.strVal
   var p = newDeliProcess(args)
 
@@ -731,7 +731,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     echo printValue(result)
     return result
   of dkRunStmt:
-    let ran = engine.doRun(val.sons)
+    let ran = engine.doRun(val)
     return ran
   of dkExpr:
     return engine.evalExpression(val)
@@ -769,6 +769,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return engine.evalMath(val.sons[0], v1, v2)
   of dkFunctionCall:
     return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
+  of dkCast:
+    return engine.evaluate(val.sons[1]).deliCast(val.sons[0].kind)
   else:
     todo "evaluate ", val.kind
     return deliNone()
@@ -1105,9 +1107,9 @@ proc doStmt(engine: Engine, s: DeliNode) =
     for s in s.sons:
       engine.doStmt(s)
   of dkRunStmt:
-    discard engine.doRun(s.sons)
+    discard engine.doRun(s)
   else:
-    todo "run ", s.kind
+    todo "doStmt ", s.kind
 
 proc readCurrent(engine: Engine) =
   engine.current = engine.readhead.value
