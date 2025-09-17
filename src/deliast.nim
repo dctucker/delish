@@ -88,6 +88,18 @@ proc deliFalse*(): DeliNode = DKBool(false)
 proc DKStr*(strVal: string): DeliNode =
   return DeliNode(kind: dkString, strVal: strVal)
 
+proc DKStream*(intVal: int): DeliNode =
+  return DeliNode(kind: dkStream, intVal: intVal)
+
+proc DKRan*(): DeliNode =
+  return DeliNode(kind: dkRan, table: {
+    "id": DeliNode(kind: dkNone),
+    "in":  DeliNode(kind: dkNone),
+    "out": DeliNode(kind: dkNone),
+    "err": DeliNode(kind: dkNone),
+    "exit": DeliNode(kind: dkNone),
+  }.toTable)
+
 proc DKPath*(strVal: string): DeliNode =
   return DeliNode(kind: dkPath, strVal: strVal)
 

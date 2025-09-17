@@ -552,11 +552,11 @@ proc initArguments(engine: Engine, script: DeliNode) =
 ### Processes ###
 
 proc doRun(engine: Engine, run: DeliNode): DeliNode =
-  todo "run and consume output"
   var args = newSeq[string]()
   for inv in run.sons[0].sons:
     args.add inv.strVal
   var p = newDeliProcess(args)
+  result = p.node
 
   try:
     p.start
@@ -568,19 +568,10 @@ proc doRun(engine: Engine, run: DeliNode): DeliNode =
   let o = engine.addFd(p.handles[1], p.streams[1])
   let e = engine.addFd(p.handles[2], p.streams[2])
 
-  result = DeliNode(kind: dkRan, table: {
-    "id": DeliNode(kind: dkInteger, intVal: p.id),
-    "in":  DeliNode(kind: dkStream, intVal: i),
-    "out": DeliNode(kind: dkStream, intVal: o),
-    "err": DeliNode(kind: dkStream, intVal: e),
-    "exit": DeliNode(kind: dkNone),
-  }.toTable)
-
   let output = engine.fds[o].stream.readAll()
-  engine.fds[1].stream.write( output )
+  result.table["out"] = DKStr(output)
 
   p.wait
-  result.table["exit"] = DeliNode(kind: dkInteger, intVal: p.exit)
   p.close
 
 
