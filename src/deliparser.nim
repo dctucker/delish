@@ -5,6 +5,10 @@ import deliscript
 
 const deepDebug {.booldefine.}: bool = false
 
+type ErrorMsg = object
+  pos*: int
+  msg*: string
+
 type Parser* = ref object
   debug*:       int
   parsed_len*:  int
@@ -12,7 +16,7 @@ type Parser* = ref object
   script*:      DeliScript
   symbol_stack: Stack[DeliKind]
   nodes:        seq[DeliNode]
-  errors*:      seq[string]
+  errors*:      seq[ErrorMsg]
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
@@ -52,7 +56,7 @@ when deepDebug:
         echo parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr, "\27[0m"
     else:
       debug 2:
-        echo parser.indent("\27[30;1m< "), $k, " ", $pos, "\27[0m"
+        echo parser.indent("\27[30;1mx "), $k, " ", $pos, "\27[0m"
 
 proc printSons(node: DeliNode, level: int) =
   for son in node.sons:
@@ -158,20 +162,21 @@ proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   parser.getNode(p).sons.add(son)
   result = p
 
-proc setLine(parser: Parser, n: cint, l: cint): cint {.exportc.} =
+proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
   debug 3:
-    echo $n, " setLine ", $l
-  var node = parser.getNode(n)
+    echo $dk, " setLine ", $l
+  var node = parser.getNode(dk)
   node.line = parser.script.line_number(l.int)
   node.script = parser.script
-  parser.nodes[n] = node
+  parser.nodes[dk] = node
 
-proc parserError(parser: Parser, msg: cstring) {.exportc.} =
+proc parserError(parser: Parser, pos: csize_t, msg: cstring) {.exportc.} =
   let length = msg.len()
   var errmsg = newString(length)
   for i in 0 .. length - 1:
     errmsg[i] = msg[i].char
-  parser.errors.add(errmsg)
+
+  parser.errors.add(ErrorMsg(pos: pos.int, msg: errmsg))
 
 proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule
@@ -183,7 +188,7 @@ proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize
   when deepDebug:
     var e = ""
     var capture = ""
-    
+
     case event
       of peEvaluate.ord:
         e = "> "

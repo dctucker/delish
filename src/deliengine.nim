@@ -43,12 +43,16 @@ proc initFd(file: File): FileDesc =
     handle: file.getOsFileHandle(),
   )
 
-proc initFd(handle: FileHandle): FileDesc =
+proc initFd(handle: FileHandle, stream: Stream): FileDesc =
   FileDesc(
     file: nil,
-    stream: nil,
+    stream: stream,
     handle: handle,
   )
+
+proc addFd(engine: Engine, handle: FileHandle, stream: Stream): int =
+  result = cint handle
+  engine.fds[result] = initFd(handle, stream)
 
 proc retval*(engine: Engine): DeliNode =
   engine.retvals.peek()
@@ -101,10 +105,6 @@ proc newEngine*(debug: int): Engine =
 proc newEngine*(script: DeliNode, debug: int): Engine =
   result = newEngine(debug)
   result.setup(script)
-
-proc addFd(engine: Engine, fd: FileHandle): int =
-  result = cint fd
-  engine.fds[result] = initFd(fd)
 
 ### Engine ###
 
@@ -419,7 +419,12 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
 proc printArguments(engine: Engine) =
   debug 2:
     echo "\27[36m== Engine Arguments =="
-    let longest = engine.arguments.map(proc(x:Argument):int = x.long_name.len()).max()
+    if engine.arguments.len == 0:
+      stdout.write("(none)\27[0m\n")
+      return
+    let longest = engine.arguments.map(proc(x:Argument):int =
+      x.long_name.len()
+    ).max()
     for arg in engine.arguments:
       stdout.write("  ")
       if arg.short_name != "":
@@ -469,6 +474,7 @@ proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode) =
     engine.addArgument(arg)
     #engine.printArguments()
     #echo "\n"
+
 
 proc doArgStmts(engine: Engine, node: DeliNode) =
   case node.kind
@@ -556,18 +562,23 @@ proc doRun(engine: Engine, pipes: seq[DeliNode]): DeliNode =
     p.exit = e.errorCode
     engine.runtimeError(e.msg)
 
-  let i = engine.addFd(p.fds[0])
-  let o = engine.addFd(p.fds[1])
-  let e = engine.addFd(p.fds[2])
+  let i = engine.addFd(p.handles[0], p.streams[0])
+  let o = engine.addFd(p.handles[1], p.streams[1])
+  let e = engine.addFd(p.handles[2], p.streams[2])
 
   result = DeliNode(kind: dkRan, table: {
     "id": DeliNode(kind: dkInteger, intVal: p.id),
     "in":  DeliNode(kind: dkStream, intVal: i),
     "out": DeliNode(kind: dkStream, intVal: o),
     "err": DeliNode(kind: dkStream, intVal: e),
-    "exit": DeliNode(kind: dkInteger, intVal: p.exit),
+    "exit": DeliNode(kind: dkNone),
   }.toTable)
+
+  let output = engine.fds[o].stream.readAll()
+  engine.fds[1].stream.write( output )
+
   p.wait
+  result.table["exit"] = DeliNode(kind: dkInteger, intVal: p.exit)
   p.close
 
 
@@ -730,6 +741,7 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     debug 3:
       stdout.write "  dereference ", val.sons[0]
     let arg = engine.getArgument(val.sons[0])
+    #if arg.isNone(): engine.runtimeError("Undeclared argument: " & val.sons[0].argName)
     result = engine.evaluate(arg)
     debug 3:
       echo " = ", $result

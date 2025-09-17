@@ -1,6 +1,7 @@
 import std/paths
 import std/osproc
 import std/strtabs
+import std/streams
 
 type
   DeliProcess* = object
@@ -10,7 +11,8 @@ type
     args*:  seq[string]
     env*:   StringTableRef
     id*: int
-    fds*: seq[FileHandle]
+    handles*: seq[FileHandle]
+    streams*: seq[Stream]
     exit*: int
 
 proc newDeliProcess*(args: seq[string]): DeliProcess =
@@ -24,9 +26,12 @@ proc newDeliProcess*(args: seq[string]): DeliProcess =
 
 proc start*(p: var DeliProcess) =
   p.process = startProcess(p.command, p.workdir, p.args, p.env, { poUsePath, poInteractive, poEchoCmd })
-  p.fds.add p.process.inputHandle
-  p.fds.add p.process.outputHandle
-  p.fds.add p.process.errorHandle
+  p.handles.add p.process.inputHandle
+  p.handles.add p.process.outputHandle
+  p.handles.add p.process.errorHandle
+  p.streams.add p.process.inputStream
+  p.streams.add p.process.outputStream
+  p.streams.add p.process.errorStream
   p.id = p.process.processID
 
 proc close*(p: var DeliProcess) =

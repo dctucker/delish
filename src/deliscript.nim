@@ -10,6 +10,7 @@ proc line_number*(script: DeliScript, pos: int): int =
   for line, offset in script.line_numbers:
     if offset > pos:
       return line - 1
+    result = line
 
 proc col_number*(script: DeliScript, pos: int): int =
   let line = script.line_number(pos)

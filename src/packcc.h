@@ -30,7 +30,7 @@ static void pcc_error(void) {
 #define CN3(K, ...) CN(3, K, __VA_ARGS__ )
 #define NA(P,S)     nodeAppend( auxil->parser, P, S )
 #define SL(X)       setLine( auxil->parser, X, _0s )
-#define ER(MSG)     parserError( auxil->parser, MSG );
+#define ER(MSG)     parserError( auxil->parser, _0s, MSG );
 // fprintf(stderr, "Parsing error: %s\n", MSG)
 
 #define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
@@ -42,7 +42,7 @@ int createNode1(void*, int, int);
 int createNode2(void*, int, int, int);
 int createNode3(void*, int, int, int, int);
 int nodeString(void*, int, size_t, size_t, char*);
-int parserError(void*, char*);
+int parserError(void*, size_t, char*);
 int setLine(void*, int, int);
 void deli_event(void*, int, int, int, size_t, char*, size_t);
 #ifdef __cplusplus

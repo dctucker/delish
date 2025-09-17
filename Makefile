@@ -5,7 +5,7 @@ src/packcc.c: src/delish.packcc
 	cd src && packcc -o packcc delish.packcc && cd ..
 
 debug: src/packcc.c
-	nimble build -d:deepDebug --verbose
+	nimble build -f -d:deepDebug
 
 release:
 	nimble build -d:release --passC:-ffast-math --opt:size
@@ -30,6 +30,7 @@ test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
 
 .PHONY: clean
 clean:
+	nimble clean
 	rm -f tests/bin/*
 	rm -f delish
 	rm -f src/packcc.*

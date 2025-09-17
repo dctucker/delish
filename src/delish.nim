@@ -54,10 +54,18 @@ when isMainModule:
     let errline = script.getLine(row)
     stderr.write(filename, ":", row, ":", col, ": error")
     for err in parser.errors:
-      stderr.write(": ", err)
+      stderr.write(": ", err.msg)
     stderr.write("\n ", errline, "\n ")
     stderr.write(repeat(" ", col), "^\n")
     quit 1
+
+  if parser.errors.len != 0:
+    for err in parser.errors:
+      let row = script.line_number(err.pos)
+      let col = script.col_number(err.pos)
+      stderr.write(filename, ":", row, ":", col, ": ", err.msg, "\n")
+    quit 1
+
 
   var engine: Engine
   var nteract: Nteract

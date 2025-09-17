@@ -30,7 +30,7 @@
 	#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
 	#define NA(P,S)     nodeAppend( auxil->parser, P, S )
 	#define SL(X)       setLine( auxil->parser, X, _0s )
-	#define ER(MSG)     parserError( auxil->parser, MSG );
+	#define ER(MSG)     parserError( auxil->parser, _0s, MSG );
 	// fprintf(stderr, "Parsing error: %s\n", MSG)
 
 	#define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
@@ -42,7 +42,7 @@
 	int createNode2(void*, int, int, int);
 	int createNode3(void*, int, int, int, int);
 	int nodeString(void*, int, size_t, size_t, char*);
-	int parserError(void*, char*);
+	int parserError(void*, size_t, char*);
 	int setLine(void*, int, int);
 	void deli_event(void*, int, int, int, size_t, char*, size_t);
 }
@@ -71,7 +71,10 @@ VLine         <-
 Comment       <- '#' (! "\n" .)* "\n"
 Block         <-
               (  !'$'
-               ( a:Conditional / a:DoLoop / a:WhileLoop / a:ForLoop
+               ( &"if"    a:Conditional
+               / &"do"    a:DoLoop
+               / &"while" a:WhileLoop
+               / &"for"   a:ForLoop
                / a:Function
                )
               /  a:Subshell
@@ -81,8 +84,7 @@ Statement     <-
               /  a:EnvStmt      / a:IncludeStmt / a:StreamStmt
               /  a:CloseStmt    / a:RunStmt
               /  a:FunctionStmt / a:BreakStmt
-              /  a:ContinueStmt / a:ReturnStmt  / a:Push / a:Pop )  ~{ ER("invalid statement"); }
-                                                                     { DK( Statement  , a ); SL(a); }
+              /  a:ContinueStmt / a:ReturnStmt  / a:Push / a:Pop )   { DK( Statement  , a ); SL(a); }
 
 Conditional   <- "if"      S+ e:Condition                           ~{ ER("expected condition after `if`"); }
                            S+ c:Body _                               { DK( Conditional, e, c ); }
@@ -92,7 +94,7 @@ WhileLoop     <- "while"   S+ e:Condition                           ~{ ER("expec
 
 DoLoop        <- "do"      S+ c:Body                                ~{ ER("expected body after `do`"); }
                  _ "while" S+ e:Condition                           ~{ ER("expected condition after `while`"); }
-                                                                         { DK( DoLoop     , c, e ); }
+                                                                     { DK( DoLoop     , c, e ); }
 
 ForLoop       <- "for"     S+ v:Variable                            ~{ ER("expected variable after `for`"); }
                            S+ "in"                                  ~{ ER("expected `in` after variable"); }
@@ -314,10 +316,11 @@ Object        <- '['                                                 { DK( Objec
 
 Pair          <- k:Expr       S* ':' S* v:Expr                      ~{ ER("expected expression after `:`"); }
                                                                      { DK( Pair, k, v ); }
-              /  i:Identifier S* ":" S* c:Body                      ~{ ER("expected body after `:`"); }
+              /  i:Identifier S* ":" S* c:Body                      ~{ ER("expected `{` body `}` after `:`"); }
                                                                      { DK( Pair, i, c ); }
 
-Body          <- "{" _ c:Code _ "}"                                  { $$ = c; }
+Body          <- "{" _ c:Code _ "}"                                 ~{ ER("missing `}`"); }
+                                                                     { $$ = c; }
 
 JsonBlock     <- "json" S+ s:StrBlock                               ~{ ER("expected string literal block after `json`"); }
                                                                      { DK( JsonBlock, s ); }
