@@ -209,17 +209,15 @@ proc nextLen*(engine: Engine): int =
     result += 1
     head = head.next
 
-proc exit(engine: Engine, errcode: int) =
-  engine.readhead.next = nil
-  quit(errcode)
-
 proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
+  engine.readhead.next = nil
   var message = ""
   for m in msg:
     message &= m
   raise RuntimeError(msg: message)
 
 proc setupError(engine: Engine, msg: varargs[string,`$`]) =
+  engine.readhead.next = nil
   var message = ""
   for m in msg:
     message &= m
