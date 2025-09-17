@@ -1,4 +1,5 @@
 import deliast
+import std/tables
 
 proc `<=`*(o1, o2: DeliNode): bool =
   case o1.kind
@@ -48,6 +49,11 @@ proc `!=`*(o1, o2: DeliNode): bool =
     todo "!= ", o1.kind, " ", o2.kind
 
 proc `==`*(o1, o2: DeliNode): bool =
+  if o1.kind == dkNone or o2.kind == dkNone:
+    return o1.kind == o2.kind
+
+  # TODO deal with non-equivalent kinds
+  assert o1.kind == o2.kind
   case o1.kind
   of dkInteger:
     return o1.intVal == o2.intVal
@@ -57,6 +63,32 @@ proc `==`*(o1, o2: DeliNode): bool =
     return o1.boolVal == o2.boolVal
   of dkNone:
     return o2.kind == dkNone
+  of dkArg, dkArgShort, dkArgLong:
+    # should this attempt to dereference?
+    return o1.kind == o2.kind and o1.argName == o2.argName
+  of dkArray:
+    if o1.sons.len != o2.sons.len:
+      return false
+    for i in 0 .. o1.sons.len - 1:
+      if o1.sons[i] != o2.sons[i]:
+        return false
+    return true
+  of dkObject:
+    if o1.table.len != o2.table.len:
+      return false
+    for key in o1.table.keys:
+      if o1.table[key] != o2.table[key]:
+        return false
+    return true
+  of dkRegex:
+    return o1.pattern == o2.pattern
+  of dkStream:
+    return o1.intVal == o2.intVal
+  of dkIdentifier:
+    # should this attempt to dereference?
+    return o1.id == o2.id
+  of dkVariable:
+    return o1.varName == o2.varName
   else:
     todo "== ", o1.kind, " ", o2.kind
 

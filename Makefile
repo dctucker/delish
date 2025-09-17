@@ -4,10 +4,11 @@ src/packcc.h:
 src/packcc.c: src/delish.packcc
 	cd src && packcc -o packcc delish.packcc && cd ..
 
-debug: src/packcc.c
+SOURCES=$(wildcard src/*.nim)
+debug: src/packcc.c $(SOURCES)
 	nimble build -f -d:deepDebug
 
-release:
+release: debug
 	nimble build -d:release --passC:-ffast-math --opt:size
 
 strip: release
@@ -18,7 +19,6 @@ packdeli: src/packcc.c Makefile
 	cd src ; packcc -o packcc delish.packcc ; cd ..
 	gcc -Og src/packcc.c -o packdeli
 
-#SOURCES=$(wildcard src/*.nim)
 #tests/%.nim: $(SOURCES)
 
 tests/bin/%: tests/%.nim src/packcc.c src/packcc.h
