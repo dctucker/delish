@@ -27,9 +27,12 @@ proc exception_handler*(e: ref Exception, debug: int) =
 
 proc delish_main*(cmdline: seq[string] = @[]): int =
   var interactive = false
+  var command_mode = false
   var debug = 0
   var breakpoints = @[54]
-  var filename = ""
+  var mainarg = ""
+  var scriptname: string
+  var script: DeliScript
 
   initUserArguments(cmdline)
 
@@ -41,16 +44,24 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
         interactive = true
       if arg.short_name == "d":
         debug += 1
+      if arg.short_name == "c":
+        command_mode = true
     else:
       if not arg.isNone():
-        filename = arg.value.toString()
+        mainarg = arg.value.toString()
         break
 
-  if filename == "":
+  if mainarg == "":
     errlog.write("usage: delish script.deli\n")
     return 2
 
-  let script = loadScript(filename)
+  if command_mode:
+    scriptname = "-c"
+    script = makeScript(scriptname, mainarg & "\n")
+  else:
+    scriptname = mainarg
+    script = loadScript(scriptname)
+
   let parser = Parser(script: script, debug: debug)
   var parsed: DeliNode
   benchmark "parsing":
@@ -61,7 +72,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     let row = script.line_number(parser.parsed_len)
     let col = script.col_number(parser.parsed_len)
     let errline = script.getLine(row)
-    errlog.write(filename, ":", row, ":", col, ": error")
+    errlog.write(scriptname, ":", row, ":", col, ": error")
     for err in parser.errors:
       errlog.write(": ", err.msg)
     errlog.write("\n ", errline, "\n ")
@@ -72,7 +83,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     for err in parser.errors:
       let row = script.line_number(err.pos)
       let col = script.col_number(err.pos)
-      errlog.write(filename, ":", row, ":", col, ": ", err.msg, "\n")
+      errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
     return 1
 
 
