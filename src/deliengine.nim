@@ -13,6 +13,7 @@ import deliargs
 import deliscript
 import deliparser
 import deliprocess
+import delifile
 
 type DeliError* = object of CatchableError
 type RuntimeError* = ref object of DeliError
