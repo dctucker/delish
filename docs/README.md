@@ -24,7 +24,7 @@ Comments begin with the `#` character.
 Casting (converting between types) is possible for some types. The following table shows which conversions are possible:
 
 | <ins>from</ins> ➡️<br/>to ⬇️ | String<br/>&nbsp; | Identifier<br/>&nbsp; | Variable<br/>&nbsp; | Arg<br/>&nbsp;  | Path<br/>&nbsp; | Integer<br/>&nbsp; | Boolean<br/>&nbsp; | Array<br/>&nbsp; | Object<br/>&nbsp; | Regex<br/>&nbsp; | Stream<br/>&nbsp; |
-|-----------:|--------|------------|----------|------|------|---------|---------|-------|--------|-------|--------|
+|-----------:|:------:|:----------:|:--------:|:----:|:----:|:-------:|:-------:|:-----:|:------:|:-----:|:------:|
 | String     |     =  |   :ok:     |   :ok:   | :ok: | :ok: |   :ok:  |   :ok:  |  :ok: |   :ok: |  :ok: |   :ok: |
 | Identifier |   :ok: |     =      |   :ok:   | :ok: |  :x: |    :x:  |    :x:  |   :x: |    :x: |   :x: |    :x: |
 | Variable   |   :ok: |   :ok:     |     =    | :ok: |  :x: |    :x:  |    :x:  |   :x: |    :x: |   :x: |    :x: |
