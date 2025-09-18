@@ -23,19 +23,19 @@ Comments begin with the `#` character.
 
 Casting (converting between types) is possible for some types. The following table shows which conversions are possible:
 
-| dest / src | String     | Identifier | Variable   | Arg        | Path       | Integer    | Boolean    | Array      | Object     | Regex      | Stream     |
-|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|
-| String     |     -      |   id.id    | v.varName  |a.name a.val|  p.strVal  |   i.itoa   |   "true"   | a.join " " |  "[k: v]"  |  r.strVal  |   s.name   |
-| Identifier | DKIdent(s) |     -      |  DKId(v)   |DKId(a.name)|     X      |     X      |     X      |     X      |     X      |     X      |     X      |
-| Variable   |  DKVar(s)  |  DKVar(id) |     -      | Var(a.name)|     X      |     X      |     X      |     X      |     X      |     X      |     X      |
-| Arg        | -s / --str | -id / --id | --varName  |     -      |     X      |     X      |     X      |     X      |     X      |     X      |     X      |
-| Path       |    ./s     |   ./id     |     X      |  ./a.name  |     -      |    ./i     |   /bin/b   | a.join "/" |     X      |     X      | s.filename |
-| Integer    |   s.int    |     X      |     X      |     X      |     X      |     -      |   0 / 1    |   a.len    |  keys.len  |     X      |  s.intVal  |
-| Boolean    | s.len > 0  |  id.exists | ! v.isNone | ! a.isNone |  p.exists  |   i != 0   |     -      | a.len > 0  |keys.len > 0|     X      |  s.exists  |
-| Array      |  s.split   |   @[id]    |    @[v]    |    @[a]    |  p.split   |    @[i]    | @[] / @[b] |     -      | @[@[k, v]] |  r.rules   |     X      |
-| Object     |  s.parse   | [name:val] | [name:val] | [name:val] |     X      | ["int": i] |["bool": b] |[0:x,1:y...]|     -      |     X      | intval:name|
-| Regex      |  s.parse   |     X      |     X      |     X      |     X      |     X      |     X      | /(x)|(y)/  |     X      |     -      |     X      |
-| Stream     |   buffer   |     X      |     X      |     X      |     X      |   fds[i]   |     X      |   buffer   |     X      |     X      |     -      |
+| <ins>from</ins> ➡️<br/>to ⬇️ | String<br/>&nbsp; | Identifier<br/>&nbsp; | Variable<br/>&nbsp; | Arg<br/>&nbsp;  | Path<br/>&nbsp; | Integer<br/>&nbsp; | Boolean<br/>&nbsp; | Array<br/>&nbsp; | Object<br/>&nbsp; | Regex<br/>&nbsp; | Stream<br/>&nbsp; |
+|-----------:|--------|------------|----------|------|------|---------|---------|-------|--------|-------|--------|
+| String     |     -  |   :ok:     |   :ok:   | :ok: | :ok: |   :ok:  |   :ok:  |  :ok: |   :ok: |  :ok: |   :ok: |
+| Identifier |   :ok: |     -      |   :ok:   | :ok: |  :x: |    :x:  |    :x:  |   :x: |    :x: |   :x: |    :x: |
+| Variable   |   :ok: |   :ok:     |     -    | :ok: |  :x: |    :x:  |    :x:  |   :x: |    :x: |   :x: |    :x: |
+| Arg        |   :ok: |   :ok:     |   :ok:   |   -  |  :x: |    :x:  |    :x:  |   :x: |    :x: |   :x: |    :x: |
+| Path       |   :ok: |   :ok:     |    :x:   | :ok: |   -  |   :ok:  |   :ok:  |  :ok: |    :x: |   :x: |   :ok: |
+| Integer    |   :ok: |    :x:     |    :x:   |  :x: |  :x: |     -   |   :ok:  |  :ok: |   :ok: |   :x: |   :ok: |
+| Boolean    |   :ok: |   :ok:     |   :ok:   | :ok: | :ok: |   :ok:  |     -   |  :ok: |   :ok: |   :x: |   :ok: |
+| Array      |   :ok: |   :ok:     |   :ok:   | :ok: | :ok: |   :ok:  |   :ok:  |    -  |   :ok: |  :ok: |    :x: |
+| Object     |   :ok: |   :ok:     |   :ok:   | :ok: |  :x: |   :ok:  |   :ok:  |  :ok: |     -  |   :x: |   :ok: |
+| Regex      |   :ok: |    :x:     |    :x:   |  :x: |  :x: |    :x:  |    :x:  |  :ok: |    :x: |    -  |    :x: |
+| Stream     |   :ok: |    :x:     |    :x:   |  :x: |  :x: |   :ok:  |    :x:  |  :ok: |    :x: |   :x: |     -  |
 
 ## Keywords
 
