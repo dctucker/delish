@@ -3,19 +3,20 @@ import std/strutils
 import std/tables
 import deliast
 
+proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
+  let k1 = ($kind)[2..^1]
+  let k2 = ($node.kind)[2..^1]
+  return newException(ValueError, "incompatible type: " & k1 & "(" & k2 & ")")
+
 proc toIdentifier*(src: DeliNode): DeliNode =
   result = case src.kind
-  of dkIdentifier:
-    DeliNode(kind: dkIdentifier, id: src.id)
-  of dkString:
-    DeliNode(kind: dkIdentifier, id: src.strVal)
-  of dkVariable:
-    DeliNode(kind: dkIdentifier, id: src.varName)
-  of dkArg, dkArgShort, dkArgLong:
-    # TODO check this
-    DeliNode(kind: dkIdentifier, id: src.argName)
-  else:
-    raise newException(ValueError, "incompatible type: Identifier(" & $src.kind & ")")
+  of dkIdentifier: DeliNode(kind: dkIdentifier, id: src.id)
+  of dkString:     DeliNode(kind: dkIdentifier, id: src.strVal)
+  of dkVariable:   DeliNode(kind: dkIdentifier, id: src.varName)
+  of dkArg,
+     dkArgShort,
+     dkArgLong:    DeliNode(kind: dkIdentifier, id: src.argName) # TODO check this
+  else: raise Incompatible(dkIdentifier, src)
 
 proc toVariable*(src: DeliNode): DeliNode =
   result = case src.kind
@@ -26,25 +27,25 @@ proc toVariable*(src: DeliNode): DeliNode =
      dkArg, dkArgShort, dkArgLong:
     todo "toVariable ", src.kind
     deliNone()
-  else:
-    raise newException(ValueError, "incompatible type: Variable(" & $src.kind & ")")
+  else: raise Incompatible(dkVariable, src)
 
 proc toBoolean*(src: DeliNode): DeliNode =
   result = case src.kind
   of dkString,
      dkStrLiteral,
      dkStrBlock:    DKBool( src.strVal.len > 0 )
-  #of dkIdentifier: # TODO check for existance via engine
-  #of dkVariable: # TODO check dereference is not None
-  #of dkArg, dkArgShort, dkArgLong: # TODO check engine has variables
+  of dkIdentifier:  DKLazy(DKNotNone(src)) # TODO check for existance via engine
+  of dkVariable:    DKLazy(DKNotNone(src)) # TODO check dereference is not None
+  of dkArg,
+     dkArgShort,
+     dkArgLong:     DKLazy(DKNotNone(src)) # TODO check engine has variables
   of dkPath:        DKBool(fileExists(src.strVal))
   of dkInteger:     DKBool( src.intVal != 0 )
   of dkBoolean:     DKBool( src.boolVal )
   of dkArray:       DKBool( src.sons.len > 0 )
   of dkObject:      DKBool( src.table.len > 0 )
-  of dkRegex:
-    raise newException(ValueError, "incompatible type: Boolean(Regex)")
-  #of dkStream:      DKBool( src.intVal in engine.fds )
+  of dkRegex:       raise Incompatible(dkBoolean, src)
+  of dkStream:      DKLazy(DKNotNone(src)) # TODO src.intVal in engine.fds
   of dkNone:        deliFalse()
   else:
     todo "toBoolean ", src.kind
@@ -58,8 +59,7 @@ proc toInteger*(src: DeliNode): DeliNode =
      dkVariable,
      dkArg, dkArgLong, dkArgShort,
      dkPath,
-     dkRegex:
-    raise newException(ValueError, "incompatible type: Integer(" & $src.kind & ")")
+     dkRegex:      raise Incompatible(dkInteger, src)
   #of dkString:  DKInt( int(src.strVal) )
   else:
     todo "toInteger ", src.kind
@@ -80,8 +80,7 @@ proc toPath*(src: DeliNode): DeliNode =
      dkStream:
     todo "toPath ", src.kind
     deliNone()
-  else:
-    raise newException(ValueError, "incompatible type: Path(" & $src.kind & ")")
+  else: raise Incompatible(dkPath, src)
 
 proc toArg*(src: DeliNode): DeliNode =
   result = case src.kind
@@ -91,8 +90,7 @@ proc toArg*(src: DeliNode): DeliNode =
   of dkVariable:   DKArg(src.varName)
   of dkArgShort:   DeliNode(kind: dkArgShort, argName: src.argName)
   of dkArgLong:    DeliNode(kind: dkArgLong, argName: src.argName)
-  else:
-    raise newException(ValueError, "incompatible type: Path(" & $src.kind & ")")
+  else: raise Incompatible(dkPath, src)
 
 proc toArray*(src: DeliNode): DeliNode =
   result = case src.kind
@@ -123,10 +121,8 @@ proc toArray*(src: DeliNode): DeliNode =
      dkArgShort,
      dkArgLong,
      dkInteger:     DeliNode(kind: dkArray, sons: @[src])
-  of dkStream:      raise newException(ValueError, "incompatible type: Array(Stream)")
-  else:
-    todo "toArray ", src.kind
-    deliNone()
+  #of dkRegex:       DeliNode(kind: dkArray, sons: src.pattern.rules)
+  else: raise Incompatible(dkArray, src)
 
 proc toObject*(src: DeliNode): DeliNode =
   result = case src.kind
@@ -143,14 +139,13 @@ proc toObject*(src: DeliNode): DeliNode =
       i += 1
     obj
   of dkObject:     DeliNode(kind: dkObject, table: src.table) # explicit copy needed?
-  of dkIdentifier: DeliObject([(src.id, deliNone())]) # TODO evaluate value
-  of dkVariable:   DeliObject([(src.varName, deliNone())]) # TODO evaluate value
-  of dkArg:        DeliObject([(src.argName, deliNone())]) # TODO evaluate value
+  of dkIdentifier: DeliObject([(src.id     , DKLazy(src))]) # TODO evaluate value
+  of dkVariable:   DeliObject([(src.varName, DKLazy(src))]) # TODO evaluate value
+  of dkArg:        DeliObject([(src.argName, DKLazy(src))]) # TODO evaluate value
   of dkInteger:    DeliObject([("int", DKInt(src.intVal))])
   of dkBoolean:    DeliObject([("bool", DKBool(src.boolVal))])
   of dkStream:     DeliObject([($src.intval, deliNone())])
-  else:
-    raise newException(ValueError, "incompatible type: Regex(" & $src.kind & ")")
+  else: raise Incompatible(dkObject, src)
 
 proc toRegex*(src: DeliNode): DeliNode =
   result = case src.kind
@@ -159,8 +154,7 @@ proc toRegex*(src: DeliNode): DeliNode =
   of dkString, dkStrLiteral, dkStrBlock, dkArray:
     todo "toRegex ", src.kind
     deliNone()
-  else:
-    raise newException(ValueError, "incompatible type: Regex(" & $src.kind & ")")
+  else: raise Incompatible(dkRegex, src)
 
 proc toStream*(src: DeliNode): DeliNode =
   result = case src.kind
@@ -169,8 +163,7 @@ proc toStream*(src: DeliNode): DeliNode =
   of dkArray, dkString, dkStrLiteral, dkStrBlock:
     todo "toStream ", src.kind
     deliNone()
-  else:
-    raise newException(ValueError, "incompatible type: Stream(" & $src.kind & ")")
+  else: raise Incompatible(dkStream, src)
 
 proc toKind*(src: DeliNode, dest: DeliKind): DeliNode =
   result = case dest

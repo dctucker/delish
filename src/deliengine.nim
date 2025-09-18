@@ -304,14 +304,6 @@ proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   locals[name.varName] = engine.evaluate(default)
   engine.locals.push(locals)
 
-#proc deliLocalAssign(variable: string, value: DeliNode, line: int): DeliNode =
-#  result = DK(dkVariableStmt,
-#    DKVar(variable),
-#    DK(dkAssignOp),
-#    DK(dkLazy, value)
-#  )
-#  result.line = line
-
 
 ### Variables ###
 

@@ -107,6 +107,14 @@ proc DKBool*(boolVal: bool): DeliNode =
 proc deliTrue* (): DeliNode = DKBool(true)
 proc deliFalse*(): DeliNode = DKBool(false)
 
+proc DKLazy*(node: DeliNode): DeliNode =
+  return DeliNode(kind: dkLazy, sons: @[node])
+
+proc DKNotNone*(node: DeliNode): DeliNode =
+  return DeliNode(kind: dkBoolExpr, sons: @[
+    node, DeliNode(kind: dkCompNe), deliNone()
+  ])
+
 proc DKStr*(strVal: string): DeliNode =
   return DeliNode(kind: dkString, strVal: strVal)
 

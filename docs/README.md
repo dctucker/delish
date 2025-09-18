@@ -19,6 +19,24 @@ Comments begin with the `#` character.
 | Array      | Zero-indexed collection             |
 | Object     | Key/value pair collection           |
 
+### Casts
+
+Casting (converting between types) is possible for some types. The following table shows which conversions are possible:
+
+| dest / src | String     | Identifier | Variable   | Arg        | Path       | Integer    | Boolean    | Array      | Object     | Regex      | Stream     |
+|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|
+| String     |     -      |   id.id    | v.varName  |a.name a.val|  p.strVal  |   i.itoa   |   "true"   | a.join " " |  "[k: v]"  |  r.strVal  |   s.name   |
+| Identifier | DKIdent(s) |     -      |  DKId(v)   |DKId(a.name)|     X      |     X      |     X      |     X      |     X      |     X      |     X      |
+| Variable   |  DKVar(s)  |  DKVar(id) |     -      | Var(a.name)|     X      |     X      |     X      |     X      |     X      |     X      |     X      |
+| Arg        | -s / --str | -id / --id | --varName  |     -      |     X      |     X      |     X      |     X      |     X      |     X      |     X      |
+| Path       |    ./s     |   ./id     |     X      |  ./a.name  |     -      |    ./i     |   /bin/b   | a.join "/" |     X      |     X      | s.filename |
+| Integer    |   s.int    |     X      |     X      |     X      |     X      |     -      |   0 / 1    |   a.len    |  keys.len  |     X      |  s.intVal  |
+| Boolean    | s.len > 0  |  id.exists | ! v.isNone | ! a.isNone |  p.exists  |   i != 0   |     -      | a.len > 0  |keys.len > 0|     X      |  s.exists  |
+| Array      |  s.split   |   @[id]    |    @[v]    |    @[a]    |  p.split   |    @[i]    | @[] / @[b] |     -      | @[@[k, v]] |  r.rules   |     X      |
+| Object     |  s.parse   | [name:val] | [name:val] | [name:val] |     X      | ["int": i] |["bool": b] |[0:x,1:y...]|     -      |     X      | intval:name|
+| Regex      |  s.parse   |     X      |     X      |     X      |     X      |     X      |     X      | /(x)|(y)/  |     X      |     -      |     X      |
+| Stream     |   buffer   |     X      |     X      |     X      |     X      |   fds[i]   |     X      |   buffer   |     X      |     X      |     -      |
+
 ## Keywords
 
 These are reserved words that cannot be used as a function name.
