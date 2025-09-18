@@ -10,8 +10,8 @@ import ../src/deliops
 # | String     |     -      |   id.id    | v.varName  |a.name a.val|  p.strVal  |   i.itoa   |   "true"   | a.join " " |  "[k: v]"  |  r.strVal  |   s.name   |
 # | Identifier | DKIdent(s) |     -      |  DKId(v)   |DKId(a.name)|     X      |     X      |     X      |     X      |     X      |     X      |     X      |
 # | Variable   |  DKVar(s)  |  DKVar(id) |     -      | Var(a.name)|     X      |     X      |     X      |     X      |     X      |     X      |     X      |
-# | Arg        | -s / --str | -id / --id | --varName  |     -      |     X      |     X      |   /bin/b   |     X      |     X      |     X      |     X      |
-# | Path       |    ./s     |   ./id     |     X      |  ./a.name  |     -      |    ./i     |     X      | a.join "/" |     X      |     X      | s.filename |
+# | Arg        | -s / --str | -id / --id | --varName  |     -      |     X      |     X      |     X      |     X      |     X      |     X      |     X      |
+# | Path       |    ./s     |   ./id     |     X      |  ./a.name  |     -      |    ./i     |   /bin/b   | a.join "/" |     X      |     X      | s.filename |
 # | Integer    |   s.int    |     X      |     X      |     X      |     X      |     -      |   0 / 1    |   a.len    |  keys.len  |     X      |  s.intVal  |
 # | Boolean    | s.len > 0  |  id.exists | ! v.isNone | ! a.isNone |  p.exists  |   i != 0   |     -      | a.len > 0  |keys.len > 0|     X      |  s.exists  |
 # | Array      |  s.split   |   @[id]    |    @[v]    |    @[a]    |  p.split   |    @[i]    | @[] / @[b] |     -      | @[@[k, v]] |  r.rules   |     X      |
@@ -20,30 +20,71 @@ import ../src/deliops
 # | Stream     |   buffer   |     X      |     X      |     X      |     X      |   fds[i]   |     X      |   buffer   |     X      |     X      |     -      |
 
 suite "cast":
-  test "identity":
-    let ing = DKStr("Reuben")
-    let num = DKInt(1)
-    let arg = DeliNode(kind: dkArgLong, argName: "mustard")
-    let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
-    let boo = DKTrue
-    let ide = DeliNode(kind: dkIdentifier, id: "break")
-    let pat = DeliNode(kind: dkPath, strVal: "/dev/random")
-    let obj = DeliNode(kind: dkObject, table: {
-      "onions": DKStr("fresh"),
-    }.toTable)
-    let reg = DeliNode(kind: dkRegex, pattern: "[A-Za-z0-9]")
-    let eam = DeliNode(kind: dkStream, intVal: 1)
-    let ari = DeliNode(kind: dkVariable, varName: "cheese")
+  let ing = DKStr("Reuben")
+  let num = DKInt(1)
+  let arg = DeliNode(kind: dkArgLong, argName: "mustard")
+  let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
+  let boo = DKTrue
+  let ide = DeliNode(kind: dkIdentifier, id: "bread")
+  let pat = DeliNode(kind: dkPath, strVal: "/dev/random")
+  let obj = DeliNode(kind: dkObject, table: {"onions": DKStr("fresh")}.toTable)
+  let reg = DeliNode(kind: dkRegex, pattern: "[A-Za-z0-9]")
+  let eam = DeliNode(kind: dkStream, intVal: 1)
+  let ari = DeliNode(kind: dkVariable, varName: "cheese")
 
+  test "cast to same type is equal":
     check:
-      num.toKind(dkInteger)    == num
-      arg.toKind(dkArg)        == arg
-      arr.toKind(dkArray)      == arr
-      boo.toKind(dkBoolean)    == boo
       ide.toKind(dkIdentifier) == ide
+      ari.toKind(dkVariable)   == ari
+      arg.toKind(dkArg)        == arg
       pat.toKind(dkPath)       == pat
+      num.toKind(dkInteger)    == num
+      boo.toKind(dkBoolean)    == boo
+      arr.toKind(dkArray)      == arr
       obj.toKind(dkObject)     == obj
       reg.toKind(dkRegex)      == reg
       eam.toKind(dkStream)     == eam
-      ari.toKind(dkVariable)   == ari
 
+  test "incompatible cast raises ValueError":
+    for dk in @[dkInteger, dkRegex, dkStream]:
+      expect ValueError:
+        discard ide.toKind(dk)
+
+    for dk in @[dkPath, dkInteger, dkRegex, dkStream]:
+      expect ValueError:
+        discard ari.toKind(dk)
+
+    for dk in @[dkInteger, dkRegex, dkStream]:
+      expect ValueError:
+        discard arg.toKind(dk)
+
+    for dk in @[dkIdentifier, dkVariable, dkArg, dkInteger, dkStream,
+        dkObject, # TODO implement [dir: p.dirname, base: p.basename]
+        dkRegex,  # TODO support globs
+    ]:
+      expect ValueError:
+        discard pat.toKind(dk)
+
+    for dk in @[dkIdentifier, dkVariable, dkArg, dkRegex]:
+      expect ValueError:
+        discard num.toKind(dk)
+
+    for dk in @[dkIdentifier, dkVariable, dkArg, dkRegex, dkStream]:
+      expect ValueError:
+        discard boo.toKind(dk)
+
+    for dk in @[dkIdentifier, dkVariable, dkArg]:
+      expect ValueError:
+        discard arr.toKind(dk)
+
+    for dk in @[dkIdentifier, dkVariable, dkArg, dkRegex, dkStream, dkPath]: # TODO inverse of pat->obj
+      expect ValueError:
+        discard obj.toKind(dk)
+
+    for dk in @[dkIdentifier, dkVariable, dkArg, dkPath, dkInteger, dkBoolean, dkObject, dkStream]:
+      expect ValueError:
+        discard reg.toKind(dk)
+
+    for dk in @[dkIdentifier, dkVariable, dkArg, dkArray, dkRegex]:
+      expect ValueError:
+        discard eam.toKind(dk)
