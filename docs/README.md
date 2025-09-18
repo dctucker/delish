@@ -37,6 +37,22 @@ Casting (converting between types) is possible for some types. The following tab
 | Regex      |   :ok: |    :x:     |    :x:   |  :x: |  :x: |    :x:  |    :x:  |  :ok: |    :x: |    =  |    :x: |
 | Stream     |   :ok: |    :x:     |    :x:   |  :x: |  :x: |   :ok:  |    :x:  |  :ok: |    :x: |   :x: |     =  |
 
+As shown in the table, anything can be converted to/from a `String`, while `Regex` is much more selective. Here are some details about how casts are expected to work:
+
+- A cast where the type is the same as the input will return the input itself as a copy.
+- `String` to `Array` depends on the type of string. Multi-line strings are split into lines, and single-line strings are split by `IFS`.
+- `Boolean` conversions should be intuitive, allowing for safe lazy evaluation of an undefined `Identifier`, returning `false` when a `Path` does not exist or when an `Array` (or other collection) is empty. All non-zero `Integer` values are `true`.
+- Converting an `Array` into a `Regex` will yield a regular expression that can match any of the values in the collection.
+- `Stream` and `Integer` are interchangeable since streams are an abstraction of numbered file descriptors.
+- Attempting to cast an incompatible type will result in an error.
+
+Casts are performed by using the type name as a function:
+
+```
+$path = Path("/usr/local/bin")
+$str = String($path)
+```
+
 ## Keywords
 
 These are reserved words that cannot be used as a function name.
