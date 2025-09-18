@@ -238,7 +238,7 @@ proc `$`*(node: DeliNode): string =
   if value == "":
     return ($(node.kind)).substr(2)
   else:
-    return ($(node.kind)).substr(2) & " " & value
+    return ($(node.kind)).substr(2) & ":" & value
 
 proc todo*(msg: varargs[string, `$`]) =
   errlog.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")

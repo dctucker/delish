@@ -280,8 +280,8 @@ proc pushLocals(engine: Engine) =
   var arguments: seq[Argument] = @[]
   engine.argstack.push(arguments)
   engine.retvals.push(deliNone())
-  debug 3:
-    echo "  push locals ", engine.locals
+  #debug 3:
+  #  echo "  push locals ", engine.locals
 
 proc setupPush(engine: Engine, line: int, table: DeliTable) =
   var inner = DKInner(line, DK(dkPush))
@@ -290,12 +290,14 @@ proc setupPush(engine: Engine, line: int, table: DeliTable) =
   engine.insertStmt(inner)
 
 proc popLocals(engine: Engine) =
+  debug 3:
+    echo "  pop locals before ", engine.locals, ", retvals ", engine.retvals
   discard engine.locals.pop()
   discard engine.argstack.pop()
   engine.assignLocal(".returned", engine.retvals.pop())
   engine.argnum = 1
   debug 3:
-    echo "  pop locals ", engine.locals
+    echo "  pop locals after ", engine.locals, ", retvals ", engine.retvals
 
 proc setupPop(engine: Engine, line: int) =
   engine.insertStmt( DKInner(line, DK(dkPop)) )
@@ -373,7 +375,15 @@ proc assignVariable(engine: Engine, key: string, value: DeliNode) =
   else:
     engine.variables[key] = value
   debug 3:
-    echo "$", key, " = ", value.kind, " ", printValue(value)
+    echo "$", key, " = ", $value
+
+proc varAssignLazy(engine: Engine, key: DeliNode, op: DeliNode, value: DeliNode) =
+  if value.kind == dkLazy:
+    engine.insertStmt( DKInner(engine.current.line,
+       DK( dkVariableStmt, key, op, value.sons[0])
+    ))
+  else:
+    engine.assignVariable(key.varName, value)
 
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
   let val = if expr.kind == dkExpr:
@@ -383,8 +393,9 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
   case op.kind
   of dkAssignOp:
     let value = engine.evaluate(val)
-    engine.assignVariable(key.varName, value)
-    #echo value
+    engine.varAssignLazy(key, op, value)
+    debug 3:
+      echo variable, " = " & value.repr
   of dkAppendOp:
     let variable = engine.getVariable(key.varName)
     let value = if val.kind == dkVarDeref:
@@ -393,8 +404,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       val
     debug 3:
       echo variable, " += ", value.repr
-    let out_value = variable + engine.evaluate(value)
-    engine.assignVariable(key.varName, out_value)
+    engine.varAssignLazy(key, op, variable + value)
   of dkRemoveOp:
     let variable = engine.getVariable(key.varName)
     let value = if val.kind == dkVarDeref:
@@ -578,7 +588,7 @@ proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
     echo "define ", engine.functions
 
 proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
-  result = DK( dkLazy, deliNone() )
+  result = DK( dkLazy, DKVar(".returned") )
   var code: DeliNode
 
   case fun.kind
@@ -605,11 +615,9 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
   for s in code.sons:
     engine.insertStmt(s)
 
+  let end_line = -code.sons[^1].line - 1
   jump_return.node = engine.writehead
-  engine.setupPop( -code.sons[^1].line - 1 )
-  #engine.insertStmt( DKInner(call.line,
-  #  DK( dkVariableStmt, counter, DK(dkAssignOp), result ),
-  #)
+  engine.setupPop(end_line)
 
   engine.debugNext()
 
@@ -801,13 +809,18 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
 
 proc doStream(engine: Engine, nodes: seq[DeliNode]) =
   var fd: FileDesc
+  #for node in nodes: todo "doStream " & $node.kind
   let first_node = nodes[0]
   if first_node.kind == dkVariable:
     let num = engine.variables[first_node.varName].getStreamNumber()
     if engine.fds.contains(num):
       fd = engine.fds[num]
+    else:
+      engine.runtimeError("stream " & $num & " does not exist")
   elif first_node.kind == dkStream:
     fd = engine.evaluateStream(first_node)
+  else:
+    todo "doStream first_node " & $first_node.kind
 
   var str: string
   let last_node = nodes[^1]
@@ -829,9 +842,13 @@ proc doStream(engine: Engine, nodes: seq[DeliNode]) =
           break
       fd.file.flushFile()
     else:
+      #todo "doStream last_node " & $eval.kind
       str = eval.toString()
       #echo str.repr
-      fd.file.write(str, "\n")
+      fd.file.write(str)
+      #if i < last_node.sons.len - 1:
+      #  fd.file.write(" ")
+  fd.file.write("\n")
 
 proc close(fd: FileDesc) =
   fd.stream.flush
@@ -1072,11 +1089,11 @@ proc doStmt(engine: Engine, s: DeliNode) =
     var to = engine.getVariable(".break")
     engine.setHeads(to.node)
   of dkReturnStmt:
-    var to = engine.getVariable(".return")
+    var head_to = engine.getVariable(".return")
     if nsons > 0:
       discard engine.retvals.pop()
       engine.retvals.push( engine.evaluate(s.sons[0]) )
-    engine.setHeads(to.node)
+    engine.setHeads(head_to.node)
   of dkPush:
     engine.pushLocals()
   of dkPop:

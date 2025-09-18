@@ -228,7 +228,7 @@ Expr          <-
               /  s:Integer / s:Boolean
               /  s:BoolExpr
               /  s:Path     / s:JsonBlock  / s:Stream
-              /  s:Cast
+              /  s:Cast     / s:FunctionCall
               )                                                      { DK( Expr, s); }
 
 IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
@@ -322,10 +322,16 @@ Object        <- '['                                                 { DK( Objec
                     S*       ','? _
               )+ ']'
 
-Pair          <- k:Expr       S* ':' S* v:Expr                      ~{ ER("expected expression after `:`"); }
-                                                                     { DK( Pair, k, v ); }
-              /  i:Identifier S* ":" S* c:Body                      ~{ ER("expected `{` body `}` after `:`"); }
+Pair          <-
+                 i:Identifier S* ":" S* c:Body                      ~{ ER("expected `{` body `}` after `:`"); }
                                                                      { DK( Pair, i, c ); }
+              /
+                 k:KeyExpr    S* ':' S* v:Expr                      ~{ ER("expected expression after `:`"); }
+                                                                     { DK( Pair, k, v ); }
+KeyExpr       <-
+              (
+                 k:Variable / k:StrLiteral / k:Integer
+              )                                                      { $$ = k; }
 
 Body          <- "{" _ c:Code _ "}"                                 ~{ ER("missing `}`"); }
                                                                      { $$ = c; }
