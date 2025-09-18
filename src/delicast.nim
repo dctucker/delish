@@ -39,7 +39,7 @@ proc toBoolean*(src: DeliNode): DeliNode =
   of dkArg,
      dkArgShort,
      dkArgLong:     DKLazy(DKNotNone(src)) # TODO check engine has variables
-  of dkPath:        DKBool(fileExists(src.strVal))
+  of dkPath:        DKBool(src.strVal.fileExists or src.strVal.dirExists)
   of dkInteger:     DKBool( src.intVal != 0 )
   of dkBoolean:     DKBool( src.boolVal )
   of dkArray:       DKBool( src.sons.len > 0 )

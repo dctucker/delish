@@ -21,7 +21,7 @@ packdeli: src/packcc.c Makefile
 
 #tests/%.nim: $(SOURCES)
 
-tests/bin/%: tests/%.nim src/packcc.c src/packcc.h
+tests/bin/%: tests/%.nim src/packcc.c src/packcc.h $(SOURCES)
 	nim c -o=tests/bin/ $<
 
 test: debug

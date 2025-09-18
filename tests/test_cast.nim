@@ -21,16 +21,33 @@ import ../src/deliops
 
 suite "cast":
   let ing = DKStr("Reuben")
-  let num = DKInt(1)
-  let arg = DeliNode(kind: dkArgLong, argName: "mustard")
-  let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
-  let boo = DKTrue
   let ide = DeliNode(kind: dkIdentifier, id: "bread")
-  let pat = DeliNode(kind: dkPath, strVal: "/dev/random")
+  let ari = DeliNode(kind: dkVariable, varName: "cheese")
+  let arg = DeliNode(kind: dkArgLong, argName: "mustard")
+  let pat = DeliNode(kind: dkPath, strVal: "./olives")
+  let num = DKInt(1)
+  let boo = DKTrue
+  let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
   let obj = DeliNode(kind: dkObject, table: {"onions": DKStr("fresh")}.toTable)
   let reg = DeliNode(kind: dkRegex, pattern: "[A-Za-z0-9]")
   let eam = DeliNode(kind: dkStream, intVal: 1)
-  let ari = DeliNode(kind: dkVariable, varName: "cheese")
+
+  test "cast to boolean":
+    for node in @[ing, num, arr, obj]: # these evaluate to true
+      check node.toKind(dkBoolean).boolVal
+
+    for node in @[pat]: # path probably does not exist
+      check not node.toKind(dkBoolean).boolVal
+
+    for node in @[ari, ide, arg, eam]: # depends on engine
+      check node.toKind(dkBoolean).kind == dkLazy
+
+    check:
+      not DKStr("").toKind(dkBoolean).boolVal
+      not DKInt(0).toKind(dkBoolean).boolVal
+      not DK(dkArray).toKind(dkBoolean).boolVal
+      not DK(dkObject).toKind(dkBoolean).boolVal
+      DKPath(".").toKind(dkBoolean).boolVal
 
   test "cast to same type is equal":
     check:
