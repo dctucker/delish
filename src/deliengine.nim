@@ -359,6 +359,14 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
         result = result.sons[idx]
       else:
         result = deliNone()
+    of dkPath:
+      if son.kind == dkIdentifier:
+        result = result.pathFunction(son.id)
+      else:
+        result = deliNone()
+      if result.kind == dkNone:
+        todo "evalVarDeref ", result.kind, " using ", $son
+      #result = PathObject.
     else:
       todo "evalVarDeref ", result.kind, " using ", son.kind
 
@@ -395,7 +403,7 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
     let value = engine.evaluate(val)
     engine.varAssignLazy(key, op, value)
     debug 3:
-      echo variable, " = " & value.repr
+      echo key, " = " & value.repr
   of dkAppendOp:
     let variable = engine.getVariable(key.varName)
     let value = if val.kind == dkVarDeref:

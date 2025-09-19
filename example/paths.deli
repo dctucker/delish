@@ -1,5 +1,12 @@
 #!/usr/bin/deli
 
-$path = ./log
-$path += Path(".txt")
-out $path
+$file = ./example/paths.deli
+if $file.f {
+  out $file, " is a regular file"
+}
+if $file.d {
+  out $file, " is a directory"
+}
+if not $file.b {
+  out $file, " is not a block file"
+}
