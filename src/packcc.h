@@ -30,6 +30,7 @@ static void pcc_error(void) {
 #define CN3(K, ...) CN(3, K, __VA_ARGS__ )
 #define NA(P,S)     nodeAppend( auxil->parser, P, S )
 #define SL(X)       setLine( auxil->parser, X, _0s )
+#define SL1(X)      setLine( auxil->parser, X, _0e )
 #define ER(MSG)     parserError( auxil->parser, _0s, MSG );
 // fprintf(stderr, "Parsing error: %s\n", MSG)
 

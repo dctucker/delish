@@ -24,6 +24,13 @@ proc `<`(t1, t2: Timespec): bool =
   let ds = t1.tv_sec - t2.tv_sec
   return (ds.int < 0) or (ds.int == 0 and t1.tv_nsec < t2.tv_nsec)
 
+proc myUID(): Gid =
+  {.cast(noSideEffect).}:
+    return getgid()
+proc myGID(): Gid =
+  {.cast(noSideEffect).}:
+    return getgid()
+
 # functions that perform POSIX `test` command checks
 proc isBlock(filename: string): bool = filename.has(S_IFBLK)   # -b FILE #FILE exists and is block special
 proc isChar(filename: string): bool  = filename.has(S_IFCHR)   # -c FILE #FILE exists and is character special
@@ -35,7 +42,7 @@ proc isRegular(filename: string): bool = filename.has(S_IFREG) # -f FILE #FILE e
 proc isSetGID(filename: string): bool = filename.has(S_ISGID)  # -g FILE #FILE exists and is set-group-ID
 proc isOwnGroup(filename: string): bool =                      # -G FILE #FILE exists and is owned by the effective group ID
   var st = Stat()
-  return stat(filename, st) == 0 and st.st_gid == getgid()
+  return stat(filename, st) == 0 and st.st_gid == myGID()
 proc isSticky(filename: string): bool = filename.has(S_ISVTX)  # -k FILE #FILE exists and has its sticky bit set
 proc isLink(filename: string): bool   = filename.has(S_IFLNK)  # -L FILE #FILE exists and is a symbolic link
 proc isUnread(filename: string): bool =
@@ -43,14 +50,14 @@ proc isUnread(filename: string): bool =
   return stat(filename, st) == 0 and st.st_mtim > st.st_atim   # -N FILE #FILE exists and has been modified since it was last read
 proc isOwnUser(filename: string): bool =                       # -O FILE #FILE exists and is owned by the effective user ID
   var st = Stat()
-  return stat(filename, st) == 0 and st.st_uid == getuid()
+  return stat(filename, st) == 0 and st.st_uid == myUID()
 proc isPipe(filename: string): bool  = filename.has(S_IFIFO)   # -p FILE #FILE exists and is a named pipe
 proc isReadable(filename: string): bool =                      # -r FILE #FILE exists and the user has read access
   var st = Stat()
   return stat(filename, st) == 0 and (
     (st.st_mode.has(S_IROTH)) or
-    (st.st_mode.has(S_IRUSR) and (st.st_uid == getuid())) or
-    (st.st_mode.has(S_IRGRP) and (st.st_gid == getgid()))
+    (st.st_mode.has(S_IRUSR) and (st.st_uid == myUID())) or
+    (st.st_mode.has(S_IRGRP) and (st.st_gid == myGID()))
   )
 proc isNonzero(filename: string): bool =                       # -s FILE #FILE exists and has a size greater than zero
   var st = Stat()
@@ -64,15 +71,15 @@ proc isWriteable(filename: string): bool =                     # -w FILE #FILE e
   var st = Stat()
   return stat(filename, st) == 0 and (
     (st.st_mode.has(S_IWOTH)) or
-    (st.st_mode.has(S_IWUSR) and (st.st_uid == getuid())) or
-    (st.st_mode.has(S_IWGRP) and (st.st_gid == getgid()))
+    (st.st_mode.has(S_IWUSR) and (st.st_uid == myUID())) or
+    (st.st_mode.has(S_IWGRP) and (st.st_gid == myGID()))
   )
 proc isExecutable(filename: string): bool =                    # -x FILE #FILE exists and the user has execute (or search) access
   var st = Stat()
   return stat(filename, st) == 0 and (
     (st.st_mode.has(S_IXOTH)) or
-    (st.st_mode.has(S_IXUSR) and (st.st_uid == getuid())) or
-    (st.st_mode.has(S_IXGRP) and (st.st_gid == getgid()))
+    (st.st_mode.has(S_IXUSR) and (st.st_uid == myUID())) or
+    (st.st_mode.has(S_IXGRP) and (st.st_gid == myGID()))
   )
 proc isSameFile(file1: string, file2: string): bool =          # -ef FILE1 -ef FILE2 #FILE1 and FILE2 have the same device and inode numbers
   var st1 = Stat()

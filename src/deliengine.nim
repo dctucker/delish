@@ -868,8 +868,18 @@ proc doClose(engine: Engine, v: DeliNode) =
 
 ### Flow ###
 
+proc printStatements(engine: Engine) =
+  var head = engine.readhead
+  while head != nil:
+    var stmt = head.value
+    stderr.write " ", stmt.line, "▶\27[48;5;235m", stmt.repr, "\27[0m"
+    head = head.next
+  stderr.write " END\n"
+
 proc doConditional(engine: Engine, cond: DeliNode) =
   #echo cond.repr
+  for son in cond.sons:
+    stderr.write son.line, ": ", son.repr, "\n"
 
   let condition = cond.sons[0]
   let code = cond.sons[1]
@@ -899,9 +909,8 @@ proc doConditional(engine: Engine, cond: DeliNode) =
     cond.node = jump_end.node
 
   debug 3:
-    for stmt in engine.statements:
-      if stmt.kind == dkInner:
-        echo stmt.repr, stmt.line
+    engine.printStatements()
+    #for stmt in engine.statements:
 
 
   let jump_true  = cond.sons[^2]
@@ -1165,6 +1174,8 @@ iterator tick*(engine: Engine): int =
     else:
       if engine.current.kind != dkInner:
         yield engine.current.line
+    debug 3:
+      engine.printStatements()
     engine.execCurrent()
     if engine.isEnd():
       break

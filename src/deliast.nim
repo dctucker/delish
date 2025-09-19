@@ -231,6 +231,11 @@ proc toString*(node: DeliNode): string =
     argFormat(node)
   of dkObject, dkRan:
     objFormat(node)
+  of dkJump:
+    if node.node != nil:
+      $node.node.value.line
+    else:
+      "Jump"
   else: ""
 
 proc `$`*(node: DeliNode): string =
