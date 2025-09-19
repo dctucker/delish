@@ -30,7 +30,12 @@
 	#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
 	#define NA(P,S)     nodeAppend( auxil->parser, P, S )
 	#define SL(X)       setLine( auxil->parser, X, _0s )
-	#define SL1(X)      setLine( auxil->parser, X, _0e )
+	#define SL1(X)      setLine( auxil->parser, X, _1s )
+	#define SL2(X)      setLine( auxil->parser, X, _2s )
+	#define SL3(X)      setLine( auxil->parser, X, _3s )
+	#define SL4(X)      setLine( auxil->parser, X, _4s )
+	#define SL5(X)      setLine( auxil->parser, X, _5s )
+	#define SL6(X)      setLine( auxil->parser, X, _6s )
 	#define ER(MSG)     parserError( auxil->parser, _0s, MSG );
 	// fprintf(stderr, "Parsing error: %s\n", MSG)
 
@@ -63,6 +68,9 @@ Code          <-                                                     { DK( Code 
               (  S* l:VLine                                          { if( l >= 0 ) NA( $$, l ); }
               )+ S*
 
+Body          <- "{" _ < c:Code > _ "}"                             ~{ ER("missing `}`"); }
+                                                                     { $$ = c; SL1(c); }
+
 S             <- ( "\\" "\n" ) / "\t" / ' '
 
 VLine         <-
@@ -91,22 +99,13 @@ Statement     <-
               /  a:FunctionStmt / a:BreakStmt
               /  a:ContinueStmt / a:ReturnStmt  / a:Push / a:Pop )   { DK( Statement  , a ); SL(a); }
 
-Conditional   <-
-                    b1:IfBlock                                     { $$ = b1; }
-              (  S+ b2:ElifBlock                                   { $$ = b2; }
-              )*
-              (  S+ b3:ElseBlock                                   { $$ = b3; }
-              )?                 _
-
-IfBlock       <- "if"       S+ e:Condition   {SL(e);}             ~{ ER("expected condition after `if`"); }
-                            S+ c:Body        {SL(c);}              { DK( Conditional, e, c ); }
-
-ElifBlock     <- "elif"     S+ e:Condition   {SL(e);}             ~{ ER("expected condition after `elif`"); }
-                            S+ c:Body        {SL(c);}              { DK( Conditional, e, c); }
-
-ElseBlock     <-               e:Else        {SL(e);}
-                            S+ c:Body        {SL(c);}              { DK( Conditional, e, c); }
-
+Conditional   <- "if"        S+ < e:Condition >                        ~{ ER("expected condition after `if`"); }
+                             S+   c:Body                                { DK( Conditional, e, c ); SL1(e); }
+              (  S+ "elif"   S+ < e:Condition >                        ~{ ER("expected condition after `elif`"); }
+                             S+   c:Body                                { NA( $$, e ); NA( $$, c ); SL2(e); }
+              )* (           S+ < e:Else      >                         { NA( $$, e ); SL3(e); }
+                             S+   c:Body                                { NA( $$, c ); }
+              )? _
 Else          <- "else"                                              { DK( Else ); }
 
 WhileLoop     <- "while"   S+ e:Condition                           ~{ ER("expected condition after `while`"); }
@@ -348,9 +347,6 @@ KeyExpr       <-
               (
                  k:Variable / k:StrLiteral / k:Integer
               )                                                      { $$ = k; }
-
-Body          <- "{" _ c:Code _ "}"                                 ~{ ER("missing `}`"); }
-                                                                     { $$ = c; }
 
 JsonBlock     <- "json" S+ s:StrBlock                               ~{ ER("expected string literal block after `json`"); }
                                                                      { DK( JsonBlock, s ); }

@@ -878,8 +878,9 @@ proc printStatements(engine: Engine) =
 
 proc doConditional(engine: Engine, cond: DeliNode) =
   #echo cond.repr
-  for son in cond.sons:
-    stderr.write son.line, ": ", son.repr, "\n"
+  debug 3:
+    for son in cond.sons:
+      stderr.write son.line, ": ", son.repr, "\n"
 
   let condition = cond.sons[0]
   let code = cond.sons[1]
