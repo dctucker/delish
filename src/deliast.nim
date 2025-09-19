@@ -55,7 +55,7 @@ type
        dkWhileLoop,
        dkDoLoop,
        dkConditional,
-       dkForLoop:      node*:       DeliListNode
+       dkForLoop:      list_node*:  DeliListNode
     else:
       discard
     sons*: seq[DeliNode]
@@ -232,8 +232,8 @@ proc toString*(node: DeliNode): string =
   of dkObject, dkRan:
     objFormat(node)
   of dkJump:
-    if node.node != nil:
-      $node.node.value.line
+    if node.list_node != nil:
+      $node.list_node.value.line
     else:
       "Jump"
   else: ""
@@ -273,10 +273,10 @@ proc getOneliner*(node: DeliNode): string =
   of dkPush: return "push"
   of dkPop:  return "pop"
   of dkJump:
-    let line = if node.node == nil:
+    let line = if node.list_node == nil:
       "end"
     else:
-      $(node.node.value.line)
+      $(node.list_node.value.line)
     return "jump :" & line
   of dkInner:
     result = "{ "

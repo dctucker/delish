@@ -153,7 +153,7 @@ proc loadScript(engine: Engine, script: DeliNode) =
     echo engine.statements
   engine.setHeads(engine.statements.head.next)
 
-  engine.assignVariable(".return", DeliNode( kind: dkJump, node: engine.tail ))
+  engine.assignVariable(".return", DeliNode( kind: dkJump, list_node: engine.tail ))
 
 proc sourceFile*(engine: Engine): string =
   result = ""
@@ -567,7 +567,7 @@ proc doRun(engine: Engine, run: DeliNode): DeliNode =
   for inv in run.sons[0].sons:
     args.add inv.strVal
   var p = newDeliProcess(args)
-  result = p.node
+  result = p.ran
 
   try:
     p.start
@@ -624,7 +624,7 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
     engine.insertStmt(s)
 
   let end_line = -code.sons[^1].line - 1
-  jump_return.node = engine.writehead
+  jump_return.list_node = engine.writehead
   engine.setupPop(end_line)
 
   engine.debugNext()
@@ -706,7 +706,8 @@ proc evalPairKey(engine: Engine, k: DeliNode): string =
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkIdentifier, dkInteger, dkPath, dkStrBlock, dkStrLiteral, dkJump, dkNone, dkRegex, dkCode:
+  of dkBoolean, dkString, dkIdentifier, dkInteger, dkPath,
+     dkStrBlock, dkStrLiteral, dkJump, dkNone, dkRegex, dkCode:
     return val
   of dkLazy:
     return val.sons[0]
@@ -887,27 +888,27 @@ proc doConditional(engine: Engine, cond: DeliNode) =
   let top_line = -code.line
   let end_line = -cond.sons[^1].sons[^1].line - 1
 
-  if cond.node == nil:
+  if cond.list_node == nil:
     var jump_true  = DK(dkJump)
     var jump_false = DK(dkJump)
     var jump_end   = DK(dkJump)
 
     engine.insertStmt( DKInner( top_line, jump_true ) )
-    jump_true.node = engine.writehead
+    jump_true.list_node = engine.writehead
 
     for stmt in code.sons:
       engine.insertStmt( stmt )
 
     engine.insertStmt( DKInner( end_line, jump_end ) )
     engine.insertStmt( DKInner( end_line, jump_false ) )
-    jump_false.node = engine.writehead
+    jump_false.list_node = engine.writehead
 
     #engine.insertStmt( DKInner( top_line - 1, jump_end ) )
-    jump_end.node = engine.writehead
+    jump_end.list_node = engine.writehead
 
     cond.sons.add(jump_true)
     cond.sons.add(jump_false)
-    cond.node = jump_end.node
+    cond.list_node = jump_end.list_node
 
   debug 3:
     engine.printStatements()
@@ -923,9 +924,9 @@ proc doConditional(engine: Engine, cond: DeliNode) =
   let ok = engine.isTruthy(eval)
 
   if ok:
-    engine.setHeads(jump_true.node)
+    engine.setHeads(jump_true.list_node)
   else:
-    engine.setHeads(jump_false.node)
+    engine.setHeads(jump_false.list_node)
 
 proc doDoLoop(engine: Engine, loop: DeliNode) =
   let code = loop.sons[0]
@@ -933,7 +934,7 @@ proc doDoLoop(engine: Engine, loop: DeliNode) =
   let top_line = -loop.line
   let end_line = -code.sons[^1].line
 
-  if loop.node == nil:
+  if loop.list_node == nil:
     var jump_break    = DK(dkJump)
     var jump_continue = DK(dkJump)
 
@@ -942,7 +943,7 @@ proc doDoLoop(engine: Engine, loop: DeliNode) =
       ".continue": jump_continue,
     }.toTable)
 
-    jump_continue.node = engine.write_head
+    jump_continue.list_node = engine.write_head
     engine.insertStmt(code.sons)
 
     engine.insertStmt( DKInner( -end_line + 1,
@@ -953,9 +954,9 @@ proc doDoLoop(engine: Engine, loop: DeliNode) =
       )
     ))
 
-    jump_break.node = engine.writehead
+    jump_break.list_node = engine.writehead
     engine.setupPop( end_line - 1 )
-    loop.node = jump_continue.node
+    loop.list_node = jump_continue.list_node
 
   engine.debugNext()
 
@@ -965,7 +966,7 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
   let top_line = -loop.line
   let end_line = -code.sons[^1].line
 
-  if loop.node == nil:
+  if loop.list_node == nil:
     var jump_break    = DK(dkJump)
     var jump_continue = DK(dkJump)
 
@@ -974,7 +975,7 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
       ".continue": jump_continue,
     }.toTable)
 
-    jump_continue.node = engine.write_head
+    jump_continue.list_node = engine.write_head
     engine.insertStmt( DKInner( top_line,
       DK( dkConditional, DK( dkBoolNot, condition),
         DK( dkCode, DKInner( top_line,
@@ -988,12 +989,12 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
       DK( dkContinueStmt )
     ))
 
-    jump_break.node = engine.writehead
+    jump_break.list_node = engine.writehead
     engine.setupPop( end_line - 1 )
 
     loop.sons.add(jump_break)
     loop.sons.add(jump_continue)
-    loop.node = jump_continue.node
+    loop.list_node = jump_continue.list_node
 
   engine.debugNext()
 
@@ -1005,7 +1006,7 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
   let end_line = -code.sons[^1].line
   let counter  = DKVar(".counter")
 
-  if loop.node == nil:
+  if loop.list_node == nil:
     var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
     var jump_continue = DeliNode(kind: dkJump, line: end_line)
 
@@ -1015,7 +1016,7 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
       ".continue": jump_continue,
     }.toTable)
 
-    jump_continue.node = engine.write_head
+    jump_continue.list_node = engine.write_head
     engine.insertStmt( DKInner(top_line,
       DK( dkVariableStmt, variable, DK(dkAssignOp),
         DK( dkVarDeref, things, counter )
@@ -1035,9 +1036,9 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
       DK( dkContinueStmt )
     ))
 
-    jump_break.node = engine.writehead
+    jump_break.list_node = engine.writehead
     engine.setupPop( end_line - 1 )
-    loop.node = jump_continue.node
+    loop.list_node = jump_continue.list_node
 
   # unroll loop
   #let code = loop.sons[2]
@@ -1061,7 +1062,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
       engine.insertStmt(stmt)
     engine.debugNext()
   of dkJump:
-    engine.setHeads(s.node)
+    engine.setHeads(s.list_node)
     engine.debugNext()
   of dkVariableStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
@@ -1108,16 +1109,16 @@ proc doStmt(engine: Engine, s: DeliNode) =
     discard engine.evalFunctionCall(call.sons[0], call.sons[1 .. ^1])
   of dkContinueStmt:
     var to = engine.getVariable(".continue")
-    engine.setHeads(to.node)
+    engine.setHeads(to.list_node)
   of dkBreakStmt:
     var to = engine.getVariable(".break")
-    engine.setHeads(to.node)
+    engine.setHeads(to.list_node)
   of dkReturnStmt:
     var head_to = engine.getVariable(".return")
     if nsons > 0:
       discard engine.retvals.pop()
       engine.retvals.push( engine.evaluate(s.sons[0]) )
-    engine.setHeads(head_to.node)
+    engine.setHeads(head_to.list_node)
   of dkPush:
     engine.pushLocals()
   of dkPop:
