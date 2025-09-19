@@ -90,8 +90,17 @@ Statement     <-
               /  a:FunctionStmt / a:BreakStmt
               /  a:ContinueStmt / a:ReturnStmt  / a:Push / a:Pop )   { DK( Statement  , a ); SL(a); }
 
-Conditional   <- "if"      S+ e:Condition                           ~{ ER("expected condition after `if`"); }
-                           S+ c:Body _                               { DK( Conditional, e, c ); }
+Conditional   <- c:IfElseBlock                                       { $$ = c; }
+
+IfElseBlock   <- "if"       S+ e1:Condition                         ~{ ER("expected condition after `if`"); }
+                            S+ c1:Body                               { DK( Conditional, e1, c1 ); }
+              (  S+ "elif"  S+ e2:Condition                         ~{ ER("expected condition after `if`"); }
+                            S+ c2:Body                               { NA( $$, e2 ); NA( $$, c2 ); }
+              )*
+              (  S+ e3:Else S+ c3:Body                               { NA( $$, e3 ); NA( $$, c3 ); }
+              )?                       _
+
+Else          <- "else"                                              { DK( Else ); }
 
 WhileLoop     <- "while"   S+ e:Condition                           ~{ ER("expected condition after `while`"); }
                            S+ c:Body _                               { DK( WhileLoop  , e, c ); }
@@ -410,3 +419,13 @@ int packcc_main(const char *input, int len, void *p)
 	deli_destroy(ctx);
 	return 0;
 }
+/*
+IfBlock       <- "if"      S+ e:Condition                           ~{ ER("expected condition after `if`"); }
+                           S+ c:Body _                               { DK( Conditional, e, c ); }
+
+IfElifBlock   <- "if"      S+ e1:Condition                           ~{ ER("expected condition after `if`"); }
+                           S+ c1:Body                                 { DK( Conditional, e1, c1 ); }
+              (  "elif"    S+ e2:Condition                           ~{ ER("expected condition after `if`"); }
+                           S+ c2:Body                                 { NA( $$, e2 ); NA( $$, c2 ); }
+              )* S+ "else" S+ c3:Body _                               { NA( $$, c3 ); }
+*/

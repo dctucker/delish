@@ -898,8 +898,14 @@ proc doConditional(engine: Engine, cond: DeliNode) =
     cond.sons.add(jump_false)
     cond.node = jump_end.node
 
-  let jump_true  = cond.sons[2]
-  let jump_false = cond.sons[3]
+  debug 3:
+    for stmt in engine.statements:
+      if stmt.kind == dkInner:
+        echo stmt.repr, stmt.line
+
+
+  let jump_true  = cond.sons[^2]
+  let jump_false = cond.sons[^1]
 
   let eval = engine.evaluate(condition)
   debug 3:

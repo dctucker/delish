@@ -1,0 +1,10 @@
+#!/usr/bin/deli
+
+$k = true
+if $k {
+  out "yes"
+} elif not $k {
+  out "not"
+} else {
+  out "no"
+}
