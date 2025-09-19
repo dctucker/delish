@@ -884,8 +884,8 @@ proc doConditional(engine: Engine, cond: DeliNode) =
 
   let condition = cond.sons[0]
   let code = cond.sons[1]
-  let top_line = -cond.line
-  let end_line = -code.sons[^1].line
+  let top_line = -code.line
+  let end_line = -cond.sons[^1].sons[^1].line - 1
 
   if cond.node == nil:
     var jump_true  = DK(dkJump)
