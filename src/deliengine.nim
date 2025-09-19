@@ -885,10 +885,11 @@ proc doConditional(engine: Engine, cond: DeliNode) =
 
   let condition = cond.sons[0]
   let code = cond.sons[1]
-  let top_line = -code.line
-  let end_line = -cond.sons[^1].sons[^1].line - 1
 
   if cond.list_node == nil:
+    let top_line = -code.line
+    let end_line = -cond.sons[^1].sons[^1].line - 1
+
     var jump_true  = DK(dkJump)
     var jump_false = DK(dkJump)
     var jump_end   = DK(dkJump)
@@ -929,12 +930,12 @@ proc doConditional(engine: Engine, cond: DeliNode) =
     engine.setHeads(jump_false.list_node)
 
 proc doDoLoop(engine: Engine, loop: DeliNode) =
-  let code = loop.sons[0]
-  let condition = loop.sons[1]
-  let top_line = -loop.line
-  let end_line = -code.sons[^1].line
-
   if loop.list_node == nil:
+    let code = loop.sons[0]
+    let condition = loop.sons[1]
+    let top_line = -loop.line
+    let end_line = -code.sons[^1].line
+
     var jump_break    = DK(dkJump)
     var jump_continue = DK(dkJump)
 
@@ -961,12 +962,12 @@ proc doDoLoop(engine: Engine, loop: DeliNode) =
   engine.debugNext()
 
 proc doWhileLoop(engine: Engine, loop: DeliNode) =
-  let condition = loop.sons[0]
-  let code      = loop.sons[1]
-  let top_line = -loop.line
-  let end_line = -code.sons[^1].line
-
   if loop.list_node == nil:
+    let condition = loop.sons[0]
+    let code      = loop.sons[1]
+    let top_line = -loop.line
+    let end_line = -code.sons[^1].line
+
     var jump_break    = DK(dkJump)
     var jump_continue = DK(dkJump)
 
@@ -1002,11 +1003,12 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
   let variable = loop.sons[0]
   let things   = engine.evaluate(loop.sons[1])
   let code     = loop.sons[2]
-  let top_line = -loop.line
-  let end_line = -code.sons[^1].line
-  let counter  = DKVar(".counter")
 
   if loop.list_node == nil:
+    let top_line = -loop.line
+    let end_line = -code.sons[^1].line
+    let counter  = DKVar(".counter")
+
     var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
     var jump_continue = DeliNode(kind: dkJump, line: end_line)
 
