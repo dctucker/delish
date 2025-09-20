@@ -109,10 +109,11 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
 
 # creates a wrapper function prefixed by `d`; isBlock becomes `disBlock`
 template liftDeliProc1(fn): untyped =
-  proc `d fn`(node: DeliNode): DeliNode {.inject,nimcall.} =
-    if node.kind != dkExprList:
+  proc `d fn`(nodes: varargs[DeliNode]): DeliNode {.inject,nimcall.} =
+    let node = nodes[0]
+    if node.kind != dkPath:
       return deliNone()
-    let bres = fn(node.sons[0].strVal)
+    let bres = fn(node.strVal)
     return DeliNode(kind: dkBoolean, boolVal: bres)
 
 liftDeliProc1(isBlock)
@@ -134,7 +135,7 @@ liftDeliProc1(isSetUID)
 liftDeliProc1(isWriteable)
 liftDeliProc1(isExecutable)
 
-let PathFunctions*: Table[string, proc(node: DeliNode): DeliNode {.nimcall.} ] = {
+let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "b": dIsBlock,
   "c": dIsChar,
   "d": dIsDir,

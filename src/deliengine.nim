@@ -382,7 +382,7 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
     of dkPath:
       if son.kind == dkIdentifier:
         # TODO this shouldn't execute the function, it should turn it into a function call
-        result = typeFunction(dkPath, son)(DKExprList(result))
+        result = typeFunction(dkPath, son)(result)
       else:
         result = deliNone()
       if result.kind == dkNone:
