@@ -353,7 +353,8 @@ KeyExpr       <-
 JsonBlock     <- "json" S+ s:StrBlock                               ~{ ER("expected string literal block after `json`"); }
                                                                      { DK( JsonBlock, s ); }
 
-Keyword       <- ( "json" / "sub"   / "if"  / "do" / "while" / "for"
+Keyword       <- ( "json" / "sub"   / "if" / "elif" / "else"
+              /  "do" / "while" / "for"
               /  "in"   / "out"   / "err" / "include"
               /  "true" / "false" / "env" / "arg" / "local"
               /  "return" / "break" / "continue"
