@@ -189,7 +189,8 @@ proc lineInfo*(engine: Engine): string =
   sline = getOneliner(engine.current)
   if engine.current.script != nil:
     filename = engine.current.script.filename
-    sline = engine.current.script.getLine(abs(line))
+    if line != 0:
+      sline = engine.current.script.getLine(abs(line))
 
   let delim = if line > 0:
     ":"
@@ -901,16 +902,7 @@ proc setupConditional(engine: Engine, cond: DeliNode, stmt: DeliKind, line: int)
 
 proc doConditional(engine: Engine, cond: DeliNode) =
 
-  if cond.list_node != nil:
-    let condition = cond.sons[0]
-    let eval = engine.evaluate(condition)
-    debug 3:
-      echo "  condition: ", $eval
-    let ok = engine.isTruthy(eval)
-    if not ok:
-      engine.setHeads(cond.list_node)
-
-  else:
+  if cond.list_node == nil:
     debug 3:
       for son in cond.sons:
         stderr.write "   - ", son.line, ": ", son.repr, "\n"
@@ -920,18 +912,25 @@ proc doConditional(engine: Engine, cond: DeliNode) =
     var jump_done = DeliNode(kind: dkJump, line: cond.sons[^1].line + 1)
 
     var i: int = 0
-    while i < cond.sons.len:
-      let condition = cond.sons[i]
-      let code = cond.sons[i + 1]
+    var sons = cond.sons
+    while i < sons.len:
+      let condition = sons[i]
+      let code = sons[i + 1]
 
       var jump_true = DK( dkJump )
       jump_true.line = condition.line
-      var conditional = DeliNode(kind: dkConditional, sons: @[
-          condition,
-          jump_true,
-      ], line: condition.line)
 
-      engine.insertStmt(conditional)
+      var conditional = cond
+      if i == 0:
+        cond.sons = @[condition, jump_true]
+        cond.line = condition.line
+      else:
+        conditional = DeliNode(kind: dkConditional, sons: @[
+            condition,
+            jump_true,
+        ], line: condition.line)
+        engine.insertStmt(conditional)
+
       engine.insertStmt(code)
       engine.insertStmt(DKInner(-code.line - 1, jump_done))
       conditional.list_node = engine.writehead
@@ -941,6 +940,14 @@ proc doConditional(engine: Engine, cond: DeliNode) =
 
     debug 2:
       engine.printStatements()
+
+  let condition = cond.sons[0]
+  let eval = engine.evaluate(condition)
+  debug 3:
+    echo "  condition: ", $eval
+  let ok = engine.isTruthy(eval)
+  if not ok:
+    engine.setHeads(cond.list_node)
 
   engine.debugNext()
 
@@ -1029,6 +1036,7 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
     ))
 
     var condition = DK( dkComparison, DK(dkCompEq), deliNone(), variable )
+    condition.line = top_line
     discard engine.setupConditional(condition, dkBreakStmt, top_line)
 
     engine.insertStmt(code.sons)

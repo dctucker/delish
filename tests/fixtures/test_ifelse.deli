@@ -8,3 +8,48 @@ if $k {
 } else {
   out "no"
 }
+return
+
+# 3  $k = true           VariableStmt
+# 4  if $k {             Conditional( VarDeref(Variable:k)
+# 5    out "yes"           Code(
+#                          Statement( StreamStmt(
+#                            Stream:0(StreamOut) ExprList( Expr(String:yes) )
+#                          ))
+#                        ))
+# 6  } elif not $k {     Conditional( BoolNot( VarDeref(Variable:k) )
+# 7    out "not"         Code(
+#                          Statement( StreamStmt(
+#                            Stream:0(StreamOut) ExprList( Expr(String:not) )
+#                          ))
+#                        ))
+# 8  } else {            Conditional( Else
+# 9    out "no"          Code(
+#                          Statement( StreamStmt(
+#                            Stream:0(StreamOut) ExprList( Expr(String:no) )
+#                          ))
+# 10 }                   ))
+# 11 return              ReturnStmt
+#
+#
+# 4  Cond VarDeref -> 6
+# 5  Code
+#    Jump 10
+# 6  Cond BoolNot -> 8
+#    Jump 8
+# 7  Code
+#    Jump 10
+# 8  Cond Else -> 10
+# 9  Code
+# 10 }
+# 11
+#
+# Expected flow
+# checks         4 -> 6 -> 8
+# code if        5 -> 10
+# code elif      7 -> 10
+# code else      9 -> 10
+#
+#  if:   4 5     10
+#  elif: 4 6 7   10
+#  else: 4 6 8 9 10
