@@ -15,7 +15,7 @@ template benchmark(benchmarkName: string, code: untyped) =
     code
     let elapsed = 1000 * (epochTime() - t0)
     if debug > 0:
-      echo "CPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms"
+      echo "\27[36mCPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms\27[0m"
 
 proc exception_handler*(e: ref Exception, debug: int) =
   errlog.write("\27[31m")

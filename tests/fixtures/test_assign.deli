@@ -1,0 +1,11 @@
+#!/usr/bin/deli
+
+test_b = {
+  return "yes"
+}
+
+$ch = 1
+out $ch
+$k = test_b
+$ch += 1
+out $k, " ", $ch

@@ -96,10 +96,9 @@ suite "engine":
       )),
       DK( dkFunctionStmt, DK( dkFunctionCall, id ) ),
     )
-    check:
-      engine.nextLen == 3
-      nextVar("x") == 0
-      nextVar("x") == 0
+    check engine.nextLen == 3
+    check nextVar("x") == 0
+    check nextVar("x") == 0
     next()
     check nextVar("x") == 1
 
@@ -113,11 +112,10 @@ suite "engine":
     )
     check engine.nextLen == 1
     next() # for loop expansion
-    check:
-      engine.nextLen > 1
-      nextVar("x") == 0
-      nextVar("x") == 1
-      nextVar("x") == 2
+    check engine.nextLen > 1
+    check nextVar("x") == 0
+    check nextVar("x") == 1
+    check nextVar("x") == 2
 
   test "do loop":
     script(

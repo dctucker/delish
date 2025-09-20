@@ -16,10 +16,10 @@ type
     handles*: seq[FileHandle]
     streams*: seq[Stream]
     exit*   : int
-    node*   : DeliNode
+    ran*    : DeliNode
 
 proc newDeliProcess*(args: seq[string]): DeliProcess =
-  result.node = DKRan()
+  result.ran = DKRan()
 
   result.command = args[0]
   result.workdir = $getCurrentDir()
@@ -41,15 +41,15 @@ proc start*(p: var DeliProcess) =
   p.streams.add p.process.errorStream
   p.id = p.process.processID
 
-  p.node.table["id"]  = DKInt(p.id)
-  p.node.table["in"]  = DKStream(p.handles[0])
-  p.node.table["out"] = DKStream(p.handles[1])
-  p.node.table["err"] = DKStream(p.handles[2])
+  p.ran.table["id"]  = DKInt(p.id)
+  p.ran.table["in"]  = DKStream(p.handles[0])
+  p.ran.table["out"] = DKStream(p.handles[1])
+  p.ran.table["err"] = DKStream(p.handles[2])
 
 proc close*(p: var DeliProcess) =
   p.process.close
 
 proc wait*(p: var DeliProcess) =
   p.exit = p.process.waitForExit
-  p.node.table["exit"] = DKInt(p.exit)
+  p.ran.table["exit"] = DKInt(p.exit)
 

@@ -55,7 +55,7 @@ type
        dkWhileLoop,
        dkDoLoop,
        dkConditional,
-       dkForLoop:      node*:       DeliListNode
+       dkForLoop:      list_node*:  DeliListNode
     else:
       discard
     sons*: seq[DeliNode]
@@ -82,12 +82,21 @@ proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
   for node in nodes:
     result.sons.add(node)
 
+proc DKExprList*(nodes: varargs[DeliNode]): DeliNode =
+  result = DK( dkExprList )
+  for node in nodes:
+    result.sons.add(node)
+
+
 proc DKArg*(argName: string): DeliNode =
   if argName.len == 0:
     raise newException(ValueError, "empty argument name")
   if argName.len == 1:
     return DeliNode(kind: dkArgShort, argName: argName)
   return DeliNode(kind: dkArgLong, argName: argName)
+
+proc DKId*(id: string): DeliNode =
+  return DeliNode(kind: dkIdentifier, id: id)
 
 proc DKVar*(varName: string): DeliNode =
   return DeliNode(kind: dkVariable, varName: varName)
@@ -231,6 +240,11 @@ proc toString*(node: DeliNode): string =
     argFormat(node)
   of dkObject, dkRan:
     objFormat(node)
+  of dkJump:
+    if node.list_node != nil:
+      $node.list_node.value.line
+    else:
+      "Jump"
   else: ""
 
 proc `$`*(node: DeliNode): string =
@@ -268,10 +282,10 @@ proc getOneliner*(node: DeliNode): string =
   of dkPush: return "push"
   of dkPop:  return "pop"
   of dkJump:
-    let line = if node.node == nil:
+    let line = if node.list_node == nil:
       "end"
     else:
-      $(node.node.value.line)
+      $(node.list_node.value.line)
     return "jump :" & line
   of dkInner:
     result = "{ "
