@@ -380,7 +380,7 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
         result = deliNone()
     of dkPath:
       if son.kind == dkIdentifier:
-        result = result.pathFunction(son.id)
+        result = result.pathFunction(son)
       else:
         result = deliNone()
       if result.kind == dkNone:

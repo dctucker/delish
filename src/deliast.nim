@@ -89,6 +89,9 @@ proc DKArg*(argName: string): DeliNode =
     return DeliNode(kind: dkArgShort, argName: argName)
   return DeliNode(kind: dkArgLong, argName: argName)
 
+proc DKId*(id: string): DeliNode =
+  return DeliNode(kind: dkIdentifier, id: id)
+
 proc DKVar*(varName: string): DeliNode =
   return DeliNode(kind: dkVariable, varName: varName)
 
