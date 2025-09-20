@@ -107,52 +107,53 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
     st1.st_mtim < st2.st_mtim
   )
 
-template liftDeliProc1(fn, name): untyped =
-  proc name(node: DeliNode): DeliNode {.nimcall.} =
-    if node.kind != dkPath:
+# creates a wrapper function prefixed by `d`; isBlock becomes `disBlock`
+template liftDeliProc1(fn): untyped =
+  proc `d fn`(node: DeliNode): DeliNode {.inject,nimcall.} =
+    if node.kind != dkExprList:
       return deliNone()
-    let bres = fn(node.strVal)
+    let bres = fn(node.sons[0].strVal)
     return DeliNode(kind: dkBoolean, boolVal: bres)
 
-liftDeliProc1(isBlock,     disBlock)
-liftDeliProc1(isChar,      disChar)
-liftDeliProc1(isDir,       disDir)
-liftDeliProc1(exists,      dexists)
-liftDeliProc1(isRegular,   disRegular)
-liftDeliProc1(isSetGID,    disSetGID)
-liftDeliProc1(isOwnGroup,  disOwnGroup)
-liftDeliProc1(isSticky,    disSticky)
-liftDeliProc1(isLink,      disLink)
-liftDeliProc1(isUnread,    disUnread)
-liftDeliProc1(isOwnUser,   disOwnUser)
-liftDeliProc1(isPipe,      disPipe)
-liftDeliProc1(isReadable,  disReadable)
-liftDeliProc1(isNonzero,   disNonzero)
-liftDeliProc1(isSocket,    disSocket)
-liftDeliProc1(isSetUID,    disSetUID)
-liftDeliProc1(isWriteable, disWriteable)
-liftDeliProc1(isExecutable,disExecutable)
+liftDeliProc1(isBlock)
+liftDeliProc1(isChar)
+liftDeliProc1(isDir)
+liftDeliProc1(exists)
+liftDeliProc1(isRegular)
+liftDeliProc1(isSetGID)
+liftDeliProc1(isOwnGroup)
+liftDeliProc1(isSticky)
+liftDeliProc1(isLink)
+liftDeliProc1(isUnread)
+liftDeliProc1(isOwnUser)
+liftDeliProc1(isPipe)
+liftDeliProc1(isReadable)
+liftDeliProc1(isNonzero)
+liftDeliProc1(isSocket)
+liftDeliProc1(isSetUID)
+liftDeliProc1(isWriteable)
+liftDeliProc1(isExecutable)
 
 let PathFunctions*: Table[string, proc(node: DeliNode): DeliNode {.nimcall.} ] = {
-  "b": disBlock,
-  "c": disChar,
-  "d": disDir,
-  "e": dexists,
-  "f": disRegular,
-  "g": disSetGID,
-  "G": disOwnGroup,
-  "k": disSticky,
-  "L": disLink,
-  "N": disUnread,
-  "O": disOwnUser,
-  "p": disPipe,
-  "r": disReadable,
-  "s": disNonzero,
-  "S": disSocket,
-  #"t": disTty, # this belongs in StreamFunctions
-  "u": disSetUID,
-  "w": disWriteable,
-  "x": disExecutable,
+  "b": dIsBlock,
+  "c": dIsChar,
+  "d": dIsDir,
+  "e": dExists,
+  "f": dIsRegular,
+  "g": dIsSetGID,
+  "G": dIsOwnGroup,
+  "k": dIsSticky,
+  "L": dIsLink,
+  "N": dIsUnread,
+  "O": dIsOwnUser,
+  "p": dIsPipe,
+  "r": dIsReadable,
+  "s": dIsNonzero,
+  "S": dIsSocket,
+  #"t": dIsTty, # this belongs in StreamFunctions
+  "u": dIsSetUID,
+  "w": dIsWriteable,
+  "x": dIsExecutable,
 }.toTable
 
 #proc disEqualTo(node: DeliNode): DeliNode {.nimcall.} =
@@ -170,11 +171,3 @@ let PathFunctions*: Table[string, proc(node: DeliNode): DeliNode {.nimcall.} ] =
 #  "nt": disNewerThan,
 #  "ot": disOlderThan,
 #}
-
-proc pathFunction*(node: DeliNode, op: DeliNode): DeliNode =
-  assert node.kind == dkPath
-  assert op.kind == dkIdentifier
-  result = if op.id in PathFunctions:
-    PathFunctions[op.id](node)
-  else:
-    deliNone()

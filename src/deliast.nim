@@ -82,6 +82,12 @@ proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
   for node in nodes:
     result.sons.add(node)
 
+proc DKExprList*(nodes: varargs[DeliNode]): DeliNode =
+  result = DK( dkExprList )
+  for node in nodes:
+    result.sons.add(node)
+
+
 proc DKArg*(argName: string): DeliNode =
   if argName.len == 0:
     raise newException(ValueError, "empty argument name")

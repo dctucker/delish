@@ -381,7 +381,8 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
         result = deliNone()
     of dkPath:
       if son.kind == dkIdentifier:
-        result = typeFunction(dkPath, son)(result)
+        # TODO this shouldn't execute the function, it should turn it into a function call
+        result = typeFunction(dkPath, son)(DKExprList(result))
       else:
         result = deliNone()
       if result.kind == dkNone:
@@ -624,8 +625,12 @@ proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
     echo "define ", engine.functions
 
 proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[DeliNode]): DeliNode =
-  result = deliNone()
-  todo "evalTypeFunction ", $ty, ".", $fun.id
+  assert fun.kind == dkIdentifier
+  try:
+    let fn = typeFunction(ty, fun)
+    return fn(DK(dkExprList, args))
+  except KeyError as e:
+    engine.runtimeError("Unknown function: ", $ty, ".", $fun.id)
 
 proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
   result = DK( dkLazy, DKVar(".returned") )
