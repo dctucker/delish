@@ -330,13 +330,13 @@ Arg           <- &'-'
 
 Array         <- "[" S* "]"                                          { DK( Array ); }
               /  '['                                                 { DK( Array ); }
-              (  _ e:Expr                                            { NA( $$, e ); }
-                 S* ','? _
+              (      _  e:Expr                                       { NA( $$, e ); }
+                     S*       ','? _
               )* ']'
 
 Object        <- '['                                                 { DK( Object ); }
-              (     _  p:Pair                                        { NA( $$, p ); }
-                    S*       ','? _
+              (      _  p:Pair                                       { NA( $$, p ); }
+                     S*       ','? _
               )+ ']'
 
 Pair          <-

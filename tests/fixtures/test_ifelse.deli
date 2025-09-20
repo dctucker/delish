@@ -2,11 +2,11 @@
 
 $k = true
 if $k {
-  out "yes"
+  $k = "yes"
 } elif not $k {
-  out "not"
+  $k = "not"
 } else {
-  out "no"
+  $k = "no"
 }
 return
 
