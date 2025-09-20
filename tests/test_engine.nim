@@ -98,10 +98,19 @@ suite "engine":
     )
     check:
       engine.nextLen == 3
-      nextVar("x") == 0
-      nextVar("x") == 0
+
+    var x: DeliNode
     next()
-    check nextVar("x") == 1
+    x = engine.getVariable("x")
+    check x == 0
+
+    next()
+    x = engine.getVariable("x")
+    check x == 0
+
+    next()
+    x = engine.getVariable("x")
+    check x == 1
 
   test "for loop":
     script(
