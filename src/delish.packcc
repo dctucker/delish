@@ -209,10 +209,11 @@ RunFlags      <-
               /  (f1:AsyncFlag f2:RedirFlag)                         { DK( RunFlags, f1, f2 ); }
               )
 
-FunctionStmt  <- !Keyword !Type c:FunctionCall                       { DK( FunctionStmt, c ); SL(c); }
-FunctionCall  <- !Keyword !Type
-              (  i:Identifier                                        { DK( FunctionCall, i ); }
-              /  v:Variable '.' i:Identifier                         { DK( FunctionCall, DK( VarDeref, v, i ) ); }
+FunctionStmt  <- !Keyword c:FunctionCall                       { DK( FunctionStmt, c ); SL(c); }
+FunctionCall  <- !Keyword
+              (  !Type i:Identifier                                  { DK( FunctionCall, i ); }
+              /  !Type v:Variable '.' i:Identifier                   { DK( FunctionCall, DK( VarDeref, v, i ) ); }
+              /        t:Type '.' i:Identifier                       { DK( FunctionCall, DK( Type, t ), i); }
               )
               (  S+ e:Expr                                           { NA( $$, e ); }
               )*

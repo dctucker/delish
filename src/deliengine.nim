@@ -13,7 +13,7 @@ import deliargs
 import deliscript
 import deliparser
 import deliprocess
-import delifile
+import delitypes/functions
 
 type DeliError* = object of CatchableError
 type RuntimeError* = ref object of DeliError
@@ -83,6 +83,7 @@ proc loadScript    (engine: Engine, script: DeliNode)
 proc assignVariable(engine: Engine, key: string, value: DeliNode)
 
 proc printStatements(engine: Engine) =
+  stderr.write "\27[36m"
   var head = engine.readhead
   while head != nil:
     let stmt = head.value
@@ -90,10 +91,10 @@ proc printStatements(engine: Engine) =
       "." & $(-stmt.line)
     else:
       ":" & $stmt.line
-    stderr.write " ", line, "▶\27[48;5;235m", stmt.repr, "\27[0m"
+    stderr.write " ", line, "▶\27[48;5;236m", stmt.repr, "\27[40m"
     head = head.next
     stderr.write "\n"
-  stderr.write " END\n"
+  stderr.write " END\27[0m\n"
 
 proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList
@@ -380,7 +381,7 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
         result = deliNone()
     of dkPath:
       if son.kind == dkIdentifier:
-        result = result.pathFunction(son)
+        result = typeFunction(dkPath, son)(result)
       else:
         result = deliNone()
       if result.kind == dkNone:
@@ -541,9 +542,17 @@ proc doFunctionDefs(engine: Engine, node: DeliNode) =
 proc checkFunctionCalls(engine: Engine, node: DeliNode) =
   case node.kind:
   of dkFunctionStmt:
-    let id = node.sons[0].sons[0].id
-    if id notin engine.functions:
-      engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
+    let args = node.sons[0].sons
+    case args[0].kind
+    of dkIdentifier:
+      let id = args[0].id
+      if id notin engine.functions:
+        engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
+    of dkType:
+      let deliType = args[0].kind
+      let id = args[1].id
+    else:
+      engine.setupError("Invalid function call: " & $args)
   else:
     for son in node.sons:
       engine.checkFunctionCalls(son)
@@ -614,6 +623,10 @@ proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   debug 3:
     echo "define ", engine.functions
 
+proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[DeliNode]): DeliNode =
+  result = deliNone()
+  todo "evalTypeFunction ", $ty, ".", $fun.id
+
 proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
   result = DK( dkLazy, DKVar(".returned") )
   var code: DeliNode
@@ -625,13 +638,12 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
     code = engine.functions[fun.id]
   of dkVarDeref:
     code = engine.evaluate(fun)
+  of dkType:
+    return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
   else:
     todo "evalFunctionCall ", fun
 
   var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
-
-  #for a in args:
-  #  arguments.add(Argument(value: a))
 
   engine.setupPush( -code.sons[0].line + 1, {
     ".return": jump_return,

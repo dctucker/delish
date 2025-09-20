@@ -1,6 +1,6 @@
 import std/posix
 import std/tables
-import deliast
+import ../deliast
 
 # whether a mode has a bit set
 func has(m: Mode, b: cint): bool =
@@ -133,7 +133,7 @@ liftDeliProc1(isSetUID,    disSetUID)
 liftDeliProc1(isWriteable, disWriteable)
 liftDeliProc1(isExecutable,disExecutable)
 
-let PathFunctions: Table[string, proc(node: DeliNode): DeliNode {.nimcall.} ] = {
+let PathFunctions*: Table[string, proc(node: DeliNode): DeliNode {.nimcall.} ] = {
   "b": disBlock,
   "c": disChar,
   "d": disDir,
@@ -178,4 +178,3 @@ proc pathFunction*(node: DeliNode, op: DeliNode): DeliNode =
     PathFunctions[op.id](node)
   else:
     deliNone()
-
