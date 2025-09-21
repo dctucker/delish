@@ -10,3 +10,8 @@ suite "delish":
     let err = delish_main(@["tests/fixtures/errors/if.deli"])
     check:
       "missing `}`" in errlog.errors
+
+  test "parse integers":
+    let err = delish_main(@["tests/fixtures/test_integers.deli"])
+    check err == 0
+

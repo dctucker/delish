@@ -84,13 +84,20 @@ proc assignVariable(engine: Engine, key: string, value: DeliNode)
 
 proc printStatements*(engine: Engine, colorize: bool = true) =
   var head = engine.readhead
+  var indicator = ""
   while head != nil:
     let stmt = head.value
     let line = if stmt.line < 0:
       "." & $(-stmt.line)
     else:
       ":" & $stmt.line
-    stderr.write " \27[36m", line, "▶\27[48;5;235m", stmt.repr[0..^2], "\27[0m"
+    indicator = if head == engine.writehead:
+      "\27[4m▶\27[24m"
+    elif head == engine.tail:
+      "▼"
+    else:
+      "▶"
+    stderr.write " \27[36m", line, indicator, "\27[48;5;235m", stmt.repr[0..^2], "\27[0m"
     head = head.next
     stderr.write "\n"
   stderr.write "\27[36m END\27[0m\n"
@@ -146,6 +153,8 @@ proc insertStmt(engine: Engine, node: DeliNode) =
       engine.insertStmt(s)
     return
 
+  #     w                w
+  #  A  B  Z       A  B  C  Z
   var sw = engine.writehead.next
   let listnode = newSinglyLinkedNode[DeliNode](node)
   engine.writehead.next = listnode
@@ -162,15 +171,21 @@ proc removeStmt(engine: Engine): DeliNode =
   return stmt
 
 proc loadScript(engine: Engine, script: DeliNode) =
+  var endline = 0
+  if engine.tail != nil:
+    endline = engine.tail.value.line
+
   for s in script.sons:
     for s2 in s.sons:
       engine.insertStmt(s2)
-  engine.tail = engine.writehead
   engine.insertStmt(DKInner(0, deliNone()))
+  engine.tail = engine.writehead
   debug 3:
     echo engine.statements
   engine.setHeads(engine.statements.head.next)
 
+  endline = max(endline, script.script.line_count + 1)
+  engine.tail.value.line = endline
   engine.assignVariable(".return", DeliNode( kind: dkJump, list_node: engine.tail ))
 
 proc sourceFile*(engine: Engine): string =
@@ -334,7 +349,7 @@ proc printVariables(engine: Engine) =
     echo "\27[36m== Engine Variables (", engine.variables.len(), ") =="
     for k,v in engine.variables:
       stdout.write("  $", k, " = ")
-      stdout.write(printValue(v))
+      stdout.write(v.repr)
       stdout.write("\n")
 
 proc getVariable*(engine: Engine, name: string): DeliNode =
@@ -1159,6 +1174,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
     var to = engine.getVariable(".break")
     engine.setHeads(to.list_node)
   of dkReturnStmt:
+    engine.printVariables()
     var head_to = engine.getVariable(".return")
     if nsons > 0:
       discard engine.retvals.pop()

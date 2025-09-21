@@ -75,6 +75,15 @@ type DeliT = object
   length: csize_t
   parser: Parser
 
+proc parseIntAny(str: string): int =
+  if str.len > 2 and str[0..1] == "0x":
+    result = parseHexInt(str)
+  elif str.len > 1 and str[0] == '0':
+    result = parseOctInt(str)
+  else:
+    result = parseInt(str)
+  #stderr.write "parsed '", str, "'", " = ", result, "\n"
+
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
   of dkStrLiteral,
@@ -90,7 +99,10 @@ proc parseCapture(node: DeliNode, capture: string) =
       node.sons.add(DeliNode(kind:dkString, strVal: capture))
   of dkBoolean:    node.boolVal = capture == "true"
   #of dkStream:     node.intVal  = parseStreamInt(capture)
-  of dkInteger:    node.intVal  = parseInt(capture)
+  of dkOct,
+     dkHex,
+     dkDec,
+     dkInteger:    node.intVal  = parseIntAny(capture)
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture
   else:

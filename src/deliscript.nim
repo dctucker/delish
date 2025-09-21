@@ -30,7 +30,12 @@ proc initLineNumbers*(script: DeliScript) =
     script.line_numbers.add(offset)
   #script.debug script.line_numbers
 
+proc line_count*(script: DeliScript): int =
+  return script.source.count('\n')
+
 proc getLine*(script: DeliScript, line: int): string =
+  if line > script.line_numbers.len:
+    return "{EOF}"
   let start = script.line_numbers[line]
   if line+1 >= script.line_numbers.len:
     return script.source[start .. ^1 ]

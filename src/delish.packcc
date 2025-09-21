@@ -382,16 +382,24 @@ Type          <- "Integer"                                           { DK( Integ
               /  "Variable"                                          { DK( Variable   ); }
 
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
-StrLiteral    <- ( s:DblQuote / s:SingleQuote )                      { $$ = s; }
-DblQuote      <- (["] < [^"]* > ["])                                 { NS( String ); }
-SingleQuote   <- (['] < [^']* > ['])                                 { NS( String ); }
+StrLiteral    <- s1:SingleQuote                                      { $$ = s1; }
+              /  s2:DblQuote                                         { $$ = s2; }
+DblQuote      <- ("\"" < [^"]* > "\"")                               { NS( String ); }
+SingleQuote   <- ("'"  < [^']* > "'")                                { NS( String ); }
 Command       <- < W ( W / '-' )* >                                  { NS( String ); }
 Identifier    <- < A ( W / '-' )* >                                  { NS( Identifier); }
 ArgShort      <- '-' < W+ >                                          { NS( ArgShort ); }
 ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLong ); }
 String        <- < C+ >                                              { NS( String ); }
 Regex         <- 'r/' < ( '\/' / !'/' . )+ > '/'                     { NS( Regex ); }
-Integer       <- < [0-9]+ >                                          { NS( Integer ); }
+
+Integer       <-  &"0x"  h:Hex                                       { $$ = h; }
+              /   &'0'   o:Oct                                       { $$ = o; }
+              /   !'0'   d:Dec                                       { $$ = d; }
+Hex           <- < "0x" [0-9A-Fa-f]+ >                               { NS( Integer ); }
+Oct           <- < '0' !'x' [0-7]* >                                 { NS( Integer ); }
+Dec           <- < [0-9]+ >                                          { NS( Integer ); }
+
 Path          <- < ("."* "/" C+ ) / "." >                            { NS( Path ); }
 Variable      <- '$' < W (W / '-')* >                                { NS( Variable ); }
 Boolean       <- < "true" / "false" >                                { NS( Boolean ); }
