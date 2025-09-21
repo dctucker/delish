@@ -1,6 +1,9 @@
+import std/appdirs
+import std/paths
 import std/posix
 import std/tables
 import ../deliast
+import common
 
 # whether a mode has a bit set
 func has(m: Mode, b: cint): bool =
@@ -108,19 +111,35 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
     st1.st_mtim < st2.st_mtim
   )
 
+# file and directory operations
+proc dChdir(nodes: varargs[DeliNode]): DeliNode =
+  var arg: DeliNode
+  var arg_i = 0
+  shift
+  expect dkPath
+  result = DKBool( chdir(arg.strVal.cstring) == 0 )
+
+proc dPwd(nodes: varargs[DeliNode]): DeliNode =
+  var arg_i = 0
+  maxarg
+  result = DKPath($getCurrentDir())
+
+proc dHome(nodes: varargs[DeliNode]): DeliNode =
+  var arg_i = 0
+  maxarg
+  result = DKPath($getHomeDir())
+
 proc dTest(nodes: varargs[DeliNode]): DeliNode =
   result = deliNone()
 
-  var i = 0
+  var arg_i = 0
+  var arg: DeliNode
 
-  let path = nodes[i]
-  i += 1
+  shift
+  let path = arg
 
-  if i >= nodes.len:
-    raise newException(ValueError, "missing argument; args: " & $nodes)
-
-  let op = nodes[i]
-  i += 1
+  shift
+  let op = arg
   case op.kind
   of dkArg,
      dkArgShort,
@@ -155,11 +174,8 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
     else:
       raise newException(ValueError, "Unknown test argument: " & $op)
 
-    if i >= nodes.len:
-      raise newException(ValueError, "missing argument for " & $op)
-
-    let path2 = nodes[i]
-    i += 1
+    shift
+    let path2 = arg
     return DKBool( fn2(path.strVal, path2.strVal) )
 
   else:
@@ -167,6 +183,15 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "test": dTest,
+  "pwd": dPwd,
+  "home": dHome,
+  "chdir": dChdir,
+  #"mkdir": dMkdir,
+  #"unlink": dUnlink,
+  #"rename": dRename,
+  #"chown": dChown,
+  #"chmod": dChmod,
+  #"symlink": dSymlink,
 }.toTable
 
 #proc disEqualTo(node: DeliNode): DeliNode {.nimcall.} =

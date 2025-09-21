@@ -4,8 +4,8 @@ import std/tables
 import ../deliast
 
 proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
-  let k1 = ($kind)[2..^1]
-  let k2 = ($node.kind)[2..^1]
+  let k1 = kind.name
+  let k2 = node.kind.name
   return newException(ValueError, "incompatible type: " & k1 & "(" & k2 & ")")
 
 proc toIdentifier*(src: DeliNode): DeliNode =

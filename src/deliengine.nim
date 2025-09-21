@@ -549,9 +549,13 @@ proc checkFunctionCalls(engine: Engine, node: DeliNode) =
       if id notin engine.functions:
         engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
     of dkType:
-      let deliType = args[0].kind
+      let deliType = args[0].sons[0].kind
       let id = args[1].id
-      # TODO
+      if id notin typeFunctions(deliType):
+        engine.setupError("Unknown function: \"" & $deliType & "." & id & "\" at " & node.script.filename & ":" & $node.line)
+    of dkVarDeref:
+      # TODO needs more static analysis
+      discard
     else:
       engine.setupError("Invalid function call: " & $args)
   else:
@@ -604,9 +608,9 @@ proc doRun(engine: Engine, run: DeliNode): DeliNode =
     p.exit = e.errorCode
     engine.runtimeError(e.msg)
 
-  let i = engine.addFd(p.handles[0], p.streams[0])
+  #TODO let i = engine.addFd(p.handles[0], p.streams[0])
   let o = engine.addFd(p.handles[1], p.streams[1])
-  let e = engine.addFd(p.handles[2], p.streams[2])
+  #TODO let e = engine.addFd(p.handles[2], p.streams[2])
 
   let output = engine.fds[o].stream.readAll()
   result.table["out"] = DKStr(output)
