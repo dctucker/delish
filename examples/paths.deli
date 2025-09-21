@@ -1,12 +1,12 @@
 #!/usr/bin/deli
 
 $file = ./examples/paths.deli
-if $file.f {
+if $file.test -f {
   out $file, " is a regular file"
 }
-if $file.d {
+if $file.test -d {
   out $file, " is a directory"
 }
-if not $file.b {
+if not $file.test -b {
   out $file, " is not a block file"
 }

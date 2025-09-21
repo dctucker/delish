@@ -552,6 +552,7 @@ proc checkFunctionCalls(engine: Engine, node: DeliNode) =
     of dkType:
       let deliType = args[0].kind
       let id = args[1].id
+      # TODO
     else:
       engine.setupError("Invalid function call: " & $args)
   else:
@@ -632,6 +633,22 @@ proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[Del
   except KeyError as e:
     engine.runtimeError("Unknown function: ", $ty, ".", $fun.id)
 
+proc evalDerefFunction(engine: Engine, variable: DeliNode, args: seq[DeliNode]): DeliNode =
+  result = deliNone()
+  if args[0].kind == dkIdentifier:
+    let ty = variable.kind
+    if args[0].id in typeFunctions(ty):
+      var nextArgs = @[variable]
+      for i in 1..args.len - 1:
+        var arg = args[i]
+        if arg.kind == dkExpr:
+          arg = arg.sons[0]
+        if arg.kind == dkArg and arg.sons.len > 0:
+          arg = arg.sons[0]
+        nextArgs.add arg
+
+      return engine.evalTypeFunction(ty, args[0], nextArgs)
+
 proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
   result = DK( dkLazy, DKVar(".returned") )
   var code: DeliNode
@@ -644,18 +661,7 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
   of dkVarDeref:
     code = engine.evaluate(fun)
     if code.kind != dkCode:
-      if args[0].kind == dkIdentifier:
-        let ty = code.kind
-        if args[0].id in typeFunctions(ty):
-          var nextArgs = @[code]
-          for i in 1..args.len - 1:
-            if args[i].kind == dkExpr:
-              echo args[i].repr
-              nextArgs.add args[i].sons[0]
-            else:
-              nextArgs.add args[i]
-
-          return engine.evalTypeFunction(ty, args[0], nextArgs)
+      return engine.evalDerefFunction(code, args)
   of dkType:
     return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
   else:

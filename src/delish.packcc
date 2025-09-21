@@ -382,7 +382,9 @@ Type          <- "Integer"                                           { DK( Integ
               /  "Variable"                                          { DK( Variable   ); }
 
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
-StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }
+StrLiteral    <- ( s:DblQuote / s:SingleQuote )                      { $$ = s; }
+DblQuote      <- (["] < [^"]* > ["])                                 { NS( String ); }
+SingleQuote   <- (['] < [^']* > ['])                                 { NS( String ); }
 Command       <- < W ( W / '-' )* >                                  { NS( String ); }
 Identifier    <- < A ( W / '-' )* >                                  { NS( Identifier); }
 ArgShort      <- '-' < W+ >                                          { NS( ArgShort ); }

@@ -84,6 +84,8 @@ enum DeliKind {
 	dkType,
 	dkStrBlock,
 	dkStrLiteral,
+	dkDblQuote,
+	dkSingleQuote,
 	dkCommand,
 	dkIdentifier,
 	dkArgShort,

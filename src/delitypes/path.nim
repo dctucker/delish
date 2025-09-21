@@ -32,6 +32,7 @@ proc myGID(): Gid =
     return getgid()
 
 # functions that perform POSIX `test` command checks
+proc nop(path: string): bool = false
 proc isBlock(path: string): bool = path.has(S_IFBLK)      # -b FILE #FILE exists and is block special
 proc isChar(path: string): bool  = path.has(S_IFCHR)      # -c FILE #FILE exists and is character special
 proc isDir(path: string): bool   = path.has(S_IFDIR)      # -d FILE #FILE exists and is a directory
@@ -81,7 +82,7 @@ proc isExecutable(path: string): bool =                   # -x FILE #FILE exists
     (st.st_mode.has(S_IXUSR) and (st.st_uid == myUID())) or
     (st.st_mode.has(S_IXGRP) and (st.st_gid == myGID()))
   )
-proc isSameFile(file1: string, file2: string): bool =     # -ef FILE1 -ef FILE2 #FILE1 and FILE2 have the same device and inode numbers
+proc isSame(file1: string, file2: string): bool =         # -ef FILE1 -ef FILE2 #FILE1 and FILE2 have the same device and inode numbers
   var st1 = Stat()
   var st2 = Stat()
   return (
@@ -107,36 +108,9 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
     st1.st_mtim < st2.st_mtim
   )
 
-# creates a wrapper function prefixed by `d`; isBlock becomes `disBlock`
-template liftDeliProc1(fn): untyped =
-  proc `d fn`(nodes: varargs[DeliNode]): DeliNode {.inject,nimcall.} =
-    let node = nodes[0]
-    if node.kind != dkPath:
-      return deliNone()
-    let bres = fn(node.strVal)
-    return DeliNode(kind: dkBoolean, boolVal: bres)
-
-liftDeliProc1(isBlock)
-liftDeliProc1(isChar)
-liftDeliProc1(isDir)
-liftDeliProc1(exists)
-liftDeliProc1(isRegular)
-liftDeliProc1(isSetGID)
-liftDeliProc1(isOwnGroup)
-liftDeliProc1(isSticky)
-liftDeliProc1(isLink)
-liftDeliProc1(isUnread)
-liftDeliProc1(isOwnUser)
-liftDeliProc1(isPipe)
-liftDeliProc1(isReadable)
-liftDeliProc1(isNonzero)
-liftDeliProc1(isSocket)
-liftDeliProc1(isSetUID)
-liftDeliProc1(isWriteable)
-liftDeliProc1(isExecutable)
-
 proc dTest(nodes: varargs[DeliNode]): DeliNode =
-  result = DKBool(false)
+  result = deliNone()
+
   var i = 0
 
   let path = nodes[i]
@@ -146,32 +120,50 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
     raise newException(ValueError, "missing argument; args: " & $nodes)
 
   let op = nodes[i]
-  if op.kind != dkArg:
-    echo $op
-    return deliNone()
-  let fn = case op.argName
-  of "b": isBlock
-  of "c": isChar
-  of "d": isDir
-  of "e": exists
-  of "f": isRegular
-  of "g": isSetGID
-  of "G": isOwnGroup
-  of "k": isSticky
-  of "L": isLink
-  of "N": isUnread
-  of "O": isOwnUser
-  of "p": isPipe
-  of "r": isReadable
-  of "s": isNonzero
-  of "S": isSocket
-  of "u": isSetUID
-  of "w": isWriteable
-  of "x": isExecutable
-  else:
-    raise newException(ValueError, "Unrecognized argument: " & op.argName)
+  i += 1
+  case op.kind
+  of dkArg,
+     dkArgShort,
+     dkArgLong:
+    let fn1 = case op.argName
+    of "b", "block":  isBlock
+    of "c", "char":   isChar
+    of "d", "dir":    isDir
+    of "e", "exists": exists
+    of "f", "file":   isRegular
+    of "g", "sgid":   isSetGID
+    of "G", "group":  isOwnGroup
+    of "k", "sticky": isSticky
+    of "L", "link":   isLink
+    of "N", "unread": isUnread
+    of "O", "owner":  isOwnUser
+    of "p", "pipe":   isPipe
+    of "r", "read":   isReadable
+    of "s", "size":   isNonzero
+    of "S", "socket": isSocket
+    of "u", "suid":   isSetUID
+    of "w", "write":  isWriteable
+    of "x", "exec":   isExecutable
+    else:             nop
+    if fn1 != nop:
+      return DKBool( fn1(path.strVal) )
 
-  result.boolVal = fn(path.strVal)
+    let fn2 = case op.argName
+    of "n", "newer":         isNewer
+    of "o", "older":         isOlder
+    of "i", "equal", "same": isSame
+    else:
+      raise newException(ValueError, "Unknown test argument: " & $op)
+
+    if i >= nodes.len:
+      raise newException(ValueError, "missing argument for " & $op)
+
+    let path2 = nodes[i]
+    i += 1
+    return DKBool( fn2(path.strVal, path2.strVal) )
+
+  else:
+    echo $op
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "test": dTest,
