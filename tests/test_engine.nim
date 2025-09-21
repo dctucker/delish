@@ -3,7 +3,7 @@ import os
 
 import ../src/deliast
 import ../src/deliengine
-import ../src/deliops
+import ../src/delitypes/ops
 
 var engine: Engine
 

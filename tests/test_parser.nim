@@ -34,12 +34,9 @@ suite "parser":
     let check = DK( dkScript, DK( dkCode, DK( dkStatement,
       DK( dkStreamStmt,
         DK( dkStream, DK( dkStreamOut ) ),
-        DK( dkExprList,
-          DK( dkExpr, DK( dkString ) ),
-          DK( dkExpr, DK( dkInteger ) )
-        )
+        DK( dkExpr, DK( dkString ) ),
+        DK( dkExpr, DK( dkInteger ) )
       )
     )))
-    check:
-      kinds_match(parsed, check)
+    check kinds_match(parsed, check)
 

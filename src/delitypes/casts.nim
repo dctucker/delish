@@ -1,7 +1,7 @@
 import os
 import std/strutils
 import std/tables
-import deliast
+import ../deliast
 
 proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
   let k1 = ($kind)[2..^1]

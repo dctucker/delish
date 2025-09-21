@@ -1,4 +1,4 @@
-import deliast
+import ../deliast
 import std/tables
 
 proc `<=`*(o1, o2: DeliNode): bool =

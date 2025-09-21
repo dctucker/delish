@@ -3,8 +3,6 @@ import std/tables
 import std/lists
 import os
 import std/streams
-import deliops
-import delicast
 import deliast
 import strutils
 import sequtils
@@ -13,6 +11,8 @@ import deliargs
 import deliscript
 import deliparser
 import deliprocess
+import delitypes/casts
+import delitypes/ops
 import delitypes/functions
 
 type DeliError* = object of CatchableError
