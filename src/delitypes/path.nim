@@ -111,31 +111,35 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
     st1.st_mtim < st2.st_mtim
   )
 
-# file and directory operations
-proc dChdir(nodes: varargs[DeliNode]): DeliNode =
-  var arg: DeliNode
-  var arg_i = 0
-  shift
-  expect dkPath
-  result = DKBool( chdir(arg.strVal.cstring) == 0 )
-
-proc dPwd(nodes: varargs[DeliNode]): DeliNode =
-  var arg_i = 0
+proc dStat(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextarg dkPath
+  let path = arg
   maxarg
-  result = DKPath($getCurrentDir())
-
-proc dHome(nodes: varargs[DeliNode]): DeliNode =
-  var arg_i = 0
-  maxarg
-  result = DKPath($getHomeDir())
+  var st = Stat()
+  if stat(path.strVal.cstring, st) != 0:
+    return deliNone()
+  result = DeliObject([
+    ("dev",     DKInt(st.st_dev)),
+    ("ino",     DKInt(st.st_ino)),
+    ("mode",    DKInt(st.st_mode.int)),
+    ("nlink",   DKInt(st.st_nlink.int)),
+    ("uid",     DKInt(st.st_uid.int)),
+    ("gid",     DKInt(st.st_gid.int)),
+    ("rdev",    DKInt(st.st_rdev)),
+    ("size",    DKInt(st.st_size)),
+    ("atime",   DKInt(st.st_atim.tv_sec.int)), # TODO time with nanoseconds
+    ("mtime",   DKInt(st.st_mtim.tv_sec.int)),
+    ("ctime",   DKInt(st.st_ctim.tv_sec.int)),
+    ("blksize", DKInt(st.st_blksize)),
+    ("blocks",  DKInt(st.st_blocks)),
+  ])
 
 proc dTest(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  shift
   result = deliNone()
 
-  var arg_i = 0
-  var arg: DeliNode
-
-  shift
   let path = arg
 
   shift
@@ -181,7 +185,23 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
   else:
     echo $op
 
+# file and directory operations
+proc dChdir(nodes: varargs[DeliNode]): DeliNode =
+  var arg: DeliNode
+  var arg_i = 0
+  nextarg dkPath
+  result = DKBool( chdir(arg.strVal.cstring) == 0 )
+
+proc dPwd(nodes: varargs[DeliNode]): DeliNode =
+  noargs
+  result = DKPath($getCurrentDir())
+
+proc dHome(nodes: varargs[DeliNode]): DeliNode =
+  noargs
+  result = DKPath($getHomeDir())
+
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+  "stat": dStat,
   "test": dTest,
   "pwd": dPwd,
   "home": dHome,
@@ -193,19 +213,3 @@ let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nim
   #"chmod": dChmod,
   #"symlink": dSymlink,
 }.toTable
-
-#proc disEqualTo(node: DeliNode): DeliNode {.nimcall.} =
-#  #in:
-#  # FunctionCall(
-#  #   VarDeref:VarDeref( Variable:file Identifier:nt )
-#  #   Expr:VarDeref ( VarDeref( Variable:file2 ) )
-#  # ))
-#  #
-#  #out:
-#  # DK(dkFunctionCall, DKId(node.id), path1, path2)
-#
-#let PathFunctions2: Table[string, proc(node: DeliNode): DeliNode {.nimcall.} ] = {
-#  "ef": disEqualTo,
-#  "nt": disNewerThan,
-#  "ot": disOlderThan,
-#}
