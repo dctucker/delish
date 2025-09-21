@@ -41,6 +41,10 @@ type
     of dkRegex:        pattern*:    string
     of dkStream,
        dkInteger:      intVal*:     int
+    of dkDecimal:
+                       whole*:      int
+                       fraction*:   int
+                       decimals*:   int8
     of dkBoolean:      boolVal*:    bool
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
@@ -109,6 +113,9 @@ proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
 
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
+
+proc DKDecimal*(whole, fraction: int, decimals: int8): DeliNode =
+  return DeliNode(kind: dkDecimal, whole: whole, fraction: fraction, decimals: decimals)
 
 proc DKBool*(boolVal: bool): DeliNode =
   return DeliNode(kind: dkBoolean, boolVal: boolVal)
@@ -221,6 +228,9 @@ proc toString*(node: DeliNode): string =
      dkString:     node.strVal
   of dkStream,
      dkInteger:    $(node.intVal)
+  of dkDecimal:
+    var frac = ""
+    $(node.whole) & '.' & align($(node.fraction), node.decimals, '0')
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
   of dkVarDeref:   "VarDeref"

@@ -233,7 +233,7 @@ Invocation    <- c:Command                                           { DK( Invoc
 ArgExpr       <- a:Arg (S+ / '=') e:Expr?                            { DK( ArgExpr, a, e ); }
 
 ConstExpr     <-
-              (  e:Integer / e:StrBlock / e:StrLiteral
+              (  e:Number / e:StrBlock / e:StrLiteral
               /  e:Boolean / e:Array / e:Object
               /  e:Path / e:JsonBlock
               )                                                      { $$ = e; }
@@ -243,7 +243,7 @@ Expr          <-
               /  s:Array / s:Object
               /  s:Arg / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
-              /  s:Integer / s:Boolean
+              /  s:Number / s:Boolean
               /  s:BoolExpr
               /  s:Path     / s:JsonBlock  / s:Stream
               /  s:Cast     / s:FunctionCall
@@ -293,7 +293,7 @@ Comparison    <- e1:CompExpr S+ o:Comparator S+ e2:CompExpr         ~{ ER("expec
                                                                      { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
               (  s:FunctionCall / s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
-              /  s:Integer / s:Boolean / s:Path / s:Arg
+              /  s:Number / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
 Comparator    <-
               (  o:CompGe / o:CompGt / o:CompLe / o:CompLt
@@ -370,6 +370,7 @@ Cast          <- t:Type S* "(" S* e:Expr                            ~{ ER("expec
                                S*        ")"                         { DK( Cast, t, e ); }
 
 Type          <- "Integer"                                           { DK( Integer    ); }
+              /  "Decimal"                                           { DK( Decimal    ); }
               /  "Arg"                                               { DK( Arg        ); }
               /  "Array"                                             { DK( Array      ); }
               /  "Boolean"                                           { DK( Boolean    ); }
@@ -393,12 +394,15 @@ ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLo
 String        <- < C+ >                                              { NS( String ); }
 Regex         <- 'r/' < ( '\/' / !'/' . )+ > '/'                     { NS( Regex ); }
 
-Integer       <-  &"0x"  h:Hex                                       { $$ = h; }
-              /   &'0'   o:Oct                                       { $$ = o; }
-              /   !'0'   d:Dec                                       { $$ = d; }
-Hex           <- < "0x" [0-9A-Fa-f]+ >                               { NS( Integer ); }
-Oct           <- < '0' !'x' [0-7]* >                                 { NS( Integer ); }
-Dec           <- < [0-9]+ >                                          { NS( Integer ); }
+Number        <- d:Decimal {$$=d;} / i:Integer {$$=i;}
+Decimal       <- < [0-9]+ '.' [0-9]+ >                               { NS( Decimal ); }
+
+Integer       <-  &"0x"  h:Int16                                     { $$ = h; }
+              /   &'0'   o:Int8                                      { $$ = o; }
+              /   !'0'   d:Int10                                     { $$ = d; }
+Int16         <- < "0x" [0-9A-Fa-f]+ >                               { NS( Integer ); }
+Int8          <- < '0' !'x' [0-7]* >                                 { NS( Integer ); }
+Int10         <- < [0-9]+ >                                          { NS( Integer ); }
 
 Path          <- < ("."* "/" C+ ) / "." >                            { NS( Path ); }
 Variable      <- '$' < W (W / '-')* >                                { NS( Variable ); }

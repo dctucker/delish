@@ -75,6 +75,17 @@ type DeliT = object
   length: csize_t
   parser: Parser
 
+# 123.45
+# 0.12345
+# 12345.000
+# max 64-bit uint: 18446744073709551616 (19 digits)
+# max 32-bit  int: 4294967296            (9 digits)
+proc parseDecimal(str: string): (int,int,int8) =
+  var parts = str.split('.')
+  result[0] = parts[0].parseInt
+  result[1] = parts[1].parseInt
+  result[2] = parts[1].len.int8
+
 proc parseIntAny(str: string): int =
   if str.len > 2 and str[0..1] == "0x":
     result = parseHexInt(str)
@@ -99,10 +110,8 @@ proc parseCapture(node: DeliNode, capture: string) =
       node.sons.add(DeliNode(kind:dkString, strVal: capture))
   of dkBoolean:    node.boolVal = capture == "true"
   #of dkStream:     node.intVal  = parseStreamInt(capture)
-  of dkOct,
-     dkHex,
-     dkDec,
-     dkInteger:    node.intVal  = parseIntAny(capture)
+  of dkInteger:    node.intVal  = parseIntAny(capture)
+  of dkDecimal:    (node.whole, node.fraction, node.decimals) = parseDecimal(capture)
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture
   else:

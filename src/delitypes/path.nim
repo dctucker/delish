@@ -111,6 +111,9 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
     st1.st_mtim < st2.st_mtim
   )
 
+proc DKTime(time: Timespec): DeliNode =
+  return DKDecimal(time.tv_sec.int, time.tv_nsec, 9)
+
 proc dStat(nodes: varargs[DeliNode]): DeliNode =
   argvars
   nextarg dkPath
@@ -128,9 +131,9 @@ proc dStat(nodes: varargs[DeliNode]): DeliNode =
     ("gid",     DKInt(st.st_gid.int)),
     ("rdev",    DKInt(st.st_rdev)),
     ("size",    DKInt(st.st_size)),
-    ("atime",   DKInt(st.st_atim.tv_sec.int)), # TODO time with nanoseconds
-    ("mtime",   DKInt(st.st_mtim.tv_sec.int)),
-    ("ctime",   DKInt(st.st_ctim.tv_sec.int)),
+    ("atime",   DKTime(st.st_atim)),
+    ("mtime",   DKTime(st.st_mtim)),
+    ("ctime",   DKTime(st.st_ctim)),
     ("blksize", DKInt(st.st_blksize)),
     ("blocks",  DKInt(st.st_blocks)),
   ])
