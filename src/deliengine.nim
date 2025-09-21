@@ -82,8 +82,7 @@ proc initFunctions (engine: Engine, script: DeliNode)
 proc loadScript    (engine: Engine, script: DeliNode)
 proc assignVariable(engine: Engine, key: string, value: DeliNode)
 
-proc printStatements(engine: Engine) =
-  stderr.write "\27[36m"
+proc printStatements*(engine: Engine, colorize: bool = true) =
   var head = engine.readhead
   while head != nil:
     let stmt = head.value
@@ -91,10 +90,10 @@ proc printStatements(engine: Engine) =
       "." & $(-stmt.line)
     else:
       ":" & $stmt.line
-    stderr.write " ", line, "▶\27[48;5;236m", stmt.repr, "\27[40m"
+    stderr.write " \27[36m", line, "▶\27[48;5;235m", stmt.repr[0..^2], "\27[0m"
     head = head.next
     stderr.write "\n"
-  stderr.write " END\27[0m\n"
+  stderr.write "\27[36m END\27[0m\n"
 
 proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList

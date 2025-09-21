@@ -221,7 +221,7 @@ FunctionCall  <- !Keyword
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
 EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }
 
-ExprList      <- e:Expr                                              { DK( ExprList, e ); }
+ExprList      <- e:Expr                                              { $$ = e; }
               (  S* ',' S* e:Expr                                   ~{ ER("expected expression after `,`"); }
                  S*                                                  { NA( $$, e ); }
               )*

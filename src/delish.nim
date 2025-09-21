@@ -28,6 +28,7 @@ proc exception_handler*(e: ref Exception, debug: int) =
 proc delish_main*(cmdline: seq[string] = @[]): int =
   var interactive = false
   var command_mode = false
+  var parse_only = false
   var debug = 0
   var breakpoints = @[54]
   var mainarg = ""
@@ -40,6 +41,8 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     let arg = shift()
     #echo arg
     if arg.isFlag():
+      if arg.short_name == "p":
+        parse_only = true
       if arg.short_name == "i":
         interactive = true
       if arg.short_name == "d":
@@ -94,6 +97,10 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     try:
       engine = newEngine(parsed, debug)
       nteract = newNteract(engine)
+
+      if parse_only:
+        engine.printStatements()
+        return 0
 
       for line in engine.tick():
         if debug > 0:
