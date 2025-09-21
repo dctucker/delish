@@ -13,3 +13,9 @@ let TypeFunctions: TypeFunctionTable = {
 proc typeFunction*(kind: DeliKind, op: DeliNode): DeliFunction =
   assert op.kind == dkIdentifier
   TypeFunctions[kind][op.id]
+
+proc typeFunctions*(kind: DeliKind): seq[string] =
+  if kind in TypeFunctions:
+    let funcs = TypeFunctions[kind]
+    for key, v in funcs:
+      result.add key

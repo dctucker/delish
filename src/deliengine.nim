@@ -628,7 +628,7 @@ proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[Del
   assert fun.kind == dkIdentifier
   try:
     let fn = typeFunction(ty, fun)
-    return fn(DK(dkExprList, args))
+    return fn(args)
   except KeyError as e:
     engine.runtimeError("Unknown function: ", $ty, ".", $fun.id)
 
@@ -643,6 +643,19 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
     code = engine.functions[fun.id]
   of dkVarDeref:
     code = engine.evaluate(fun)
+    if code.kind != dkCode:
+      if args[0].kind == dkIdentifier:
+        let ty = code.kind
+        if args[0].id in typeFunctions(ty):
+          var nextArgs = @[code]
+          for i in 1..args.len - 1:
+            if args[i].kind == dkExpr:
+              echo args[i].repr
+              nextArgs.add args[i].sons[0]
+            else:
+              nextArgs.add args[i]
+
+          return engine.evalTypeFunction(ty, args[0], nextArgs)
   of dkType:
     return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
   else:

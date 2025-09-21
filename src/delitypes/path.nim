@@ -135,26 +135,46 @@ liftDeliProc1(isSetUID)
 liftDeliProc1(isWriteable)
 liftDeliProc1(isExecutable)
 
+proc dTest(nodes: varargs[DeliNode]): DeliNode =
+  result = DKBool(false)
+  var i = 0
+
+  let path = nodes[i]
+  i += 1
+
+  if i >= nodes.len:
+    raise newException(ValueError, "missing argument; args: " & $nodes)
+
+  let op = nodes[i]
+  if op.kind != dkArg:
+    echo $op
+    return deliNone()
+  let fn = case op.argName
+  of "b": isBlock
+  of "c": isChar
+  of "d": isDir
+  of "e": exists
+  of "f": isRegular
+  of "g": isSetGID
+  of "G": isOwnGroup
+  of "k": isSticky
+  of "L": isLink
+  of "N": isUnread
+  of "O": isOwnUser
+  of "p": isPipe
+  of "r": isReadable
+  of "s": isNonzero
+  of "S": isSocket
+  of "u": isSetUID
+  of "w": isWriteable
+  of "x": isExecutable
+  else:
+    raise newException(ValueError, "Unrecognized argument: " & op.argName)
+
+  result.boolVal = fn(path.strVal)
+
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
-  "b": dIsBlock,
-  "c": dIsChar,
-  "d": dIsDir,
-  "e": dExists,
-  "f": dIsRegular,
-  "g": dIsSetGID,
-  "G": dIsOwnGroup,
-  "k": dIsSticky,
-  "L": dIsLink,
-  "N": dIsUnread,
-  "O": dIsOwnUser,
-  "p": dIsPipe,
-  "r": dIsReadable,
-  "s": dIsNonzero,
-  "S": dIsSocket,
-  #"t": dIsTty, # this belongs in StreamFunctions
-  "u": dIsSetUID,
-  "w": dIsWriteable,
-  "x": dIsExecutable,
+  "test": dTest,
 }.toTable
 
 #proc disEqualTo(node: DeliNode): DeliNode {.nimcall.} =
