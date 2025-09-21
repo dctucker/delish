@@ -44,10 +44,6 @@ iterator parseCmdLine(cmdline: seq[string] = @[]): Argument =
     of cmdArgument:
       yield Argument(value: strval p.key)
 
-#var params = commandLineParams()
-#proc shift() =
-#  params = params[1 .. ^1]
-
 var user_args*: seq[Argument]
 
 proc printUserArguments*() =

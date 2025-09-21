@@ -32,6 +32,7 @@ proc myGID(): Gid =
     return getgid()
 
 # functions that perform POSIX `test` command checks
+proc nop(path: string): bool = false
 proc isBlock(path: string): bool = path.has(S_IFBLK)      # -b FILE #FILE exists and is block special
 proc isChar(path: string): bool  = path.has(S_IFCHR)      # -c FILE #FILE exists and is character special
 proc isDir(path: string): bool   = path.has(S_IFDIR)      # -d FILE #FILE exists and is a directory
@@ -81,7 +82,7 @@ proc isExecutable(path: string): bool =                   # -x FILE #FILE exists
     (st.st_mode.has(S_IXUSR) and (st.st_uid == myUID())) or
     (st.st_mode.has(S_IXGRP) and (st.st_gid == myGID()))
   )
-proc isSameFile(file1: string, file2: string): bool =     # -ef FILE1 -ef FILE2 #FILE1 and FILE2 have the same device and inode numbers
+proc isSame(file1: string, file2: string): bool =         # -ef FILE1 -ef FILE2 #FILE1 and FILE2 have the same device and inode numbers
   var st1 = Stat()
   var st2 = Stat()
   return (
@@ -107,53 +108,65 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
     st1.st_mtim < st2.st_mtim
   )
 
-# creates a wrapper function prefixed by `d`; isBlock becomes `disBlock`
-template liftDeliProc1(fn): untyped =
-  proc `d fn`(node: DeliNode): DeliNode {.inject,nimcall.} =
-    if node.kind != dkExprList:
-      return deliNone()
-    let bres = fn(node.sons[0].strVal)
-    return DeliNode(kind: dkBoolean, boolVal: bres)
+proc dTest(nodes: varargs[DeliNode]): DeliNode =
+  result = deliNone()
 
-liftDeliProc1(isBlock)
-liftDeliProc1(isChar)
-liftDeliProc1(isDir)
-liftDeliProc1(exists)
-liftDeliProc1(isRegular)
-liftDeliProc1(isSetGID)
-liftDeliProc1(isOwnGroup)
-liftDeliProc1(isSticky)
-liftDeliProc1(isLink)
-liftDeliProc1(isUnread)
-liftDeliProc1(isOwnUser)
-liftDeliProc1(isPipe)
-liftDeliProc1(isReadable)
-liftDeliProc1(isNonzero)
-liftDeliProc1(isSocket)
-liftDeliProc1(isSetUID)
-liftDeliProc1(isWriteable)
-liftDeliProc1(isExecutable)
+  var i = 0
 
-let PathFunctions*: Table[string, proc(node: DeliNode): DeliNode {.nimcall.} ] = {
-  "b": dIsBlock,
-  "c": dIsChar,
-  "d": dIsDir,
-  "e": dExists,
-  "f": dIsRegular,
-  "g": dIsSetGID,
-  "G": dIsOwnGroup,
-  "k": dIsSticky,
-  "L": dIsLink,
-  "N": dIsUnread,
-  "O": dIsOwnUser,
-  "p": dIsPipe,
-  "r": dIsReadable,
-  "s": dIsNonzero,
-  "S": dIsSocket,
-  #"t": dIsTty, # this belongs in StreamFunctions
-  "u": dIsSetUID,
-  "w": dIsWriteable,
-  "x": dIsExecutable,
+  let path = nodes[i]
+  i += 1
+
+  if i >= nodes.len:
+    raise newException(ValueError, "missing argument; args: " & $nodes)
+
+  let op = nodes[i]
+  i += 1
+  case op.kind
+  of dkArg,
+     dkArgShort,
+     dkArgLong:
+    let fn1 = case op.argName
+    of "b", "block":  isBlock
+    of "c", "char":   isChar
+    of "d", "dir":    isDir
+    of "e", "exists": exists
+    of "f", "file":   isRegular
+    of "g", "sgid":   isSetGID
+    of "G", "group":  isOwnGroup
+    of "k", "sticky": isSticky
+    of "L", "link":   isLink
+    of "N", "unread": isUnread
+    of "O", "owner":  isOwnUser
+    of "p", "pipe":   isPipe
+    of "r", "read":   isReadable
+    of "s", "size":   isNonzero
+    of "S", "socket": isSocket
+    of "u", "suid":   isSetUID
+    of "w", "write":  isWriteable
+    of "x", "exec":   isExecutable
+    else:             nop
+    if fn1 != nop:
+      return DKBool( fn1(path.strVal) )
+
+    let fn2 = case op.argName
+    of "n", "newer":         isNewer
+    of "o", "older":         isOlder
+    of "i", "equal", "same": isSame
+    else:
+      raise newException(ValueError, "Unknown test argument: " & $op)
+
+    if i >= nodes.len:
+      raise newException(ValueError, "missing argument for " & $op)
+
+    let path2 = nodes[i]
+    i += 1
+    return DKBool( fn2(path.strVal, path2.strVal) )
+
+  else:
+    echo $op
+
+let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+  "test": dTest,
 }.toTable
 
 #proc disEqualTo(node: DeliNode): DeliNode {.nimcall.} =

@@ -212,7 +212,7 @@ RunFlags      <-
 FunctionStmt  <- !Keyword c:FunctionCall                       { DK( FunctionStmt, c ); SL(c); }
 FunctionCall  <- !Keyword
               (  !Type i:Identifier                                  { DK( FunctionCall, i ); }
-              /  !Type v:Variable '.' i:Identifier                   { DK( FunctionCall, DK( VarDeref, v, i ) ); }
+              /  !Type v:Variable '.' i:Identifier                   { DK( FunctionCall, DK( VarDeref, v ), i ); }
               /        t:Type '.' i:Identifier                       { DK( FunctionCall, DK( Type, t ), i); }
               )
               (  S+ e:Expr                                           { NA( $$, e ); }
@@ -258,7 +258,11 @@ AndExpr       <- l:AndExpr S+ o:BoolAnd S+ r:NotExpr                 { DK( CondE
                /                           r:NotExpr                 { $$ = r; }
 NotExpr       <- o:BoolNot S+ r:CondExpr                             { $$ = o; NA($$, r); }
                /              r:CondExpr                             { $$ = r; }
-CondExpr      <- ( s:Arg / s:BoolExpr / s:VarDeref / s:Boolean )     { $$ = s; }
+CondExpr      <-
+              (  s:Arg / s:BoolExpr
+              /  s:FunctionCall
+              /  s:VarDeref / s:Boolean
+              )                                                      { $$ = s; }
 
 MathExpr      <- a:AddExpr                                           { $$ = a; }
 AddExpr       <- l:AddExpr S+ ( o:AddOp / o:SubOp ) S+ r:MulExpr     { DK( MathExpr, o, l, r ); }
@@ -288,7 +292,7 @@ BoolAnd       <- "and"                                               { DK( BoolA
 Comparison    <- e1:CompExpr S+ o:Comparator S+ e2:CompExpr         ~{ ER("expected comparable expression after operator"); }
                                                                      { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
-              (  s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
+              (  s:FunctionCall / s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
               /  s:Integer / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
 Comparator    <-
@@ -378,7 +382,9 @@ Type          <- "Integer"                                           { DK( Integ
               /  "Variable"                                          { DK( Variable   ); }
 
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
-StrLiteral    <- ( (["] < [^"]* > ["]) / (['] < [^']* > [']) )       { NS( String ); }
+StrLiteral    <- ( s:DblQuote / s:SingleQuote )                      { $$ = s; }
+DblQuote      <- (["] < [^"]* > ["])                                 { NS( String ); }
+SingleQuote   <- (['] < [^']* > ['])                                 { NS( String ); }
 Command       <- < W ( W / '-' )* >                                  { NS( String ); }
 Identifier    <- < A ( W / '-' )* >                                  { NS( Identifier); }
 ArgShort      <- '-' < W+ >                                          { NS( ArgShort ); }
