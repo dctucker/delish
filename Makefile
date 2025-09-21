@@ -22,7 +22,7 @@ packdeli: src/packcc.c Makefile
 #tests/%.nim: $(SOURCES)
 
 tests/bin/%: tests/%.nim src/packcc.c src/packcc.h $(SOURCES)
-	nim c -o=tests/bin/ $<
+	nim c --hint:XDeclaredButNotUsed:off -o=tests/bin/ $<
 
 test: debug
 test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
