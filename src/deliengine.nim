@@ -176,17 +176,21 @@ proc loadScript(engine: Engine, script: DeliNode) =
     endline = engine.tail.value.line
 
   for s in script.sons:
+    endline = max(endline, s.line)
     for s2 in s.sons:
+      endline = max(endline, s2.line)
       engine.insertStmt(s2)
   engine.insertStmt(DKInner(0, deliNone()))
   engine.tail = engine.writehead
-  debug 3:
-    echo engine.statements
   engine.setHeads(engine.statements.head.next)
 
-  endline = max(endline, script.script.line_count + 1)
+  if script.script != nil:
+    endline = max(endline, script.script.line_count + 1)
   engine.tail.value.line = endline
   engine.assignVariable(".return", DeliNode( kind: dkJump, list_node: engine.tail ))
+
+  debug 3:
+    echo engine.statements
 
 proc sourceFile*(engine: Engine): string =
   result = ""
@@ -958,8 +962,10 @@ proc doConditional(engine: Engine, cond: DeliNode) =
 
   if cond.list_node == nil:
     debug 3:
+      stderr.write("\27[36m")
       for son in cond.sons:
         stderr.write "   - ", son.line, ": ", son.repr, "\n"
+      stderr.write("\27[0m")
 
     assert cond.sons.len mod 2 == 0
 
@@ -997,8 +1003,6 @@ proc doConditional(engine: Engine, cond: DeliNode) =
 
   let condition = cond.sons[0]
   let eval = engine.evaluate(condition)
-  debug 3:
-    echo "  condition: ", $eval
   let ok = engine.isTruthy(eval)
   if not ok:
     engine.setHeads(cond.list_node)

@@ -1,0 +1,11 @@
+#!/usr/bin/deli
+
+$x = 127
+$y = 0x7f
+$z = 0177
+if $x != $y {
+  return 1
+}
+if $y != $z {
+  return 1
+}
