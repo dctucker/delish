@@ -148,12 +148,12 @@ VariableStmt  <- &'$' v:Variable                                    ~{ ER("inval
               )                                                      { DK( VariableStmt, v, o, e ); }
 
 AssignExpr    <-
-              (  e:OpenExpr / e:ArgExpr /  e:RunStmt
+              (  e:Number / e:OpenExpr / e:ArgExpr /  e:RunStmt
               /  e:FunctionCall / e:Cast / e:Expr
               )                                                      { $$ = e; }
 
 AppendExpr    <-
-              (   e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr
+              (   e:Number / e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr
               /   e:Cast
               )                                                      { $$ = e; }
 
@@ -230,7 +230,9 @@ Invocation    <- c:Command                                           { DK( Invoc
               (  S+ !'|' (e:Expr / e:String)                         { NA( $$, e ); }
               )*
 
-ArgExpr       <- a:Arg (S+ / '=') e:Expr?                            { DK( ArgExpr, a, e ); }
+ArgExpr       <- a:Arg                                               { DK( ArgExpr, a ); }
+              (  S+ / '=' e:Expr                                     { NA( $$, e ); }
+              )?
 
 ConstExpr     <-
               (  e:Number / e:StrBlock / e:StrLiteral
@@ -241,9 +243,9 @@ ConstExpr     <-
 Expr          <-
               (  [(] S* s:MathExpr S* [)]
               /  s:Array / s:Object
+              /  s:Number / s:Boolean
               /  s:Arg / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
-              /  s:Number / s:Boolean
               /  s:BoolExpr
               /  s:Path     / s:JsonBlock  / s:Stream
               /  s:Cast     / s:FunctionCall
@@ -396,7 +398,7 @@ Regex         <- 'r/' < ( '\/' / !'/' . )+ > '/'                     { NS( Regex
 
 Number        <- d:Decimal                                           { $$ = d; }
                / i:Integer                                           { $$ = i; }
-Decimal       <- < [0-9]+ '.' [0-9]+ >                               { NS( Decimal ); }
+Decimal       <- < '-'? [0-9]+ '.' [0-9]+ >                          { NS( Decimal ); }
 
 Integer       <-  &"0x"  h:Int16                                     { $$ = h; }
               /   &'0'   o:Int8                                      { $$ = o; }

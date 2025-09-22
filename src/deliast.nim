@@ -211,7 +211,10 @@ proc objFormat(node: DeliNode): string =
   result &= "]"
 
 proc `$`*(decimal: Decimal): string =
-  return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
+  var sign = ""
+  if decimal.fraction < 0:
+    sign = "-"
+  return sign & $(decimal.whole) & '.' & align($(decimal.fraction.abs), decimal.decimals, '0')
 
 proc toString*(node: DeliNode): string =
   if node.kind == dkExpr:

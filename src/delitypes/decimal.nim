@@ -57,7 +57,7 @@ proc `-`*(a0, b0: Decimal): Decimal =
   result.fraction = a.fraction - b.fraction
   result.decimals = a.decimals
   let underflow = result.decimals - ($result.fraction).len
-  if result.fraction < 0:
+  if result.whole > 0 and result.fraction < 0:
     result.whole -= 1
     result.fraction += E10(result.decimals)
 
