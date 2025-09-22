@@ -397,15 +397,15 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
         result = result.sons[idx]
       else:
         result = deliNone()
-    of dkPath:
+    of dkInteger,
+       dkPath:
       if son.kind == dkIdentifier:
         # TODO this shouldn't execute the function, it should turn it into a function call
-        result = typeFunction(dkPath, son)(result)
+        result = typeFunction(result.kind, son)(result)
       else:
         result = deliNone()
       if result.kind == dkNone:
         todo "evalVarDeref ", result.kind, " using ", $son
-      #result = PathObject.
     else:
       todo "evalVarDeref ", result.kind, " using ", son.kind
 
@@ -647,11 +647,23 @@ proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   debug 3:
     echo "define ", engine.functions
 
+proc reduceExprs(engine: Engine, args: seq[DeliNode]): seq[DeliNode] =
+  for i in 0..args.len - 1:
+    var arg = args[i]
+    if arg.kind == dkExpr:
+      arg = arg.sons[0]
+    if arg.kind == dkArg and arg.sons.len > 0:
+      arg = arg.sons[0]
+    result.add arg
+
 proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[DeliNode]): DeliNode =
   assert fun.kind == dkIdentifier
+  let nextArgs = engine.reduceExprs(args)
   try:
     let fn = typeFunction(ty, fun)
-    return fn(args)
+    return fn(nextArgs)
+  except ValueError as e:
+    engine.runtimeError(e.msg)
   except KeyError as e:
     engine.runtimeError("Unknown function: ", $ty, ".", $fun.id)
 
@@ -661,14 +673,8 @@ proc evalDerefFunction(engine: Engine, variable: DeliNode, args: seq[DeliNode]):
     let ty = variable.kind
     if args[0].id in typeFunctions(ty):
       var nextArgs = @[variable]
-      for i in 1..args.len - 1:
-        var arg = args[i]
-        if arg.kind == dkExpr:
-          arg = arg.sons[0]
-        if arg.kind == dkArg and arg.sons.len > 0:
-          arg = arg.sons[0]
+      for arg in args[1..^1]:
         nextArgs.add arg
-
       return engine.evalTypeFunction(ty, args[0], nextArgs)
 
 proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =

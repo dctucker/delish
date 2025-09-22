@@ -207,7 +207,7 @@ proc argFormat(node: DeliNode): string =
 proc objFormat(node: DeliNode): string =
   result = "["
   for key,value in node.table:
-    result &= key & ": " & $value & "; "
+    result &= key & ": " & value.toString() & "; "
   result &= "]"
 
 proc `$`*(decimal: Decimal): string =
