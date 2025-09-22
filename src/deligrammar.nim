@@ -18,26 +18,23 @@ const grammar_source_0 = staticRead("delish.packcc").replace('\n','\0')
 
 proc getGrammar*():string = grammar_source_0.replace('\0','\n')
 
-macro grammarToEnum*(extra: static[seq[string]]) =
-  let symbols = getGrammar().splitLines().map(proc(x:string):string =
+proc getSymbols(): seq[string] {.compileTime.} =
+  result = getGrammar().splitLines().map(proc(x:string):string =
     if x.contains("<-"):
       let split = x.splitWhitespace()
       if split.len() > 0:
         if split[0].len > 1:
           return "dk" & split[0]
   ).filter(proc(x:string):bool = x.len() > 0)
+
+macro grammarToEnum*(extra: static[seq[string]]) =
+  let symbols = getSymbols()
   let options = concat(symbols, extra.map(proc(x:string):string = "dk" & x))
   let stmt = "type DeliKind* = enum " & options.join(", ")
   result = parseStmt(stmt)
 
 macro grammarToCEnum*(extra: static[seq[string]]) =
-  let symbols = getGrammar().splitLines().map(proc(x:string):string =
-    if x.contains("<-"):
-      let split = x.splitWhitespace()
-      if split.len() > 0:
-        if split[0].len > 1:
-          return "dk" & split[0]
-  ).filter(proc(x:string):bool = x.len() > 0)
+  let symbols = getSymbols()
   let options = concat(symbols, extra.map(proc(x:string):string = "dk" & x))
   let stmt = "enum DeliKind {\n\t" & options.join(",\n\t") & "\n};\n";
   "src/delikind.h".writeFile(stmt)
