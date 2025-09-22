@@ -5,5 +5,14 @@ $y = 123.45
 $x = 456.78
 $z = ( $x + $y )
 if $z != 580.23 {
+  out "addition failed: ", $z, " != 580.23"
+  return 1
+}
+
+$x = 123.45
+$y =   0.5678
+$z = ( $x - $y )
+if $z != 122.8822 {
+  out "subtraction failed: ", $z, " != 122.8822"
   return 1
 }

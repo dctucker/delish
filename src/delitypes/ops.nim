@@ -6,6 +6,8 @@ proc `<=`*(o1, o2: DeliNode): bool =
   case o1.kind
   of dkInteger:
     return o1.intVal <= o2.intVal
+  #of dkDecimal:
+  #  return o1.decVal <= o2.decVal
   of dkPath, dkString, dkStrLiteral, dkStrBlock:
     return o1.strVal <= o2.strVal
   else:
@@ -123,10 +125,10 @@ proc `not`*(a: DeliNode): DeliNode =
 proc `+`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
-    of dkDecimal:
-      return DeliNode(kind: dkDecimal, decVal: a.decVal + b.decVal)
     of dkInteger:
       return DeliNode(kind: dkInteger, intVal: a.intVal + b.intval)
+    of dkDecimal:
+      return DeliNode(kind: dkDecimal, decVal: a.decVal + b.decVal)
     of dkString, dkPath:
       return DeliNode(kind: dkString, strVal: a.strVal & b.strVal)
     of dkArray:
@@ -158,6 +160,8 @@ proc `-`*(a, b: DeliNode): DeliNode =
     case a.kind
     of dkInteger:
       return DeliNode(kind: dkInteger, intVal: a.intVal - b.intval)
+    of dkDecimal:
+      return DeliNode(kind: dkDecimal, decVal: a.decVal - b.decVal)
     else:
       todo "sub ", a.kind, " - ", b.kind
       return deliNone()
