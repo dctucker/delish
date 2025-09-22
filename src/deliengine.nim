@@ -783,7 +783,7 @@ proc evalPairKey(engine: Engine, k: DeliNode): string =
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
-  of dkBoolean, dkString, dkIdentifier, dkInteger, dkPath,
+  of dkBoolean, dkString, dkIdentifier, dkDecimal, dkInteger, dkPath,
      dkStrBlock, dkStrLiteral, dkJump, dkNone, dkRegex, dkCode:
     return val
   of dkLazy:

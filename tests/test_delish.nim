@@ -11,7 +11,11 @@ suite "delish":
     check:
       "missing `}`" in errlog.errors
 
-  test "parse integers":
+  test "radix integers":
     let err = delish_main(@["tests/fixtures/test_integers.deli"])
+    check err == 0
+
+  test "decimals":
+    let err = delish_main(@["tests/fixtures/test_decimals.deli"])
     check err == 0
 

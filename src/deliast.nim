@@ -30,6 +30,9 @@ type
   DeliListNode* = SinglyLinkedNode[DeliNode]
   DeliTable* = Table[string, DeliNode]
 
+  Decimal* = object
+    whole*, fraction*, decimals*: int
+
   DeliNodeObj* = object
     case kind*: DeliKind
     of dkNone:         none:        bool
@@ -41,10 +44,7 @@ type
     of dkRegex:        pattern*:    string
     of dkStream,
        dkInteger:      intVal*:     int
-    of dkDecimal:
-                       whole*:      int
-                       fraction*:   int
-                       decimals*:   int8
+    of dkDecimal:      decVal*:     Decimal
     of dkBoolean:      boolVal*:    bool
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
@@ -114,8 +114,8 @@ proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
 
-proc DKDecimal*(whole, fraction: int, decimals: int8): DeliNode =
-  return DeliNode(kind: dkDecimal, whole: whole, fraction: fraction, decimals: decimals)
+proc DKDecimal*(whole, fraction: int, decimals: int): DeliNode =
+  return DeliNode(kind: dkDecimal, decVal: Decimal(whole: whole, fraction: fraction, decimals: decimals))
 
 proc DKBool*(boolVal: bool): DeliNode =
   return DeliNode(kind: dkBoolean, boolVal: boolVal)
@@ -210,6 +210,9 @@ proc objFormat(node: DeliNode): string =
     result &= key & ": " & $value & "; "
   result &= "]"
 
+proc `$`*(decimal: Decimal): string =
+  return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
+
 proc toString*(node: DeliNode): string =
   if node.kind == dkExpr:
     result = ""
@@ -228,9 +231,7 @@ proc toString*(node: DeliNode): string =
      dkString:     node.strVal
   of dkStream,
      dkInteger:    $(node.intVal)
-  of dkDecimal:
-    var frac = ""
-    $(node.whole) & '.' & align($(node.fraction), node.decimals, '0')
+  of dkDecimal:    $(node.decVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
   of dkVarDeref:   "VarDeref"

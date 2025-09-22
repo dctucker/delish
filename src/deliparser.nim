@@ -80,11 +80,11 @@ type DeliT = object
 # 12345.000
 # max 64-bit uint: 18446744073709551616 (19 digits)
 # max 32-bit  int: 4294967296            (9 digits)
-proc parseDecimal(str: string): (int,int,int8) =
+proc parseDecimal(str: string): Decimal =
   var parts = str.split('.')
-  result[0] = parts[0].parseInt
-  result[1] = parts[1].parseInt
-  result[2] = parts[1].len.int8
+  result.whole = parts[0].parseInt
+  result.fraction = parts[1].parseInt
+  result.decimals = parts[1].len
 
 proc parseIntAny(str: string): int =
   if str.len > 2 and str[0..1] == "0x":
@@ -111,7 +111,7 @@ proc parseCapture(node: DeliNode, capture: string) =
   of dkBoolean:    node.boolVal = capture == "true"
   #of dkStream:     node.intVal  = parseStreamInt(capture)
   of dkInteger:    node.intVal  = parseIntAny(capture)
-  of dkDecimal:    (node.whole, node.fraction, node.decimals) = parseDecimal(capture)
+  of dkDecimal:    node.decVal  = parseDecimal(capture)
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture
   else:

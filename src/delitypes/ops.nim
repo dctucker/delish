@@ -1,5 +1,6 @@
 import ../deliast
 import std/tables
+import ./decimal
 
 proc `<=`*(o1, o2: DeliNode): bool =
   case o1.kind
@@ -39,6 +40,8 @@ proc `>`*(o1, o2: DeliNode): bool =
 
 proc `!=`*(o1, o2: DeliNode): bool =
   case o1.kind
+  of dkDecimal:
+    return o1.decVal != o2.decVal
   of dkInteger:
     return o1.intVal != o2.intVal
   of dkPath, dkString, dkStrLiteral, dkStrBlock:
@@ -55,6 +58,8 @@ proc `==`*(o1, o2: DeliNode): bool =
   # TODO deal with non-equivalent kinds
   assert o1.kind == o2.kind
   case o1.kind
+  of dkDecimal:
+    return o1.decVal == o2.decVal
   of dkInteger:
     return o1.intVal == o2.intVal
   of dkPath, dkString, dkStrLiteral, dkStrBlock:
@@ -118,6 +123,8 @@ proc `not`*(a: DeliNode): DeliNode =
 proc `+`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
+    of dkDecimal:
+      return DeliNode(kind: dkDecimal, decVal: a.decVal + b.decVal)
     of dkInteger:
       return DeliNode(kind: dkInteger, intVal: a.intVal + b.intval)
     of dkString, dkPath:
