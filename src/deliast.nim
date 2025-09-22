@@ -1,6 +1,7 @@
 import std/lists
 import std/tables
 import std/strutils
+import std/times
 #import stacks
 import ./deligrammar
 import ./deliscript
@@ -19,6 +20,7 @@ grammarSubKindStrings("Comparator")
 
 const deliTypes* = {
   dkInteger,
+  dkDateTime,
   dkArg,
   dkArray,
   dkBoolean,
@@ -57,6 +59,7 @@ type
     of dkInvocation:   cmd*:        string
     of dkObject,
        dkRan:          table*:      DeliTable
+    of dkDateTime:     dtVal*:      DateTime
     of dkArgShort,
        dkArgLong,
        dkArg:          argName*:    string
@@ -241,6 +244,7 @@ proc toString*(node: DeliNode): string =
   of dkDecimal:    $(node.decVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
+  of dkDateTime:   $(node.dtVal)
   of dkVarDeref:   "VarDeref"
   of dkArgDefault:
     if node.sons.len > 0:

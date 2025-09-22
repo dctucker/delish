@@ -1,6 +1,7 @@
 import system/exceptions
 import std/tables
 import std/lists
+import std/times
 import std/os
 import std/streams
 import std/strutils
@@ -813,6 +814,19 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
       let str = engine.evalPairKey( pair.sons[0] )
       result.table[str] = engine.evaluate(pair.sons[1])
     echo printValue(result)
+    return result
+  of dkDateTime:
+    let date = val.sons[0].sons
+    let time = val.sons[1].sons
+    result = DK( dkDateTime )
+    result.dtVal = dateTime(
+      date[0].intVal,
+      Month(date[1].intVal),
+      date[2].intVal,
+      time[0].intVal,
+      time[1].intVal,
+      time[2].intVal,
+    )
     return result
   of dkRunStmt:
     let ran = engine.doRun(val)
