@@ -43,22 +43,6 @@ proc parse*(parser: Parser): DeliNode =
   parser.entry_point.script = parser.script
   return parser.entry_point
 
-when deepDebug:
-  proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
-    debug 2:
-      echo "\27[1;30m", parser.indent("> "), $k, ": \27[0;34m", matchStr.split("\n")[0], "\27[0m"
-    parser.symbol_stack.push(k)
-
-  proc leave(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
-    discard parser.symbol_stack.pop()
-    if matchStr.len > 0:
-      #matchStr.replace("\\\n"," ").replace("\n","\\n")
-      debug 2:
-        echo parser.indent("\27[1m< "), $k, "\27[0m: \27[34m", matchStr, "\27[0m"
-    else:
-      debug 2:
-        echo parser.indent("\27[30;1mx "), $k, " ", $pos, "\27[0m"
-
 proc printSons(node: DeliNode, level: int) =
   for son in node.sons:
     echo indent($son, 4*level)
@@ -178,6 +162,28 @@ proc parserError(parser: Parser, pos: csize_t, msg: cstring) {.exportc.} =
     errmsg[i] = msg[i].char
 
   parser.errors.add(ErrorMsg(pos: pos.int, msg: errmsg))
+
+when deepDebug:
+  const
+    cSave = "\27[s"
+    cRest = "\27[u"
+    cDark = "\27[1;30m"
+    cToken= "\27[0;34m"
+    cNorm = "\27[0m"
+  proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
+    debug 2:
+      echo cDark, parser.indent("> "), $k, cToken, matchStr.split("\n")[0], cNorm
+    parser.symbol_stack.push(k)
+
+  proc leave(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
+    discard parser.symbol_stack.pop()
+    if matchStr.len > 0:
+      #matchStr.replace("\\\n"," ").replace("\n","\\n")
+      debug 2:
+        echo cDark & parser.indent("< "), $k, cNorm, ": ", cToken, matchStr, cNorm
+    else:
+      debug 2:
+        echo cDark & parser.indent("x "), $k, " ", $pos, cNorm
 
 proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule

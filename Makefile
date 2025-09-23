@@ -32,6 +32,4 @@ test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
 .PHONY: clean
 clean:
 	nimble clean
-	rm -f tests/bin/*
-	rm -f delish
-	rm -f src/packcc.*
+	rm -f delish tests/bin/* src/packcc.* src/delikind.h
