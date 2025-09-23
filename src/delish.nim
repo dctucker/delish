@@ -71,7 +71,11 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
   let parser = Parser(script: script, debug: debug, slowmo: slowmo)
   var parsed: DeliNode
   benchmark "parsing":
+    if debug >= 2:
+      stderr.write "\27[?7l"
     parsed = parser.parse()
+    if debug >= 2:
+      stderr.write "\27[?7h"
 
   if parser.parsed_len != script.source.len():
     #errlog.write("\n*** ERROR: Stopped parsing at pos ", parser.parsed_len, "/", script.source.len(), "\n")

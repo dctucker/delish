@@ -123,13 +123,13 @@ proc dStat(nodes: varargs[DeliNode]): DeliNode =
   if stat(path.strVal.cstring, st) != 0:
     return deliNone()
   result = DeliObject([
-    ("dev",     DKInt(st.st_dev)),
-    ("ino",     DKInt(st.st_ino)),
+    ("dev",     DKInt(st.st_dev.int)),
+    ("ino",     DKInt(st.st_ino.int)),
     ("mode",    DKInt(st.st_mode.int)),
     ("nlink",   DKInt(st.st_nlink.int)),
     ("uid",     DKInt(st.st_uid.int)),
     ("gid",     DKInt(st.st_gid.int)),
-    ("rdev",    DKInt(st.st_rdev)),
+    ("rdev",    DKInt(st.st_rdev.int)),
     ("size",    DKInt(st.st_size)),
     ("atime",   DKTime(st.st_atim)),
     ("mtime",   DKTime(st.st_mtim)),
