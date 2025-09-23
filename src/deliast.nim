@@ -9,6 +9,13 @@ import delilog
 ### AST representation
 grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])
 grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","C","S","W","_"])
+grammarSubKinds("Statement")
+grammarSubKinds("Type")
+grammarSubKinds("CompExpr")
+grammarSubKinds("Comparator")
+grammarSubKinds("RedirOp")
+grammarKindStrings("Type")
+grammarSubKindStrings("Comparator")
 
 const deliTypes* = {
   dkInteger,
