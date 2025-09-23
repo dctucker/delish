@@ -4,11 +4,7 @@ import ../src/deliast
 import ../src/deliparser
 import ../src/deliengine
 import ../src/deliscript
-
-proc traverse*(tree: DeliNode, args: varargs[int]): DeliNode =
-  result = tree
-  for arg in args:
-    result = result.sons[arg]
+import ./common
 
 suite "flow control":
   test "if/elif/else block":

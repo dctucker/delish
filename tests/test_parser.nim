@@ -3,17 +3,13 @@ import unittest
 import ../src/deliast
 import ../src/deliparser
 import ../src/deliscript
+import ./common
 
-proc kinds_match(node: DeliNode, check: DeliNode): bool =
-  result = true
-  if node.kind != check.kind:
-    echo "kinds to not match: ", node.kind, " != ", check.kind
-    return false
-  for i in check.sons.low .. check.sons.high:
-    let son1 = node.sons[i]
-    let son2 = check.sons[i]
-    if not kinds_match(son1, son2):
-      return false
+proc setupParser(source_path: string): Parser =
+  let source = readFile(source_path)
+  let source_len = source.len
+  let script = makeScript(source_path, source)
+  return Parser(script: script, debug: 0)
 
 suite "parser":
   test "hello world":
@@ -43,3 +39,26 @@ suite "parser":
     check:
       kinds_match(parsed, check)
 
+  test "parse comparisons":
+    var parser = setupParser("tests/fixtures/test_integers.deli")
+    let parsed = parser.parse()
+
+    check:
+      parser.parsed_len == parser.script.source.len
+
+    #let expected = DK( dkScript, DK( dkCode,
+    #    dkStatement( dkVariableStmt( Variable:x AssignOp:= Expr:127 ( Integer:127 ) ) )
+    #    dkStatement( dkVariableStmt( Variable:y AssignOp:= Expr:127 ( Integer:127 ) ) )
+    #    dkStatement( dkVariableStmt( Variable:z AssignOp:= Expr:127 ( Integer:127 ) ) )
+    #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkCompNe dkVarDeref:VarDeref( Variable:x ) VarDeref:VarDeref( Variable:y ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
+    #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkCompNe dkVarDeref:VarDeref( Variable:y ) VarDeref:VarDeref( Variable:z ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
+    #))
+    check parsed.traverse(0,0,0).kind == dkVariableStmt
+    check parsed.traverse(0,1,0).kind == dkVariableStmt
+    check parsed.traverse(0,2,0).kind == dkVariableStmt
+    check parsed.traverse(0,3,0).kind == dkConditional
+    check parsed.traverse(0,3,0,0).kind == dkBoolExpr
+    check parsed.traverse(0,3,0,0,0).kind == dkComparison
+    check parsed.traverse(0,4,0).kind == dkConditional
+    check parsed.traverse(0,4,0,0).kind == dkBoolExpr
+    check parsed.traverse(0,4,0,0,0).kind == dkComparison
