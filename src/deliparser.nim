@@ -1,4 +1,5 @@
-import strutils
+import std/os
+import std/strutils
 import stacks
 import ./deliast
 import ./deliscript
@@ -12,6 +13,7 @@ type ErrorMsg = object
 
 type Parser* = ref object
   debug*:       int
+  slowmo*:      bool
   parsed_len*:  int
   entry_point:  DeliNode
   script*:      DeliScript
@@ -168,22 +170,39 @@ when deepDebug:
     cSave = "\27[s"
     cRest = "\27[u"
     cDark = "\27[1;30m"
+    cUnder= "\27[4m"
+    cRed  = "\27[31m"
     cToken= "\27[0;34m"
     cNorm = "\27[0m"
-  proc enter(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
+    cClear= "\27[J"
+    cUp   = "\27[A"
+    cDown = "\27[B"
+
+  var lastpos = -1
+
+  proc symbols(parser: Parser): string =
+    for k in parser.symbol_stack.toSeq:
+      result &= k.name & " "
+
+  proc evaluate(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
     debug 2:
-      echo cDark, parser.indent("> "), $k, cToken, matchStr.split("\n")[0], cNorm
+      stderr.write "\r", cSave, pos, cClear, cDark, parser.symbols, cUnder, k.name, cNorm
     parser.symbol_stack.push(k)
 
-  proc leave(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
+  proc noMatch(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
     discard parser.symbol_stack.pop()
-    if matchStr.len > 0:
-      #matchStr.replace("\\\n"," ").replace("\n","\\n")
-      debug 2:
-        echo cDark & parser.indent("< "), $k, cNorm, ": ", cToken, matchStr, cNorm
-    else:
-      debug 2:
-        echo cDark & parser.indent("x "), $k, " ", $pos, cNorm
+    debug 2:
+      stderr.write "\r", pos, cDark, parser.symbols, cRed, k.name, cNorm
+
+  proc match(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
+    discard parser.symbol_stack.pop()
+    debug 2:
+      if pos != lastpos:
+        stderr.write "\r", cSave, pos, cClear, cDark, parser.symbols, cNorm, k.name, ": ", cToken, matchStr, cNorm, "\n"
+      else:
+        stderr.write cRest, pos, cDark, parser.symbols, cNorm, k.name, "\n"
+      lastpos = pos
+
 
 proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule
@@ -193,24 +212,25 @@ proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize
   parser.parsed_len = max(parser.parsed_len, pos.int)
 
   when deepDebug:
-    var e = ""
     var capture = ""
 
     case event
       of peEvaluate.ord:
-        e = "> "
-        parser.enter( DeliKind(rule), pos.int, capture )
+        parser.evaluate( DeliKind(rule), pos.int, capture )
       of peMatch.ord:
-        e = "\27[1m< "
         capture = newString(length)
         if length > 0:
           for i in 0 .. length - 1:
             capture[i] = buffer[i].char
-        parser.leave( DeliKind(rule), pos.int, capture )
+        parser.match( DeliKind(rule), pos.int, capture )
       of peNoMatch.ord:
-        e = "< "
-        parser.leave( DeliKind(rule), pos.int, capture )
-      else: e = "  "
+        parser.noMatch( DeliKind(rule), pos.int, capture )
+      else:
+        discard
+
+  debug 2:
+    if parser.slowmo:
+      sleep(50)
 
   ##let k = DeliKind(rule)
   ##echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"

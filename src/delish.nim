@@ -29,6 +29,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
   var interactive = false
   var command_mode = false
   var parse_only = false
+  var slowmo = false
   var debug = 0
   var breakpoints = @[54]
   var mainarg = ""
@@ -43,6 +44,8 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     if arg.isFlag():
       if arg.short_name == "p":
         parse_only = true
+      if arg.short_name == "s":
+        slowmo = true
       if arg.short_name == "i":
         interactive = true
       if arg.short_name == "d":
@@ -65,7 +68,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     scriptname = mainarg
     script = loadScript(scriptname)
 
-  let parser = Parser(script: script, debug: debug)
+  let parser = Parser(script: script, debug: debug, slowmo: slowmo)
   var parsed: DeliNode
   benchmark "parsing":
     parsed = parser.parse()
