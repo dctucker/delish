@@ -290,12 +290,11 @@ BoolNot       <- "not"                                               { DK( BoolN
 BoolOr        <- "or"                                                { DK( BoolOr ); }
 BoolAnd       <- "and"                                               { DK( BoolAnd ); }
 
-Comparison    <- &(   L+       S+   CompOp )
-                   e1:CompExpr S+ o:CompOp S+ e2:CompExpr           ~{ ER("expected comparable expression after operator"); }
+Comparison    <-            &( .* CompOp )
+                 e1:CompExpr S+ o:CompOp S+ e2:CompExpr             ~{ ER("expected comparable expression after operator"); }
                                                                      { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
-              (  s:FunctionCall / s:VarDeref
-              /  s:StrBlock / s:StrLiteral / s:Regex
+              (  s:FunctionCall / s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
               /  s:Number / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
 CompOp        <-
@@ -444,7 +443,6 @@ RedirWriteOp  <- ">"                                                 { DK( Redir
 RedirDuplexOp <- "<>"                                                { DK( RedirDuplexOp ); }
 DefaultOp     <- "|="                                                { DK( DefaultOp ); }
 C             <- [^ \n\r\t;]
-L             <- [^\n\r;]
 A             <- [A-Za-z]
 W             <- [A-Za-z0-9_]
 _             <- [ \n\r\t;]*
