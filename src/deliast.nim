@@ -8,8 +8,8 @@ import ./deliscript
 import ./delilog
 
 ### AST representation
-grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])
-grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","C","S","W","_"])
+grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","L","S","W","U"])
+grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","C","L","S","W","_"])
 grammarSubKinds("Statement")
 grammarSubKinds("Type")
 grammarSubKinds("CompExpr")
