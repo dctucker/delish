@@ -1,0 +1,48 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NIM_VERSION: 2.2.4
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Nim
+      run: |
+        export CHOOSENIM_CHOOSE_VERSION=${NIM_VERSION}
+        curl https://nim-lang.org/choosenim/init.sh -sSf > init.sh
+        sh init.sh -y
+        echo "$HOME/.nimble/bin" >> "$GITHUB_PATH"
+
+    - name: Test nim and nimble in PATH
+      run: |
+        echo $GITHUB_PATH
+        ls $HOME/.nimble/bin
+        nim
+        nimble
+
+    - uses: actions/checkout@v4
+      with: 
+        repository: dctucker/packcc
+        ref: unquoted-debug
+        path: packcc
+
+    - name: Build and install packcc
+      run: |
+        pushd ${GITHUB_WORKSPACE}/packcc/build/gcc
+        make
+        sudo cp debug/bin/packcc /usr/local/bin/
+        popd
+
+    - name: Make
+      run: make
+
+    - name: Make test
+      run: make test
