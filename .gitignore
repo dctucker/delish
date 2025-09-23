@@ -2,3 +2,5 @@ delish
 tests/test_*
 tests/bin
 !tests/*.nim
+src/packcc.*
+src/delikind.h
