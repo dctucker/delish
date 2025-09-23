@@ -290,8 +290,7 @@ BoolNot       <- "not"                                               { DK( BoolN
 BoolOr        <- "or"                                                { DK( BoolOr ); }
 BoolAnd       <- "and"                                               { DK( BoolAnd ); }
 
-Comparison    <-            &( .* CompOp )
-                 e1:CompExpr S+ o:CompOp S+ e2:CompExpr             ~{ ER("expected comparable expression after operator"); }
+Comparison    <- e1:CompExpr S+ o:CompOp S+ e2:CompExpr             ~{ ER("expected comparable expression after operator"); }
                                                                      { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
               (  s:FunctionCall / s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
