@@ -1,19 +1,19 @@
 import system/exceptions
 import std/tables
 import std/lists
-import os
+import std/os
 import std/streams
-import deliast
-import strutils
-import sequtils
+import std/strutils
+import std/sequtils
 import stacks
-import deliargs
-import deliscript
-import deliparser
-import deliprocess
-import delitypes/casts
-import delitypes/ops
-import delitypes/functions
+import ./deliast
+import ./deliargs
+import ./deliscript
+import ./deliparser
+import ./deliprocess
+import ./delitypes/casts
+import ./delitypes/ops
+import ./delitypes/functions
 
 type DeliError* = object of CatchableError
 type RuntimeError* = ref object of DeliError

@@ -1,13 +1,13 @@
 
-import times
-import strutils
-import deliparser
-import deliargs
-import deliast
-import deliengine
-import delinteract
-import deliscript
-import delilog
+import std/times
+import std/strutils
+import ./deliparser
+import ./deliargs
+import ./deliast
+import ./deliengine
+import ./delinteract
+import ./deliscript
+import ./delilog
 
 template benchmark(benchmarkName: string, code: untyped) =
   block:

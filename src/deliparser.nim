@@ -1,8 +1,8 @@
 import strutils
 import stacks
-import deliast
-import deliscript
-import delitypes/parse
+import ./deliast
+import ./deliscript
+import ./delitypes/parse
 
 const deepDebug {.booldefine.}: bool = false
 
@@ -76,17 +76,6 @@ type DeliT = object
   length: csize_t
   parser: Parser
 
-# 123.45
-# 0.12345
-# 12345.000
-# max 64-bit uint: 18446744073709551616 (19 digits)
-# max 32-bit  int: 4294967296            (9 digits)
-proc parseDecimal(str: string): Decimal =
-  var parts = str.split('.')
-  result.whole = parts[0].parseInt
-  result.fraction = parts[1].parseInt
-  result.decimals = parts[1].len
-
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
   of dkStrLiteral,
@@ -100,9 +89,8 @@ proc parseCapture(node: DeliNode, capture: string) =
       node.cmd     = capture
     else:
       node.sons.add(DeliNode(kind:dkString, strVal: capture))
-  of dkBoolean:    node.boolVal = capture == "true"
-  #of dkStream:     node.intVal  = parseStreamInt(capture)
-  of dkInteger:    node.intVal  = parse(capture)
+  of dkBoolean:    node.boolVal = parseBoolean(capture)
+  of dkInteger:    node.intVal  = parseInteger(capture)
   of dkDecimal:    node.decVal  = parseDecimal(capture)
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture

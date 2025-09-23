@@ -3,7 +3,7 @@ import std/osproc
 import std/strtabs
 import std/streams
 import std/tables
-import deliast
+import ./deliast
 
 type
   DeliProcess* = object

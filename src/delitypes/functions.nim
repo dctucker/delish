@@ -1,7 +1,7 @@
 import std/tables
 import ../deliast
-import path
-import integer
+import ./path
+import ./integer
 
 type DeliFunction = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 type DeliFunctionTable = Table[string, DeliFunction]

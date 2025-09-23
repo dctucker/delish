@@ -3,7 +3,7 @@ import std/paths
 import std/posix
 import std/tables
 import ../deliast
-import common
+import ./common
 
 # whether a mode has a bit set
 func has(m: Mode, b: cint): bool =

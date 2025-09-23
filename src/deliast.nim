@@ -1,10 +1,10 @@
 import std/lists
 import std/tables
-import strutils
+import std/strutils
 #import stacks
-import deligrammar
-import deliscript
-import delilog
+import ./deligrammar
+import ./deliscript
+import ./delilog
 
 ### AST representation
 grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])

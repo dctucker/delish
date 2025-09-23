@@ -1,7 +1,7 @@
 import system
-import strutils
-import sequtils
-import macros
+import std/strutils
+import std/sequtils
+import std/macros
 #import pegs
 
 #let file_io_funcs = """

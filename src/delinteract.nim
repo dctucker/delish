@@ -1,5 +1,5 @@
-import deliengine
 import std/terminal
+import ./deliengine
 
 type Nteract* = ref object
   engine: Engine

@@ -1,8 +1,8 @@
-import os
+import std/os
 import std/strutils
 import std/tables
 import ../deliast
-import parse
+import ./parse
 
 proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
   let k1 = kind.name
@@ -56,7 +56,7 @@ proc toInteger*(src: DeliNode): DeliNode =
   result = case src.kind
   of dkInteger:    DKInt( src.intVal )
   of dkStream:     DKInt(src.intVal)
-  of dkString:     DKInt(src.strVal.parse)
+  of dkString:     DKInt(src.strVal.parseInteger)
   of dkIdentifier,
      dkVariable,
      dkArg, dkArgLong, dkArgShort,
