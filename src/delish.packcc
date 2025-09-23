@@ -101,12 +101,12 @@ Statement     <-
               /  a:FunctionStmt / a:BreakStmt
               /  a:ContinueStmt / a:ReturnStmt  / a:Push / a:Pop )   { DK( Statement  , a ); SL(a); }
 
-Conditional   <- "if"        S+ < e:Condition >                        ~{ ER("expected condition after `if`"); }
-                             S+   c:Body                                { DK( Conditional, e, c ); SL1(e); }
-              (  S+ "elif"   S+ < e:Condition >                        ~{ ER("expected condition after `elif`"); }
-                             S+   c:Body                                { NA( $$, e ); NA( $$, c ); SL2(e); }
-              )* (           S+ < e:Else      >                         { NA( $$, e ); SL3(e); }
-                             S+   c:Body                                { NA( $$, c ); }
+Conditional   <- "if"        S+ < e:Condition >                     ~{ ER("expected condition after `if`"); }
+                             S+   c:Body                             { DK( Conditional, e, c ); SL1(e); }
+              (  S+ "elif"   S+ < e:Condition >                     ~{ ER("expected condition after `elif`"); }
+                             S+   c:Body                             { NA( $$, e ); NA( $$, c ); SL2(e); }
+              )* (           S+ < e:Else      >                      { NA( $$, e ); SL3(e); }
+                             S+   c:Body                             { NA( $$, c ); }
               )? _
 
 Else          <- "else"                                              { DK( Else ); }
@@ -290,13 +290,14 @@ BoolNot       <- "not"                                               { DK( BoolN
 BoolOr        <- "or"                                                { DK( BoolOr ); }
 BoolAnd       <- "and"                                               { DK( BoolAnd ); }
 
-Comparison    <- e1:CompExpr S+ o:Comparator S+ e2:CompExpr         ~{ ER("expected comparable expression after operator"); }
+Comparison    <-            &( .* CompOp )
+                 e1:CompExpr S+ o:CompOp S+ e2:CompExpr             ~{ ER("expected comparable expression after operator"); }
                                                                      { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
               (  s:FunctionCall / s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
               /  s:Number / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
-Comparator    <-
+CompOp        <-
               (  o:CompGe / o:CompGt / o:CompLe / o:CompLt
               /  o:CompEq / o:CompNe / o:CompMatch
               )                                                      { $$ = o; }

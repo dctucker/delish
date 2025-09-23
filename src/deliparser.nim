@@ -1,5 +1,6 @@
 import std/os
 import std/strutils
+import std/tables
 import stacks
 import ./deliast
 import ./deliscript
@@ -7,19 +8,27 @@ import ./delitypes/parse
 
 const deepDebug {.booldefine.}: bool = false
 
-type ErrorMsg = object
-  pos*: int
-  msg*: string
+type
+  ErrorMsg = object
+    pos*: int
+    msg*: string
 
-type Parser* = ref object
-  debug*:       int
-  slowmo*:      bool
-  parsed_len*:  int
-  entry_point:  DeliNode
-  script*:      DeliScript
-  symbol_stack: Stack[DeliKind]
-  nodes:        seq[DeliNode]
-  errors*:      seq[ErrorMsg]
+  Metric = object
+    evaluate: int
+    noMatch:  int
+    match:    int
+
+  Parser* = ref object
+    debug*:       int
+    slowmo*:      bool
+    parsed_len*:  int
+    entry_point:  DeliNode
+    script*:      DeliScript
+    symbol_stack: Stack[DeliKind]
+    nodes:        seq[DeliNode]
+    errors*:      seq[ErrorMsg]
+    metrics:      OrderedTable[DeliKind,Metric]
+    max_depth:    int
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
@@ -33,6 +42,29 @@ proc indent(parser: Parser, msg: string): string =
 proc initParser(parser: Parser) =
   parser.symbol_stack = Stack[DeliKind]()
 
+proc total*(m: Metric): int =
+  return m.match + m.noMatch + m.evaluate
+
+proc printMetric(m: Metric, name: string) =
+  stderr.write name.alignLeft(13)
+  stderr.write ($m.evaluate).align(8)
+  stderr.write ($m.noMatch).align(8)
+  stderr.write ($m.match).align(8)
+  stderr.write ($m.total).align(8)
+  stderr.write "\n"
+
+proc printMetrics*(parser: Parser) =
+  stderr.write "Kind             Eval  NoMatch   Match   Total\n"
+  parser.metrics.sort(proc(a,b: (DeliKind, Metric)): int = cmp(b[1].total, a[1].total))
+  var total: Metric
+  for k,m in parser.metrics:
+    m.printMetric k.name
+    total.evaluate += m.evaluate
+    total.noMatch += m.noMatch
+    total.match += m.match
+  total.printMetric "Total"
+  stderr.write "Maximum depth: ", parser.max_depth, "\n"
+
 proc parse*(parser: Parser): DeliNode =
   parser.initParser()
 
@@ -41,6 +73,10 @@ proc parse*(parser: Parser): DeliNode =
   discard packcc_main(cstr, parser.script.source.len.cint, parser)
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
+
+  debug 2:
+    parser.printMetrics
+
   return parser.entry_point
 
 proc printSons(node: DeliNode, level: int) =
@@ -190,10 +226,16 @@ when deepDebug:
       stderr.write "\r", cSave, pos, cClear, cDark, parser.symbols, cUnder, k.name, cNorm
     parser.symbol_stack.push(k)
 
+    if k notin parser.metrics:
+      parser.metrics[k] = Metric(evaluate: 0, noMatch: 0, match: 0)
+    parser.metrics[k].evaluate += 1
+
   proc noMatch(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
     discard parser.symbol_stack.pop()
     debug 2:
       stderr.write "\r", pos, cDark, parser.symbols, cRed, k.name, cNorm
+
+    parser.metrics[k].noMatch += 1
 
   proc match(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
     discard parser.symbol_stack.pop()
@@ -204,6 +246,8 @@ when deepDebug:
         stderr.write cRest, pos, cDark, parser.symbols, cNorm, k.name, "\n"
       lastpos = pos
 
+    parser.metrics[k].match += 1
+
 
 proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
   case rule
@@ -211,6 +255,7 @@ proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize
   else: discard
 
   parser.parsed_len = max(parser.parsed_len, pos.int)
+  parser.max_depth = max(parser.max_depth, level)
 
   when deepDebug:
     var capture = ""

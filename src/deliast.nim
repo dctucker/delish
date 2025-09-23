@@ -13,25 +13,10 @@ grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","C","S","W","_"])
 grammarSubKinds("Statement")
 grammarSubKinds("Type")
 grammarSubKinds("CompExpr")
-grammarSubKinds("Comparator")
+grammarSubKinds("CompOp")
 grammarSubKinds("RedirOp")
 grammarKindStrings("Type")
-grammarSubKindStrings("Comparator")
-
-const deliTypes* = {
-  dkInteger,
-  dkDateTime,
-  dkArg,
-  dkArray,
-  dkBoolean,
-  dkIdentifier,
-  dkPath,
-  dkObject,
-  dkRegex,
-  dkStream,
-  dkString,
-  dkVariable,
-}
+grammarSubKindStrings("CompOp")
 
 type
   DeliNode* = ref DeliNodeObj
