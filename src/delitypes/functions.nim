@@ -1,6 +1,6 @@
 import std/tables
-import ../deliast
 import ./[
+  common,
   path,
   integer,
 ]

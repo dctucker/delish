@@ -4,10 +4,12 @@ import std/[
   strutils,
   times,
 ]
-import ./[
-  deligrammar,
+import ../[
   deliscript,
   delilog,
+]
+import ./[
+  grammar
 ]
 
 ### AST representation

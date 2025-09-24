@@ -1,5 +1,5 @@
 import std/tables
-import ../deliast
+import ./common
 import ./decimal
 
 proc `<=`*(o1, o2: DeliNode): bool =

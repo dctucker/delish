@@ -4,11 +4,9 @@ import std/[
   tables,
 ]
 import stacks
-import ./[
-  deliast,
-  deliscript,
-]
-import delitypes/parse
+import ./ast
+import ../deliscript
+import ../delitypes/parse
 
 const deepDebug {.booldefine.}: bool = false
 

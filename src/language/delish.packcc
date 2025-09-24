@@ -4,7 +4,7 @@
 
 %header {
 	#include "stdarg.h"
-	#include "delikind.h"
+	#include "kind.h"
 	struct deli_t {
 		const char *input;
 		size_t offset;

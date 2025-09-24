@@ -2,7 +2,6 @@ import std/[
   strutils,
   tables,
 ]
-import ../deliast
 import ./common
 
 proc dOct(nodes: varargs[DeliNode]): DeliNode =

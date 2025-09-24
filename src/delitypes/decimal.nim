@@ -1,4 +1,4 @@
-import ../deliast
+import ./common
 
 const decimalPowers = [ # instead of math.pow(10, x)
   1,

@@ -1,4 +1,4 @@
-import ../deliast
+import ../language/ast
 
 template shift*() =
   if arg_i >= nodes.len:
@@ -25,3 +25,5 @@ template argvars*() =
 template noargs*() =
   if nodes.len > 0:
     raise newException(ValueError, "too many arguments: " & $nodes)
+
+export ast

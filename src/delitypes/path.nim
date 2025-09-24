@@ -4,7 +4,6 @@ import std/[
   posix,
   tables,
 ]
-import ../deliast
 import ./common
 
 # whether a mode has a bit set

@@ -1,5 +1,5 @@
 import std/parseopt
-import ./deliast
+import ./language/ast
 
 type Argument* = ref object
   short_name*, long_name* : string

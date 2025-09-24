@@ -1,11 +1,11 @@
 all: debug
 
-src/packcc.h:
-src/packcc.c: src/delish.packcc
-	cd src && packcc -o packcc delish.packcc && cd ..
+src/language/packcc.h:
+src/language/packcc.c: src/language/delish.packcc
+	cd src/language && packcc -o packcc delish.packcc && cd ../..
 
-SOURCES=$(wildcard src/*.nim)
-debug: src/packcc.c $(SOURCES)
+SOURCES=$(wildcard src/**/*.nim)
+debug: src/language/packcc.c $(SOURCES)
 	nimble build -f -d:deepDebug
 
 release: debug
@@ -16,12 +16,12 @@ strip: release
 	sstrip -z delish
 
 packdeli: src/packcc.c Makefile
-	cd src ; packcc -o packcc delish.packcc ; cd ..
-	gcc -Og src/packcc.c -o packdeli
+	cd src/language ; packcc -o packcc delish.packcc ; cd ../..
+	gcc -Og src/language/packcc.c -o packdeli
 
 #tests/%.nim: $(SOURCES)
 
-tests/bin/%: tests/%.nim src/packcc.c src/packcc.h $(SOURCES)
+tests/bin/%: tests/%.nim src/language/packcc.c src/language/packcc.h $(SOURCES)
 	nim c --hint:XDeclaredButNotUsed:off -o=tests/bin/ $<
 
 test: debug
@@ -32,4 +32,4 @@ test: $(patsubst tests/test_%.nim,tests/bin/test_%,$(wildcard tests/test_*.nim))
 .PHONY: clean
 clean:
 	nimble clean
-	rm -f delish tests/bin/* src/packcc.* src/delikind.h
+	rm -f delish tests/bin/* src/language/packcc.* src/language/kind.h

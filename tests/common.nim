@@ -1,6 +1,8 @@
+import ../src/language/[
+  ast,
+  parser,
+]
 import ../src/[
-  deliast,
-  deliparser,
   deliengine,
   deliscript,
   delish,
@@ -24,9 +26,9 @@ proc kinds_match*(node: DeliNode, check: DeliNode): bool =
       return false
 
 export
-  deliast,
+  ast,
+  parser,
   deliengine,
   deliscript,
   delish,
-  delilog,
-  deliparser
+  delilog

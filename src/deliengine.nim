@@ -9,11 +9,13 @@ import std/[
 ]
 import stacks
 
+import ./language/[
+  ast,
+  parser,
+]
 import ./[
   argument,
-  deliast,
   deliscript,
-  deliparser,
   deliprocess,
 ]
 import ./delitypes/[

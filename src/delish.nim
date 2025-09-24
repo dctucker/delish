@@ -2,10 +2,12 @@ import std/[
   times,
   strutils,
 ]
+import ./language/[
+  parser,
+  ast,
+]
 import ./[
   argument,
-  deliparser,
-  deliast,
   deliengine,
   delinteract,
   deliscript,

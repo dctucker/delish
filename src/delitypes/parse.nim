@@ -1,5 +1,5 @@
 import std/strutils
-import ../deliast
+import ./common
 
 proc parseInteger*(str: string): int =
   if str.len > 2 and str[0..1] == "0x":

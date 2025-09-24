@@ -2,5 +2,5 @@ delish
 tests/test_*
 tests/bin
 !tests/*.nim
-src/packcc.*
-src/delikind.h
+src/language/packcc.*
+src/language/kind.h

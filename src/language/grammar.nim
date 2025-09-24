@@ -103,7 +103,7 @@ macro grammarToCEnum*(extra: static[seq[string]]) =
   let symbols = getSymbols()
   let options = concat(symbols, extra.map(proc(x:string):string = "dk" & x))
   let stmt = "enum DeliKind {\n\t" & options.join(",\n\t") & "\n};\n";
-  "src/delikind.h".writeFile(stmt)
+  "src/language/kind.h".writeFile(stmt)
 
 # TODO produce lists representing literals
 # Keyword

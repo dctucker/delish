@@ -5,7 +5,7 @@ import std/[
   streams,
   tables,
 ]
-import ./deliast
+import ./language/ast
 
 type
   DeliProcess* = object

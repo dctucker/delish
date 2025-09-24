@@ -3,7 +3,7 @@ import std/[
   strutils,
   tables,
 ]
-import ../deliast
+import ./common
 import ./parse
 
 proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
