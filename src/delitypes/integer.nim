@@ -1,5 +1,7 @@
-import std/strutils
-import std/tables
+import std/[
+  strutils,
+  tables,
+]
 import ../deliast
 import ./common
 

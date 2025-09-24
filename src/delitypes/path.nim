@@ -1,7 +1,9 @@
-import std/appdirs
-import std/paths
-import std/posix
-import std/tables
+import std/[
+  appdirs,
+  paths,
+  posix,
+  tables,
+]
 import ../deliast
 import ./common
 

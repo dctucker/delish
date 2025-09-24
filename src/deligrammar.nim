@@ -1,8 +1,9 @@
 import system
-import std/strutils
-import std/sequtils
-import std/macros
-#import pegs
+import std/[
+  strutils,
+  sequtils,
+  macros,
+]
 
 #let file_io_funcs = """
 #  unlink

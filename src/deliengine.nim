@@ -1,32 +1,41 @@
 import system/exceptions
-import std/lists
-import std/sequtils
-import std/streams
-import std/strutils
-import std/tables
-import std/times
+import std/[
+  lists,
+  sequtils,
+  streams,
+  strutils,
+  tables,
+  times,
+]
 import stacks
-import ./argument
-import ./deliast
-import ./deliscript
-import ./deliparser
-import ./deliprocess
-import ./delitypes/casts
-import ./delitypes/ops
-import ./delitypes/functions
 
-include ./engine/common
-include ./engine/environment
-include ./engine/engine
-include ./engine/locals
-include ./engine/variables
-include ./engine/arguments
-include ./engine/fileio
-include ./engine/processes
-include ./engine/functions
-include ./engine/evaluation
-include ./engine/flow
-include ./engine/runtime
+import ./[
+  argument,
+  deliast,
+  deliscript,
+  deliparser,
+  deliprocess,
+]
+import ./delitypes/[
+  casts,
+  ops,
+  functions,
+]
+
+include ./engine/[
+  common,
+  environment,
+  engine,
+  locals,
+  variables,
+  arguments,
+  fileio,
+  processes,
+  functions,
+  evaluation,
+  flow,
+  runtime,
+]
 
 proc newEngine*(debug: int): Engine =
   result = Engine(

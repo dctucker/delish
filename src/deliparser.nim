@@ -1,10 +1,14 @@
-import std/os
-import std/strutils
-import std/tables
+import std/[
+  os,
+  strutils,
+  tables,
+]
 import stacks
-import ./deliast
-import ./deliscript
-import ./delitypes/parse
+import ./[
+  deliast,
+  deliscript,
+]
+import delitypes/parse
 
 const deepDebug {.booldefine.}: bool = false
 

@@ -1,6 +1,8 @@
-import std/os
-import std/strutils
-import std/tables
+import std/[
+  os,
+  strutils,
+  tables,
+]
 import ../deliast
 import ./parse
 

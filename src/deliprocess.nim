@@ -1,8 +1,10 @@
-import std/paths
-import std/osproc
-import std/strtabs
-import std/streams
-import std/tables
+import std/[
+  paths,
+  osproc,
+  strtabs,
+  streams,
+  tables,
+]
 import ./deliast
 
 type

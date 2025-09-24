@@ -1,11 +1,14 @@
-import std/lists
-import std/tables
-import std/strutils
-import std/times
-#import stacks
-import ./deligrammar
-import ./deliscript
-import ./delilog
+import std/[
+  lists,
+  tables,
+  strutils,
+  times,
+]
+import ./[
+  deligrammar,
+  deliscript,
+  delilog,
+]
 
 ### AST representation
 grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])
