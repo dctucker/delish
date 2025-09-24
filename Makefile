@@ -25,9 +25,9 @@ tests/bin/%: tests/%.nim src/packcc.c src/packcc.h $(SOURCES)
 	nim c --hint:XDeclaredButNotUsed:off -o=tests/bin/ $<
 
 test: debug
-test: $(patsubst tests/%.nim,tests/bin/%,$(wildcard tests/*.nim))
+test: $(patsubst tests/test_%.nim,tests/bin/test_%,$(wildcard tests/test_*.nim))
 	#for f in tests/*.nim; do nim c -o=tests/bin/ $$f ; done
-	for f in tests/bin/*; do $$f ; done
+	for f in tests/bin/test_*; do $$f ; done
 
 .PHONY: clean
 clean:

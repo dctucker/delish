@@ -1,9 +1,9 @@
 import unittest
 import std/tables
 
-import ../src/deliast
 import ../src/delitypes/casts
 import ../src/delitypes/ops
+import ./common
 
 # | dest / src | String     | Identifier | Variable   | Arg        | Path       | Integer    | Boolean    | Array      | Object     | Regex      | Stream     |
 # |------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|------------|

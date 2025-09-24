@@ -1,9 +1,7 @@
 import unittest
 import os
-
-import ../src/deliast
-import ../src/deliengine
 import ../src/delitypes/ops
+import ./common
 
 var engine: Engine
 

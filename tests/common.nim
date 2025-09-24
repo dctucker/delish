@@ -1,4 +1,11 @@
-import ../src/deliast
+import ../src/[
+  deliast,
+  deliparser,
+  deliengine,
+  deliscript,
+  delish,
+  delilog,
+]
 
 proc traverse*(tree: DeliNode, args: varargs[int]): DeliNode =
   result = tree
@@ -16,3 +23,10 @@ proc kinds_match*(node: DeliNode, check: DeliNode): bool =
     if not kinds_match(son1, son2):
       return false
 
+export
+  deliast,
+  deliengine,
+  deliscript,
+  delish,
+  delilog,
+  deliparser

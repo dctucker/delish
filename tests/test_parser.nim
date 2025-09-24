@@ -1,8 +1,4 @@
 import unittest
-
-import ../src/deliast
-import ../src/deliparser
-import ../src/deliscript
 import ./common
 
 proc setupParser(source_path: string): Parser =
@@ -53,12 +49,13 @@ suite "parser":
     #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkCompNe dkVarDeref:VarDeref( Variable:x ) VarDeref:VarDeref( Variable:y ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
     #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkCompNe dkVarDeref:VarDeref( Variable:y ) VarDeref:VarDeref( Variable:z ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
     #))
-    check parsed.traverse(0,0,0).kind == dkVariableStmt
-    check parsed.traverse(0,1,0).kind == dkVariableStmt
-    check parsed.traverse(0,2,0).kind == dkVariableStmt
-    check parsed.traverse(0,3,0).kind == dkConditional
-    check parsed.traverse(0,3,0,0).kind == dkBoolExpr
-    check parsed.traverse(0,3,0,0,0).kind == dkComparison
-    check parsed.traverse(0,4,0).kind == dkConditional
-    check parsed.traverse(0,4,0,0).kind == dkBoolExpr
-    check parsed.traverse(0,4,0,0,0).kind == dkComparison
+    let script = parsed.sons[0]
+    check script.traverse(0,0).kind == dkVariableStmt
+    check script.traverse(1,0).kind == dkVariableStmt
+    check script.traverse(2,0).kind == dkVariableStmt
+    check script.traverse(3,0).kind == dkConditional
+    check script.traverse(3,0,0).kind == dkBoolExpr
+    check script.traverse(3,0,0,0).kind == dkComparison
+    check script.traverse(4,0).kind == dkConditional
+    check script.traverse(4,0,0).kind == dkBoolExpr
+    check script.traverse(4,0,0,0).kind == dkComparison

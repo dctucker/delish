@@ -1,9 +1,4 @@
 import unittest
-
-import ../src/deliast
-import ../src/deliparser
-import ../src/deliengine
-import ../src/deliscript
 import ./common
 
 suite "flow control":

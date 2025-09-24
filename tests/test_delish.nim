@@ -1,8 +1,6 @@
 import unittest
 import std/strutils
-
-import ../src/delish
-import ../src/delilog
+import ./common
 
 suite "delish":
   test "incomplete conditional block":
