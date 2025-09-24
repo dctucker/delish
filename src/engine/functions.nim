@@ -45,6 +45,8 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
   of dkIdentifier:
     if fun.id notin engine.functions:
       engine.runtimeError("Unknown function: " & fun.id)
+      #echo "Unknown function"
+      #return DKInner(0, deliNone())
     code = engine.functions[fun.id]
   of dkVarDeref:
     code = engine.evaluate(fun)

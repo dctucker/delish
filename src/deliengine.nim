@@ -62,6 +62,15 @@ proc newEngine*(script: DeliNode, debug: int): Engine =
 proc retval*(engine: Engine): DeliNode =
   engine.retvals.peek()
 
+proc readCurrent(engine: Engine) =
+  engine.current = engine.readhead.value
+
+proc isEnd(engine: Engine): bool =
+  return engine.readhead == nil or engine.readhead.next == nil
+
+proc advance(engine: Engine) =
+  engine.setHeads(engine.readhead.next)
+
 proc doNext*(engine: Engine): int =
   if engine.isEnd():
     return -1
@@ -91,7 +100,17 @@ iterator tick*(engine: Engine): int =
         yield engine.current.line
     debug 3:
       engine.printStatements()
+
+    #try:
+    #engine.printStatements(true)
     engine.execCurrent()
+    #engine.printStatements(true)
+    #except RuntimeError as e:
+    #  if engine.isEnd():
+    #    stderr.write "REACHED END", engine.writehead.value.line, "\n"
+    #  engine.advance()
+    #  raise e
+
     if engine.isEnd():
       break
     engine.advance()

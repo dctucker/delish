@@ -1,6 +1,8 @@
 ### Runtime ###
 
 proc doStmt(engine: Engine, s: DeliNode) =
+  echo s.kind
+
   let nsons = s.sons.len()
   case s.kind
   of dkNone:
@@ -86,27 +88,6 @@ proc doStmt(engine: Engine, s: DeliNode) =
   else:
     todo "doStmt ", s.kind
 
-proc doIncludes(engine: Engine, node: DeliNode) =
-  case node.kind:
-  of dkScript, dkCode, dkStatement:
-    for n in node.sons:
-      engine.doIncludes(n)
-  of dkIncludeStmt:
-    engine.doStmt(node)
-  else:
-    discard
-
-proc initIncludes(engine: Engine, script: DeliNode) =
-  engine.doIncludes(script)
-
-proc readCurrent(engine: Engine) =
-  engine.current = engine.readhead.value
-
 proc execCurrent(engine: Engine) =
   engine.doStmt(engine.current)
 
-proc isEnd(engine: Engine): bool =
-  return engine.readhead == nil or engine.readhead.next == nil
-
-proc advance(engine: Engine) =
-  engine.setHeads(engine.readhead.next)

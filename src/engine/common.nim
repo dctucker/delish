@@ -40,6 +40,7 @@ proc initIncludes  (engine: Engine, script: DeliNode)
 proc initFunctions (engine: Engine, script: DeliNode)
 proc initScript    (engine: Engine, script: DeliNode)
 proc assignVariable(engine: Engine, key: string, value: DeliNode)
+proc setHeads      (engine: Engine, list: DeliListNode)
 
 proc getStreamNumber(node: DeliNode): int =
   return node.intVal

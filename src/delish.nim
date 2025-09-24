@@ -110,6 +110,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
               let row = script.line_number(err.pos)
               let col = script.col_number(err.pos)
               errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
+            continue
 
           echo parsed.repr
           for s in parsed.sons:

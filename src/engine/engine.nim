@@ -1,5 +1,27 @@
 ### Engine ###
 
+proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
+  #engine.readhead.next = nil
+  engine.setHeads(engine.tail)
+  var message = ""
+  for m in msg:
+    message &= m
+  raise RuntimeError(msg: message)
+
+proc setupError(engine: Engine, msg: varargs[string,`$`]) =
+  #engine.readhead.next = nil
+  engine.setHeads(engine.tail)
+  var message = ""
+  for m in msg:
+    message &= m
+  raise SetupError(msg: "(setup) " & message)
+
+proc setHeads(engine: Engine, list: DeliListNode) =
+  if list == nil:
+    engine.setupError("can't set next node to nil")
+  engine.readhead = list
+  engine.writehead = engine.readhead
+
 proc printStatements*(engine: Engine, all: bool = false) =
   var head: DeliListNode
   var unread = false
@@ -31,10 +53,6 @@ proc printStatements*(engine: Engine, all: bool = false) =
 
 proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList
-
-proc setHeads(engine: Engine, list: DeliListNode) =
-  engine.readhead = list
-  engine.writehead = engine.readhead
 
 proc insertStmt*(engine: Engine, node: DeliNode) =
   if node.script == nil:
@@ -129,6 +147,19 @@ proc doInclude(engine: Engine, included: DeliNode) =
   for s in parsed.sons:
     engine.insertStmt(s.sons)
 
+proc doIncludes(engine: Engine, node: DeliNode) =
+  case node.kind:
+  of dkScript, dkCode, dkStatement:
+    for n in node.sons:
+      engine.doIncludes(n)
+  of dkIncludeStmt:
+    engine.doStmt(node)
+  else:
+    discard
+
+proc initIncludes(engine: Engine, script: DeliNode) =
+  engine.doIncludes(script)
+
 proc debugNext(engine: Engine) =
   debug 3:
     stdout.write("\27[30;1m  next = ")
@@ -148,20 +179,6 @@ proc nextLen*(engine: Engine): int =
   while head != nil:
     result += 1
     head = head.next
-
-proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
-  engine.readhead.next = nil
-  var message = ""
-  for m in msg:
-    message &= m
-  raise RuntimeError(msg: message)
-
-proc setupError(engine: Engine, msg: varargs[string,`$`]) =
-  engine.readhead.next = nil
-  var message = ""
-  for m in msg:
-    message &= m
-  raise SetupError(msg: "(setup) " & message)
 
 proc setup*(engine: Engine, script: DeliNode) =
   engine.initArguments(script)
