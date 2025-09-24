@@ -59,7 +59,7 @@
 		*invalid_expression  = "invalid expression",
 		*expected_body       = "expected body",
 		*expected_variable   = "expected variable",
-		*expected_invocation = "expected invocation";
+		*expected_invocation = "expected invocaton";
 }
 
 %source {
@@ -78,7 +78,7 @@ Code          <-                                                     { DK( Code 
               )+ S*
 
 Body          <- ( "{"                                               { BB('{', 1); }
-                    _ < c:Code >                                    ~{ ER( expected_body ); }
+                    _ < c:Code >
                                  _ "}"                              ~{ ER("missing `}`"); }
                  )                                                  ~{ ER( expected_body ); }
                                                                      { BB('{', -1); $$ = c; SL1(c); }
@@ -257,7 +257,7 @@ Expr          <-
               /  s:StrBlock / s:StrLiteral / s:Regex
               /  s:DateTime / s:Number / s:Boolean
               /  s:BoolExpr
-              /  s:Path     / s:JsonBlock  / s:Stream
+              /  s:Path     / s:JsonBlock
               /  s:Cast     / s:FunctionCall
               )                                                      { DK( Expr, s); }
 

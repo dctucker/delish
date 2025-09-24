@@ -37,15 +37,18 @@ type
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
+proc initParser(parser: Parser) =
+  parser.symbol_stack.clear
+  parser.errors = @[]
+  parser.brackets.clear
+  parser.metrics.clear
+
 template debug(level: int, code: untyped) =
   if parser.debug >= level:
     code
 
 proc indent(parser: Parser, msg: string): string =
   return indent( msg, 4*parser.symbol_stack.len() )
-
-proc initParser(parser: Parser) =
-  parser.symbol_stack = Stack[DeliKind]()
 
 proc total*(m: Metric): int =
   return m.match + m.noMatch + m.evaluate
@@ -81,10 +84,6 @@ proc parse*(parser: Parser): DeliNode =
     parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
-
-  debug 2:
-    parser.printMetrics
-
   return parser.entry_point
 
 proc printSons(node: DeliNode, level: int) =

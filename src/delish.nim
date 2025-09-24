@@ -81,10 +81,65 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
   # setup parser
   let parser = Parser(script: script, debug: debug, slowmo: slowmo)
   var parsed: DeliNode
+
+  var engine: Engine
+  var nteract: Nteract
+
+  # interactive mode with no script specified
+  if interactive_only:
+    echo "Interactive mode"
+    parsed = parser.parse()
+    engine = newEngine(parsed, debug)
+    nteract = newNteract(engine)
+
+    var line = 0
+    while true:
+      try:
+        nteract.cmdline = ""
+        let input = nteract.getUserInput()
+        if input == "exit":
+          break
+        if input.strip.len > 0:
+          script = makeScript(scriptname, "\n".repeat(line) & input & "\n")
+          parser.script = script
+          parsed = parser.parse()
+
+          if parser.errors.len != 0 or parsed.kind != dkScript:
+            errlog.write "parser error"
+            for err in parser.errors:
+              let row = script.line_number(err.pos)
+              let col = script.col_number(err.pos)
+              errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
+
+          echo parsed.repr
+          for s in parsed.sons:
+            engine.insertStmt(s)
+            line += 1
+
+        engine.printStatements(true)
+        for line in engine.tick():
+          if debug > 0:
+            echo engine.lineInfo()
+
+      except InterruptError as e:
+        stderr.write "\27[31m", e.msg, "\27[0m\n"
+        return 0
+      except RuntimeError as e:
+        exception_handler(e, 2)
+        engine.printStatements(true)
+      except SetupError as e:
+        exception_handler(e, 2)
+        engine.printStatements(true)
+
+  # script mode follows
   benchmark "parsing":
     if debug >= 2:
       stderr.write "\27[?7l"
     parsed = parser.parse()
+
+    if debug >= 2:
+      parser.printMetrics
+
     if debug >= 2:
       stderr.write "\27[?7h"
 
@@ -109,48 +164,6 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
       errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
     return 1
 
-  var engine: Engine
-  var nteract: Nteract
-
-  # interactive mode with no script specified
-  if interactive_only:
-    echo "Interactive mode"
-    engine = newEngine(parsed, debug)
-    nteract = newNteract(engine)
-
-    while true:
-      try:
-        let input = nteract.getUserInput()
-        if input == "exit":
-          break
-        if input.strip.len > 0:
-          script = makeScript(scriptname, input & "\n")
-          parser.script = script
-          parsed = parser.parse()
-
-          if parser.errors.len != 0:
-            for err in parser.errors:
-              let row = script.line_number(err.pos)
-              let col = script.col_number(err.pos)
-              errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
-
-          echo parsed.repr
-          for s in parsed.sons:
-            engine.insertStmt(s)
-
-        #engine.printStatements(true)
-        for line in engine.tick():
-          if debug > 0:
-            echo engine.lineInfo()
-
-      except InterruptError as e:
-        stderr.write "\27[31m", e.msg, "\27[0m\n"
-        return 0
-      except RuntimeError as e:
-        exception_handler(e, 0)
-      except SetupError as e:
-        exception_handler(e, 0)
-
   # execution loop
   benchmark "executing":
     try:
@@ -168,7 +181,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
           nteract.line = line.abs
           nteract.filename = engine.sourceFile()
           if line > 0:
-            discard nteract.getUserInput()
+            discard nteract.getUserInput(engine.sourceLine())
 
     except SetupError as e:
       exception_handler(e, debug)

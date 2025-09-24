@@ -14,11 +14,24 @@ proc newNteract*(engine: Engine): Nteract =
 proc prompt*(nt: Nteract): string =
   return nt.filename & ":" & $(nt.line.abs)
 
+proc clear(nt: Nteract) =
+  nt.pos = 0
+  nt.cmdline = ""
+  stdout.write("\r\27[2K")
+  stdout.write("\27[30;1m")
+  stdout.write(nt.prompt)
+  stdout.write("\27[0m> ")
+  stdout.flushFile()
+
 proc `filename=`*(nt: Nteract, fn: string) =
   nt.filename = fn
 
 proc `line=`*(nt: Nteract, line: int) =
   nt.line = line
+
+proc `cmdline=`*(nt: Nteract, cmdline: string) =
+  nt.cmdline = cmdline
+  nt.pos = nt.cmdline.len
 
 proc left(nt: Nteract) =
   if nt.pos > 0:
@@ -35,15 +48,6 @@ proc up(nt: Nteract) =
 
 proc down(nt: Nteract) =
   cursorDown()
-
-proc clear(nt: Nteract) =
-  nt.pos = 0
-  nt.cmdline = ""
-  stdout.write("\r\27[2K")
-  stdout.write("\27[30;1m")
-  stdout.write(nt.prompt)
-  stdout.write("\27[0m> ")
-  stdout.flushFile()
 
 proc drawRemaining(nt: Nteract) =
   stdout.write "\27[?25l\27[0K"
@@ -89,10 +93,9 @@ proc fwdel(nt: Nteract) =
       nt.cmdline = nt.cmdline[0 .. nt.pos - 1] & nt.cmdline[ nt.pos+1 .. ^1 ]
     nt.drawRemaining()
 
-proc getUserInput*(nt: Nteract): string =
+proc getUserInput*(nt: Nteract, cmdline: string = ""): string =
   nt.clear()
-  nt.cmdline = nt.engine.sourceLine()
-  nt.pos = nt.cmdline.len
+  nt.cmdline = cmdline
   stdout.write(nt.cmdline)
   stdout.flushFile()
 
