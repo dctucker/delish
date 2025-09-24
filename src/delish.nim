@@ -1,8 +1,8 @@
 
 import std/times
 import std/strutils
+import ./argument
 import ./deliparser
-import ./deliargs
 import ./deliast
 import ./deliengine
 import ./delinteract
