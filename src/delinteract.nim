@@ -102,6 +102,8 @@ proc getUserInput*(nt: Nteract): string =
     case k
     of '\3':
       raise InterruptError(msg: "^C")
+    of '\4':
+      raise InterruptError(msg: "^D")
     of '\7', '\127':
       if first:
         nt.clear()

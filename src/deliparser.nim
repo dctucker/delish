@@ -100,7 +100,7 @@ proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
   of dkStrLiteral,
      dkStrBlock,
-     dkString:     node.strVal  = capture
+     dkString:     node.strVal  = parseString(capture)
   of dkPath:       node.strVal  = capture
   of dkIdentifier: node.id      = capture
   of dkVariable:   node.varName = capture

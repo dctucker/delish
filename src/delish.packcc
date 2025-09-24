@@ -387,14 +387,14 @@ Type          <- "Integer"                                           { DK( Integ
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- s1:SingleQuote                                      { $$ = s1; }
               /  s2:DblQuote                                         { $$ = s2; }
-DblQuote      <- ("\"" < [^"]* > "\"")                               { NS( String ); }
-SingleQuote   <- ("'"  < [^']* > "'")                                { NS( String ); }
-Command       <- < W ( W / '-' )* >                                  { NS( String ); }
-Identifier    <- < A ( W / '-' )* >                                  { NS( Identifier); }
-ArgShort      <- '-' < W+ >                                          { NS( ArgShort ); }
-ArgLong       <- "--" < ( W ('-' W )*)+ >                            { NS( ArgLong ); }
-String        <- < C+ >                                              { NS( String ); }
-Regex         <- 'r/' < ( '\/' / !'/' . )+ > '/'                     { NS( Regex ); }
+DblQuote      <- ( "\"" <              [^"]*    > "\"" )             { NS( String ); }
+SingleQuote   <- ( "'"  <              [^']*    >  "'" )             { NS( String ); }
+Command       <-        <   W ( W / '-'   )*    >                    { NS( String ); }
+Identifier    <-        <   A ( W / '-'   )*    >                    { NS( Identifier); }
+ArgShort      <-   '-'  <       W+              >                    { NS( ArgShort ); }
+ArgLong       <-  "--"  <     ( W ( '-' W )* )+ >                    { NS( ArgLong ); }
+String        <-        <       C+              >                    { NS( String ); }
+Regex         <-  'r/'  <    ( '\/' / !'/' . )+ > '/'                { NS( Regex ); }
 
 Number        <- d:Decimal                                           { $$ = d; }
                / i:Integer                                           { $$ = i; }
@@ -406,14 +406,14 @@ Time          <- h:Hour ':' m:Minute ':'                             { DK( Time,
               (  s:Second '.' n:NanoSecond                           { NA( $$, s ); NA( $$, n ); }
               /  s:Second                                            { NA( $$, s ); }
               )  z:Timezone?                                         { NA( $$, z ); }
-Year          <- <  [0-9][0-9][0-9][0-9]  >                          { NS( Integer ); }
-Month         <- <            [0-1][0-9]  >                          { NS( Integer ); }
-Day           <- <            [0-3][0-9]  >                          { NS( Integer ); }
-Hour          <- <            [0-2][0-9]  >                          { NS( Integer ); }
-Minute        <- <            [0-6][0-9]  >                          { NS( Integer ); }
-Second        <- <            [0-6][0-9]  >                          { NS( Integer ); }
-NanoSecond    <- <                 [0-9]+ >                          { NS( NanoSecond ); }
-Timezone      <- <  [-+][0-2][0-9] ':'? [0-6][0-9] / 'Z' >           { NS( Timezone ); }
+Year          <- <            [0-9] [0-9] [0-9] [0-9]       >        { NS( Integer ); }
+Month         <- <                        [0-1] [0-9]       >        { NS( Integer ); }
+Day           <- <                        [0-3] [0-9]       >        { NS( Integer ); }
+Hour          <- <                        [0-2] [0-9]       >        { NS( Integer ); }
+Minute        <- <                        [0-6] [0-9]       >        { NS( Integer ); }
+Second        <- <                        [0-6] [0-9]       >        { NS( Integer ); }
+NanoSecond    <- <                              [0-9]+      >        { NS( NanoSecond ); }
+Timezone      <- <  [-+] [0-2] [0-9] ':'? [0-6] [0-9] / 'Z' >        { NS( Timezone ); }
 
 Integer       <-  &"0x"  h:Int16                                     { $$ = h; }
               /   &'0'   o:Int8                                      { $$ = o; }

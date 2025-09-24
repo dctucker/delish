@@ -80,13 +80,21 @@ proc doStmt        (engine: Engine, s: DeliNode)
 proc initArguments (engine: Engine, script: DeliNode)
 proc initIncludes  (engine: Engine, script: DeliNode)
 proc initFunctions (engine: Engine, script: DeliNode)
-proc loadScript    (engine: Engine, script: DeliNode)
+proc initScript    (engine: Engine, script: DeliNode)
 proc assignVariable(engine: Engine, key: string, value: DeliNode)
 
-proc printStatements*(engine: Engine, colorize: bool = true) =
-  var head = engine.readhead
+proc printStatements*(engine: Engine, all: bool = false) =
+  var head: DeliListNode
+  var have_read = false
+  if all:
+    head = engine.statements.head
+  else:
+    head = engine.readhead
   var indicator = ""
   while head != nil:
+    if head == engine.readhead:
+      have_read = true
+
     let stmt = head.value
     let line = if stmt.line < 0:
       "." & $(-stmt.line)
@@ -96,8 +104,10 @@ proc printStatements*(engine: Engine, colorize: bool = true) =
       "\27[4m▶\27[24m"
     elif head == engine.tail:
       "▼"
-    else:
+    elif have_read:
       "▶"
+    else:
+      "▷"
     stderr.write " \27[36m", line, indicator, "\27[48;5;235m", stmt.repr[0..^2], "\27[0m"
     head = head.next
     stderr.write "\n"
@@ -110,7 +120,7 @@ proc setup*(engine: Engine, script: DeliNode) =
   engine.initArguments(script)
   engine.initIncludes(script)
   engine.initFunctions(script)
-  engine.loadScript(script)
+  engine.initScript(script)
 
 proc newEngine*(debug: int): Engine =
   result = Engine(
@@ -145,7 +155,7 @@ proc setHeads(engine: Engine, list: DeliListNode) =
   engine.readhead = list
   engine.writehead = engine.readhead
 
-proc insertStmt(engine: Engine, node: DeliNode) =
+proc insertStmt*(engine: Engine, node: DeliNode) =
   if node.script == nil:
     if engine.current.kind != dkNone:
       node.script = engine.current.script
@@ -171,7 +181,7 @@ proc removeStmt(engine: Engine): DeliNode =
   engine.statements.remove(engine.readhead)
   return stmt
 
-proc loadScript(engine: Engine, script: DeliNode) =
+proc initScript(engine: Engine, script: DeliNode) =
   var endline = 0
   if engine.tail != nil:
     endline = engine.tail.value.line
@@ -199,7 +209,8 @@ proc sourceFile*(engine: Engine): string =
     result = engine.current.script.filename
 
 proc sourceLine*(engine: Engine): string =
-  return engine.current.script.getLine( engine.current.line )
+  if engine.current.script != nil:
+    return engine.current.script.getLine( engine.current.line )
 
 proc lineInfo*(engine: Engine): string =
   var filename: string

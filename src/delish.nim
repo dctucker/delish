@@ -57,13 +57,16 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
         mainarg = arg.value.toString()
         break
 
-  if mainarg == "":
+  if mainarg == "" and not interactive:
     errlog.write("usage: delish script.deli\n")
     return 2
 
   if command_mode:
     scriptname = "-c"
     script = makeScript(scriptname, mainarg & "\n")
+  elif interactive and mainarg == "":
+    scriptname = "in"
+    script = makeScript(scriptname, "\n")
   else:
     scriptname = mainarg
     script = loadScript(scriptname)
@@ -117,6 +120,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
           nteract.filename = engine.sourceFile()
           if line > 0:
             discard nteract.getUserInput()
+
     except SetupError as e:
       exception_handler(e, debug)
       return 2
@@ -124,8 +128,36 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
       exception_handler(e, debug)
       return 1
     except InterruptError as e:
-      exception_handler(e, debug)
+      exception_handler(e, 0)
       return 127
+
+  if interactive:
+    echo "Interactive mode"
+    while true:
+      try:
+        let input = nteract.getUserInput()
+        if input == "exit":
+          break
+        if input.strip.len > 0:
+          script = makeScript(scriptname, input & "\n")
+          parser.script = script
+          parsed = parser.parse()
+          echo parsed.repr
+          for s in parsed.sons:
+            engine.insertStmt(parsed)
+
+        echo "statements"
+        engine.printStatements(true)
+        echo "executing"
+        for line in engine.tick():
+          if debug > 0:
+            echo engine.lineInfo()
+      except InterruptError as e:
+        break
+      except RuntimeError as e:
+        exception_handler(e, 0)
+      except SetupError as e:
+        exception_handler(e, 0)
 
   return engine.retval().intVal
 

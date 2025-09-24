@@ -34,7 +34,9 @@ proc line_count*(script: DeliScript): int =
   return script.source.count('\n')
 
 proc getLine*(script: DeliScript, line: int): string =
-  if line > script.line_numbers.len:
+  if line <= 0:
+    return $line
+  if line > script.line_numbers.len - 1:
     return "{EOF}"
   let start = script.line_numbers[line]
   if line+1 >= script.line_numbers.len:

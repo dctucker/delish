@@ -24,3 +24,5 @@ proc parseDecimal*(str: string): Decimal =
   result.fraction = parts[1].parseInt
   result.decimals = parts[1].len
 
+proc parseString*(str: string): string =
+  result = str
