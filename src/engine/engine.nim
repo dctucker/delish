@@ -189,4 +189,3 @@ proc setup*(engine: Engine, script: DeliNode) =
 proc teardown(engine: Engine) =
   for k,v in engine.fds.pairs():
     v.close()
-

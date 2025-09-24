@@ -16,7 +16,7 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
     return deliNone()
 
 proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
-  #echo "compare ", v1, op, v2
+  #stderr.write "compare ", v1, op, v2
   let val = case op.kind
   of dkCompEq: v1 == v2
   of dkCompNe: v1 != v2
@@ -48,7 +48,7 @@ proc evalExpression(engine: Engine, expr: DeliNode): DeliNode =
   result = expr
   while result.kind == dkExpr:
     let s = result.sons[0]
-    #echo s.kind
+    #stderr.write s.kind
     result = engine.evaluate(s)
 
 proc evaluateStream(engine: Engine, stream: DeliNode): FileDesc =
@@ -71,31 +71,38 @@ proc evalPairKey(engine: Engine, k: DeliNode): string =
 
 proc evaluate(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
+
   of dkBoolean, dkString, dkIdentifier, dkDecimal, dkInteger, dkPath,
      dkStrBlock, dkStrLiteral, dkJump, dkNone, dkRegex, dkCode:
     return val
+
   of dkLazy:
     return val.sons[0]
+
   of dkStream,
     dkEnvDefault,
     dkCondition,
     dkBoolExpr:
     return engine.evaluate( val.sons[0] )
+
   of dkStreamIn:  return DeliNode(kind: dkStream, intVal: 0)
   of dkStreamOut: return DeliNode(kind: dkStream, intVal: 1)
   of dkStreamErr: return DeliNode(kind: dkStream, intVal: 2)
+
   of dkArray:
     result = DeliNode(kind: dkArray)
     for son in val.sons:
       result.sons.add(engine.evaluate(son))
     return result
+
   of dkObject:
     result = DK( dkObject )
     for pair in val.sons:
       let str = engine.evalPairKey( pair.sons[0] )
       result.table[str] = engine.evaluate(pair.sons[1])
-    echo printValue(result)
+    #stderr.write printValue(result)
     return result
+
   of dkDateTime:
     let date = val.sons[0].sons
     let time = val.sons[1].sons
@@ -109,15 +116,20 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
       time[2].intVal,
     )
     return result
+
   of dkRunStmt:
     let ran = engine.doRun(val)
     return ran
+
   of dkExpr:
     return engine.evalExpression(val)
+
   of dkVariable:
     return engine.getVariable(val.varName)
+
   of dkVarDeref:
     return engine.evalVarDeref(val)
+
   of dkArg:
     debug 3:
       stdout.write "  dereference ", val.sons[0]
@@ -125,33 +137,45 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     #if arg.isNone(): engine.runtimeError("Undeclared argument: " & val.sons[0].argName)
     result = engine.evaluate(arg)
     debug 3:
-      echo " = ", $result
+      stderr.write " = ", $result
+    return result
+
   of dkArgExpr:
     let arg = val.sons[0]
     let aval = engine.evalExpression(val.sons[1])
     result = DK(dkArray, arg, aval)
+    return result
+
   of dkOpenExpr:
     return engine.doOpen(val.sons)
+
   of dkBoolNot:
     return not engine.evaluate( val.sons[0] ).toBoolean()
+
   of dkCondExpr:
     let v1 = val.sons[1]
     let v2 = val.sons[2]
     return engine.evalCondExpr( val.sons[0], v1, v2 )
+
   of dkComparison:
     let v1 = engine.evaluate(val.sons[1])
     let v2 = engine.evaluate(val.sons[2])
     return engine.evalComparison(val.sons[0], v1, v2)
+
   of dkMathExpr:
     let v1 = engine.evaluate(val.sons[1])
     let v2 = engine.evaluate(val.sons[2])
     return engine.evalMath(val.sons[0], v1, v2)
+
   of dkFunctionCall:
     return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
+
   of dkCast:
     return engine.evaluate(val.sons[1]).toKind(val.sons[0].kind)
+
   of dkElse:
     return deliTrue()
+
   else:
     todo "evaluate ", val.kind
     return deliNone()
