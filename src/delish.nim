@@ -127,6 +127,13 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
           script = makeScript(scriptname, input & "\n")
           parser.script = script
           parsed = parser.parse()
+
+          if parser.errors.len != 0:
+            for err in parser.errors:
+              let row = script.line_number(err.pos)
+              let col = script.col_number(err.pos)
+              errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
+
           echo parsed.repr
           for s in parsed.sons:
             engine.insertStmt(s)

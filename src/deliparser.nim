@@ -29,6 +29,7 @@ type
     entry_point:  DeliNode
     script*:      DeliScript
     symbol_stack: Stack[DeliKind]
+    brackets:     Stack[char]
     nodes:        seq[DeliNode]
     errors*:      seq[ErrorMsg]
     metrics:      OrderedTable[DeliKind,Metric]
@@ -75,6 +76,9 @@ proc parse*(parser: Parser): DeliNode =
   var cstr = parser.script.source.cstring
   parser.nodes = @[deliNone()]
   discard packcc_main(cstr, parser.script.source.len.cint, parser)
+  if parser.brackets.len > 0:
+    let b = parser.brackets.pop()
+    parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
 
@@ -100,6 +104,13 @@ type DeliT = object
   length: csize_t
   parser: Parser
 
+proc pccError(parser: Parser): void {.exportc.} =
+  when deepDebug:
+    debug 2:
+      stderr.write "\n"
+  if parser.errors.len == 0:
+    todo "handle syntax error"
+
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
   of dkStrLiteral,
@@ -123,6 +134,17 @@ proc parseCapture(node: DeliNode, capture: string) =
 
 proc addNode(parser: Parser, node: DeliNode) =
   parser.nodes.add node
+
+proc bracket(parser: Parser, pos: int, c: char, d: int8) {.exportc.} =
+  if d > 0:
+    parser.brackets.push(c)
+  elif d < 1:
+    if parser.brackets.len == 0:
+      parser.errors.add(ErrorMsg(pos: pos, msg: "Unexpected `" & $c))
+      return
+    let c1 = parser.brackets.pop()
+    if c1 != c:
+      parser.errors.add(ErrorMsg(pos: pos, msg: "Expected `" & $c1 & "`, got `" & $c & "`"))
 
 proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: cstring): cint {.exportc.} =
   result = parser.nodes.len.cint
