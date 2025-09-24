@@ -233,7 +233,7 @@ proc toString*(node: DeliNode): string =
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
   of dkDateTime:   $(node.dtVal)
-  of dkVarDeref:   "VarDeref"
+  of dkVarDeref:   "$"
   of dkArgDefault:
     if node.sons.len > 0:
       $(node.sons[0])
@@ -272,8 +272,13 @@ proc todo*(msg: varargs[string, `$`]) =
 
 proc repr*(node: DeliNode): string =
   result = ""
-  result &= $node
-  if node.sons.len() > 0:
+
+  if node.kind == dkExpr:
+    result &= node.kind.name
+  else:
+    result &= $node
+
+  if node.sons.len > 0:
     result &= "( "
     for n in node.sons:
       result &= repr(n)

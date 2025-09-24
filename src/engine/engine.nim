@@ -2,7 +2,7 @@
 
 proc printStatements*(engine: Engine, all: bool = false) =
   var head: DeliListNode
-  var have_read = false
+  var unread = false
   if all:
     head = engine.statements.head
   else:
@@ -10,25 +10,24 @@ proc printStatements*(engine: Engine, all: bool = false) =
   var indicator = ""
   while head != nil:
     if head == engine.readhead:
-      have_read = true
+      unread = true
 
     let stmt = head.value
     let line = if stmt.line < 0:
       "." & $(-stmt.line)
     else:
       ":" & $stmt.line
-    indicator = if head == engine.writehead:
-      "\27[4m▶\27[24m"
-    elif head == engine.tail:
-      "▼"
-    elif have_read:
-      "▶"
+    indicator = if head == engine.tail:
+      if unread: "▼" else: "▽"
     else:
-      "▷"
+      if unread: "▶" else: "▷"
+
+    if head == engine.writehead:
+      indicator = "\27[4m" & indicator & "\27[24m"
     stderr.write " \27[36m", line, indicator, "\27[48;5;235m", stmt.repr[0..^2], "\27[0m"
     head = head.next
     stderr.write "\n"
-  stderr.write "\27[36m END\27[0m\n"
+  stderr.write "\27[36mEND⏚\27[0m\n"
 
 proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList
@@ -46,13 +45,21 @@ proc insertStmt*(engine: Engine, node: DeliNode) =
       engine.insertStmt(s)
     return
 
-  #     w                w
-  #  A  B  Z       A  B  C  Z
-  var sw = engine.writehead.next
-  let listnode = newSinglyLinkedNode[DeliNode](node)
-  engine.writehead.next = listnode
-  listnode.next = sw
-  engine.writehead = listnode
+  if engine.writehead == engine.tail:
+    var listnode = newSinglyLinkedNode[DeliNode](engine.tail.value)
+    engine.writehead.value = node
+    engine.writehead.next = listnode
+    engine.writehead = listnode
+    engine.tail = engine.writehead
+
+  else:
+    #     w                w
+    #  A  B  Z       A  B  C  Z
+    var sw = engine.writehead.next
+    let listnode = newSinglyLinkedNode[DeliNode](node)
+    engine.writehead.next = listnode
+    listnode.next = sw
+    engine.writehead = listnode
 
 proc insertStmt(engine: Engine, nodes: seq[DeliNode]) =
   for node in nodes:
