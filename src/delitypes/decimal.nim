@@ -87,9 +87,16 @@ proc `/`*(a0, b0: Decimal): Decimal =
   result.fraction = result.whole mod E10(result.decimals)
   result.whole    = result.whole div E10(result.decimals)
 
+#     123.45
+# %     3.2
+# =     1.85
 proc `mod`*(a0, b0: Decimal): Decimal =
-  todo "mod Decimal / Decimal"
-  return Decimal()
+  let (a, b) = conform(a0, b0)
+  result.decimals = a.decimals
+  result.whole = a.whole * E10(a.decimals) + a.fraction
+  result.whole = result.whole mod (b.whole * E10(b.decimals) + b.fraction)
+  result.fraction = result.whole mod E10(result.decimals)
+  result.whole    = result.whole div E10(result.decimals)
 
 proc `==`*(a0, b0: Decimal): bool =
   let (a, b) = conform(a0, b0)

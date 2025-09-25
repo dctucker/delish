@@ -129,26 +129,25 @@ proc `+`*(a, b: DeliNode): DeliNode =
     of dkDecimal: return DKDec(a.decVal + b.decVal)
     of dkString,
       dkPath:     return DKStr(a.strVal & b.strVal)
+    of dkArg:     return DK(dkArgExpr, a, b)
     of dkArray:
       result = DeliNode(kind: dkArray)
-      for n in a.sons:
-        result.sons.add(n)
-      for n in b.sons:
-        result.sons.add(n)
-        return result
-    of dkArg:
-      return DK(dkArgExpr, a, b)
+      for n in a.sons: result.sons.add(n)
+      for n in b.sons: result.sons.add(n)
+      return result
     else:
       todo "add ", a.kind, " + ", b.kind
       return deliNone()
 
   case a.kind
   of dkArray:
-    a.sons.add(b)
-    return a
+    result = DeliNode(kind: dkArray)
+    for n in a.sons: result.sons.add(n)
+    result.sons.add(b)
   of dkArgExpr:
-    a.sons.add(b)
-    return a
+    result = DeliNode(kind: dkArgExpr)
+    for n in a.sons: result.sons.add(n)
+    result.sons.add(b)
   else:
     todo "add ", a.kind, " + ", b.kind
     return a
