@@ -44,7 +44,7 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
       variable = node.varName
     of dkPath:
       path = node.strVal
-    of dkRedirOp:
+    of dkRedirOper:
       mode = getRedirOpenMode(node.sons[0])
     else:
       todo "open ", node.kind

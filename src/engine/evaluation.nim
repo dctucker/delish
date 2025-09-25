@@ -18,12 +18,12 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
 proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
   #stderr.write "compare ", v1, op, v2
   let val = case op.kind
-  of dkCompEq: v1 == v2
-  of dkCompNe: v1 != v2
-  of dkCompGt: v1 >  v2
-  of dkCompGe: v1 >= v2
-  of dkCompLt: v1 <  v2
-  of dkCompLe: v1 <= v2
+  of dkEqOp: v1 == v2
+  of dkNeOp: v1 != v2
+  of dkGtOp: v1 >  v2
+  of dkGeOp: v1 >= v2
+  of dkLtOp: v1 <  v2
+  of dkLeOp: v1 <= v2
   else:
     todo "evalComparison ", $op
     false

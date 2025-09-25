@@ -60,7 +60,6 @@ proc getRule(name: string): string {.compileTime.} =
 
     result &= " " & x.simplifyBody
 
-
 proc getSubKinds(kind: string): seq[string] {.compileTime.} =
   return getRule(kind).replace("(","").replace(")","").split("/").map(proc(x:string): string =
     result = x
@@ -94,6 +93,31 @@ macro grammarSubKindStrings*(kind: static[string]) =
   when deepDebug: echo stmt
   result = parseStmt(stmt)
 
+proc getOperatorKinds(): seq[string] {.compileTime.} =
+  return getSymbols().filter(proc(x: string): bool =
+    return x.endsWith("Op")
+  )
+
+macro grammarOpKinds*() =
+  let ops = getOperatorKinds()
+  let stmt = "const dkOperatorKinds = { " & ops.join(", ") & " }"
+  when deepDebug: echo stmt
+  result = parseStmt(stmt)
+
+macro grammarOpKindStrings*() =
+  let kinds = getOperatorKinds()
+  var stmt = "const dkOperatorKindStrings = {\n"
+  for k in kinds:
+    var str: string
+    for x in grammar_lines:
+      if x.startsWith(k[2..^1] & " "):
+         str = x.split("<-")[1].simplifyBody
+         break
+
+    stmt &= "  " & k & ": " & str & ",\n"
+  stmt &= "}.toTable"
+  when deepDebug: echo stmt
+  result = parseStmt(stmt)
 
 macro grammarToEnum*(extra: static[seq[string]]) =
   let symbols = getSymbols()

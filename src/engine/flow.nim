@@ -145,7 +145,7 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
       )
     ))
 
-    var condition = DK( dkComparison, DK(dkCompEq), deliNone(), variable )
+    var condition = DK( dkComparison, DK(dkEqOp), deliNone(), variable )
     condition.line = top_line
     discard engine.setupConditional(condition, dkBreakStmt, top_line)
 

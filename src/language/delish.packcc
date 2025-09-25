@@ -59,7 +59,7 @@
 		*invalid_expression  = "invalid expression",
 		*expected_body       = "expected body",
 		*expected_variable   = "expected variable",
-		*expected_invocation = "expected invocaton";
+		*expected_invocation = "expected invocation";
 }
 
 %source {
@@ -160,7 +160,7 @@ AppendExpr    <-
               /   e:Cast
               )                                                      { $$ = e; }
 
-OpenExpr      <- Open   (S+ o:RedirOp)? S+ ( p:Path / p:VarDeref )  ~{ ER("expected path after `open`"); }
+OpenExpr      <- Open  (S+ o:RedirOper)? S+ ( p:Path / p:VarDeref ) ~{ ER("expected path after `open`"); }
                                                                      { DK( OpenExpr, p, o); }
 CloseStmt     <-
               (  Close   S+ v:Variable                              ~{ ER( expected_variable ); }
@@ -200,9 +200,9 @@ StreamStmt    <-
 RunStmt       <-
               (  f:RunFlags  S+  Run                                 { DK( RunStmt, f ); }
               /                  Run                                 { DK( RunStmt ); }
-              )              S+  i:Invocation                       ~{ ER("expected invocation"); }
+              )              S+  i:Invocation                       ~{ ER( expected_invocation ); }
                                                                      { NA( $$, i ); }
-              (  S* PipeOp S* i:Invocation                          ~{ ER("expected invocation"); }
+              (  S* PipeOp S* i:Invocation                          ~{ ER( expected_invocation ); }
                                                                      { NA( $$, i ); }
               )*
 
@@ -286,24 +286,17 @@ BoolNot       <- Not                                                 { DK( BoolN
 BoolOr        <- Or                                                  { DK( BoolOr ); }
 BoolAnd       <- And                                                 { DK( BoolAnd ); }
 
-Comparison    <- e1:CompExpr S+ o:CompOp S+ e2:CompExpr             ~{ ER("expected comparable expression"); }
+Comparison    <- e1:CompExpr S+ o:CompOper S+ e2:CompExpr           ~{ ER("expected comparable expression"); }
                                                                      { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
               (  s:FunctionCall / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
               /  s:Number / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
-CompOp        <-
-              (  o:CompGe / o:CompGt / o:CompLe / o:CompLt
-              /  o:CompEq / o:CompNe / o:CompMatch
+CompOper      <-
+              (  o:GeOp / o:GtOp / o:LeOp / o:LtOp
+              /  o:EqOp / o:NeOp / o:MatchOp
               )                                                      { $$ = o; }
-CompGe        <- ">="                                                { DK( CompGe ); }
-CompGt        <- ">"                                                 { DK( CompGt ); }
-CompLe        <- "<="                                                { DK( CompLe ); }
-CompLt        <- "<"                                                 { DK( CompLt ); }
-CompEq        <- "=="                                                { DK( CompEq ); }
-CompNe        <- "!="                                                { DK( CompNe ); }
-CompMatch     <- "=~"                                                { DK( CompMatch ); }
 
 VarDeref      <- &VarOp n:Variable                                   { DK( VarDeref, n ); }
               (  DerefOp
@@ -315,46 +308,15 @@ VarDeref      <- &VarOp n:Variable                                   { DK( VarDe
 RedirFlag     <- Redir                                               { DK( RedirFlag ); }
               (  S+
                ( i:VarDeref / i:Path / i:Stream )                   ~{ ER("expected redirection source"); }
-                 S* r:RedirOp S*                                    ~{ ER("expected redirection operator"); }
+                 S* r:RedirOper S*                                  ~{ ER("expected redirection operator"); }
                ( o:VarDeref / o:Path / o:Stream )                   ~{ ER("expected redirection destination"); }
                                                                      { NA( r, i ); NA( r, o ); NA( $$, r ); }
               )+
 
 AsyncFlag     <- Async                                               { DK( AsyncFlag ); }
 
-ArgNames      <- S+ a:Arg                                            { DK( ArgNames, a); }
-              (  S+ a:Arg                                            { NA( $$, a); }
-              )*
-
-Arg           <- &'-'
-              (  l:ArgLong                                           { DK( Arg, l ); }
-              /  s:ArgShort                                          { DK( Arg, s ); }
-              )                                                     ~{ ER("invalid argument name"); }
-
-Array         <- ALeft S* ARight                                     { DK( Array ); }
-              /  ALeft                                               { DK( Array ); }
-              (      _  e:Expr                                       { NA( $$, e ); }
-                     S*       SepOp? _
-              )* ARight
-
-Object        <- ALeft                                               { DK( Object ); }
-              (         _  p:Pair                                    { NA( $$, p ); }
-                        S*       SepOp? _
-              )+ ARight
-
-Pair          <-
-                 i:Identifier S* PairOp S* c:Body                   ~{ ER("expected body after `:`"); }
-                                                                     { DK( Pair, i, c ); }
-              /
-                 k:KeyExpr    S* PairOp S* v:Expr                   ~{ ER("expected value expression"); }
-                                                                     { DK( Pair, k, v ); }
-KeyExpr       <-
-              (
-                 k:Variable / k:StrLiteral / k:Integer
-              )                                                      { $$ = k; }
-
-JsonBlock     <- Json   S+ s:StrBlock                               ~{ ER("expected string literal block after `json`"); }
-                                                                     { DK( JsonBlock, s ); }
+Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER("expected expression"); }
+                                 S*        PRight                    { DK( Cast, t, e ); }
 
 Keyword       <-
               (  Json   / Sub   / If       / Elif    / Else
@@ -397,9 +359,6 @@ Open          <- "open"
 Close         <- "close"
 Run           <- "run"
 
-Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER("expected expression"); }
-                                 S*        PRight                    { DK( Cast, t, e ); }
-
 Type          <- "Integer"                                           { DK( Integer    ); }
               /  "Decimal"                                           { DK( Decimal    ); }
               /  "DateTime"                                          { DK( DateTime   ); }
@@ -413,6 +372,40 @@ Type          <- "Integer"                                           { DK( Integ
               /  "Stream"                                            { DK( Stream     ); }
               /  "String"                                            { DK( String     ); }
               /  "Variable"                                          { DK( Variable   ); }
+
+ArgNames      <- S+ a:Arg                                            { DK( ArgNames, a); }
+              (  S+ a:Arg                                            { NA( $$, a); }
+              )*
+
+Arg           <- &'-'
+              (  l:ArgLong                                           { DK( Arg, l ); }
+              /  s:ArgShort                                          { DK( Arg, s ); }
+              )                                                     ~{ ER("invalid argument name"); }
+
+Array         <- ALeft S* ARight                                     { DK( Array ); }
+              /  ALeft                                               { DK( Array ); }
+              (      _  e:Expr                                       { NA( $$, e ); }
+                     S*       SepOp? _
+              )* ARight
+
+Object        <- ALeft                                               { DK( Object ); }
+              (         _  p:Pair                                    { NA( $$, p ); }
+                        S*       SepOp? _
+              )+ ARight
+
+Pair          <-
+                 i:Identifier S* PairOp S* c:Body                   ~{ ER("expected body after `:`"); }
+                                                                     { DK( Pair, i, c ); }
+              /
+                 k:KeyExpr    S* PairOp S* v:Expr                   ~{ ER("expected value expression"); }
+                                                                     { DK( Pair, k, v ); }
+KeyExpr       <-
+              (
+                 k:Variable / k:StrLiteral / k:Integer
+              )                                                      { $$ = k; }
+
+JsonBlock     <- Json   S+ s:StrBlock                               ~{ ER("expected string literal block after `json`"); }
+                                                                     { DK( JsonBlock, s ); }
 
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- s1:SingleQuote                                      { $$ = s1; }
@@ -460,6 +453,13 @@ StreamIn      <- "in"                                                { DK( Strea
 StreamOut     <- "out"                                               { DK( StreamOut ); }
 StreamErr     <- "err"                                               { DK( StreamErr ); }
 
+GeOp          <- ">="                                                { DK( GeOp ); }
+GtOp          <- ">"                                                 { DK( GtOp ); }
+LeOp          <- "<="                                                { DK( LeOp ); }
+LtOp          <- "<"                                                 { DK( LtOp ); }
+EqOp          <- "=="                                                { DK( EqOp ); }
+NeOp          <- "!="                                                { DK( NeOp ); }
+MatchOp       <- "=~"                                                { DK( MatchOp ); }
 MulOp         <- "*"                                                 { DK( MulOp ); }
 DivOp         <- "/"                                                 { DK( DivOp ); }
 ModOp         <- "%"                                                 { DK( ModOp ); }
@@ -474,10 +474,10 @@ AssignOp      <- "="                                                 { DK( Assig
 AppendOp      <- "+="                                                { DK( AppendOp ); }
 RemoveOp      <- "-="                                                { DK( RemoveOp ); }
 DefaultOp     <- "|="                                                { DK( DefaultOp ); }
-RedirOp       <-
+RedirOper     <-
               (  o:RedirAppendOp / o:RedirReadOp
               /  o:RedirWriteOp / o:RedirDuplexOp
-              )                                                      { DK( RedirOp, o ); }
+              )                                                      { DK( RedirOper, o ); }
 RedirAppendOp <- ">>"                                                { DK( RedirAppendOp ); }
 RedirReadOp   <- "<"                                                 { DK( RedirReadOp ); }
 RedirWriteOp  <- ">"                                                 { DK( RedirWriteOp ); }

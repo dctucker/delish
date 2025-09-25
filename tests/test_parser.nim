@@ -46,8 +46,8 @@ suite "parser":
     #    dkStatement( dkVariableStmt( Variable:x AssignOp:= Expr:127 ( Integer:127 ) ) )
     #    dkStatement( dkVariableStmt( Variable:y AssignOp:= Expr:127 ( Integer:127 ) ) )
     #    dkStatement( dkVariableStmt( Variable:z AssignOp:= Expr:127 ( Integer:127 ) ) )
-    #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkCompNe dkVarDeref:VarDeref( Variable:x ) VarDeref:VarDeref( Variable:y ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
-    #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkCompNe dkVarDeref:VarDeref( Variable:y ) VarDeref:VarDeref( Variable:z ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
+    #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkNeOp dkVarDeref:VarDeref( Variable:x ) VarDeref:VarDeref( Variable:y ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
+    #    dkBlock( dkConditional( dkBoolExpr( dkComparison( dkNeOp dkVarDeref:VarDeref( Variable:y ) VarDeref:VarDeref( Variable:z ) ) ) Code( Statement( ReturnStmt( Expr:1 ( Integer:1 ) ) ) ) ) )
     #))
     let script = parsed.sons[0]
     check script.traverse(0,0).kind == dkVariableStmt

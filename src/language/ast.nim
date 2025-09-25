@@ -19,11 +19,12 @@ grammarSubKinds("Statement")
 grammarSubKinds("Type")
 grammarSubKinds("Stream")
 grammarSubKinds("CompExpr")
-grammarSubKinds("CompOp")
-grammarSubKinds("RedirOp")
+grammarSubKinds("CompOper")
 grammarKindStrings("Type")
 grammarSubKindStrings("Stream")
-grammarSubKindStrings("CompOp")
+grammarSubKindStrings("CompOper")
+grammarOpKinds()
+grammarOpKindStrings()
 
 type
   DeliNode* = ref DeliNodeObj
@@ -135,7 +136,7 @@ proc DKLazy*(node: DeliNode): DeliNode =
 
 proc DKNotNone*(node: DeliNode): DeliNode =
   return DeliNode(kind: dkBoolExpr, sons: @[
-    node, DeliNode(kind: dkCompNe), deliNone()
+    node, DeliNode(kind: dkNeOp), deliNone()
   ])
 
 proc DKStr*(strVal: string): DeliNode =
@@ -227,24 +228,22 @@ proc `$`*(decimal: Decimal): string =
   return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
 
 proc toString*(node: DeliNode): string =
-  if node.kind in { dkExpr, dkExprList }:
+  let kind = node.kind
+  if kind in { dkExpr, dkExprList }:
     result = ""
     for s in node.sons:
       result &= s.toString()
       result &= " "
     return result
 
-  if node.kind in dkStreamKinds:
-    return dkStreamKindStrings[node.kind]
-  if node.kind in dkStatementKinds:
+  if kind in dkStreamKinds:
+    return dkStreamKindStrings[kind]
+  if kind in dkStatementKinds:
     return ""
+  if kind in dkOperatorKinds:
+    return dkOperatorKindStrings[kind]
 
-  return case node.kind
-  of dkInner, dkNone, dkFunctionCall, dkType, dkLazy, dkForLoop, dkCode, dkStatement:
-    ""
-  of dkAssignOp:   "="
-  of dkAppendOp:   "+="
-  of dkRemoveOp:   "-="
+  return case kind
   of dkVarDeref:   "$"
   of dkIdentifier: node.id
   of dkPath,
@@ -279,9 +278,14 @@ proc toString*(node: DeliNode): string =
       $node.list_node.value.line
     else:
       "Jump"
-  else:
-    todo "toString " & node.kind.name
+  of dkInner, dkNone:
     ""
+  else:
+    if kind.ord <= dkKeyword.ord:
+      ""
+    else:
+      todo "toString " & kind.name
+      ""
 
 proc `$`*(node: DeliNode): string =
   let value = node.toString()

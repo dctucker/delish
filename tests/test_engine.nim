@@ -122,7 +122,7 @@ suite "engine":
         DK( dkCode,
           DKVarStmt("x", dkRemoveOp, DKInt(1)),
         ), DK( dkCondition, DK( dkComparison,
-          DK( dkCompGt ), DKVar("x"), DKInt(0)
+          DK( dkGtOp ), DKVar("x"), DKInt(0)
         ))
       ),
       DKVarStmt("x", dkAssignOp, DKInt(5)),
@@ -141,7 +141,7 @@ suite "engine":
       DKVarStmt("x", dkAssignOp, DKInt(3)),
       DK( dkWhileLoop,
         DK( dkCondition, DK( dkComparison,
-          DK( dkCompGt ), DKVar("x"), DKInt(0)
+          DK( dkGtOp ), DKVar("x"), DKInt(0)
         )),
         DK( dkCode,
           DKVarStmt("x", dkRemoveOp, DKInt(1)),
@@ -164,7 +164,7 @@ suite "engine":
       DKVarStmt("x", dkAssignOp, DKInt(1)),
       DK( dkConditional,
         DK( dkCondition, DK( dkComparison,
-          DK( dkCompGt ), DKVar("x"), DKInt(0)
+          DK( dkGtOp ), DKVar("x"), DKInt(0)
         )),
         DK( dkCode,
           DKVarStmt("y", dkAssignOp, DKTrue),
