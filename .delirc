@@ -1,0 +1,7 @@
+ls = {
+  local $pwd = Path.pwd
+  for $f in $pwd.list {
+    out $f
+  }
+}
+out ls

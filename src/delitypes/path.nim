@@ -1,9 +1,11 @@
 import std/[
+  algorithm,
   #appdirs,
   os,
   #paths,
   posix,
   tables,
+  sequtils,
 ]
 import ./common
 
@@ -204,13 +206,23 @@ proc dHome(nodes: varargs[DeliNode]): DeliNode =
   noargs
   result = DKPath($os.getHomeDir())
 
+
+type PathEntry = tuple[kind: PathComponent, path: string]
+
 proc dListDir(nodes: varargs[DeliNode]): DeliNode =
   argvars
   nextarg dkPath
   let path = arg
   result = DK(dkArray)
-  for p in walkDir(path.strVal, relative=true):
-    result.sons.add DKPath(p.path)
+  result.sons = walkDir(path.strVal, relative=true).toSeq.sorted(
+    proc(e1, e2: PathEntry): int =
+      let s1 = $(e1.kind) & e1.path
+      let s2 = $(e2.kind) & e2.path
+      return system.cmp[string](s1, s2)
+  ).map(
+    proc(e: PathEntry): DeliNode =
+      return DKPath(e.path)
+  )
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "stat": dStat,

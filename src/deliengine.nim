@@ -1,28 +1,28 @@
-import system/exceptions
-import std/[
-  lists,
-  sequtils,
-  streams,
-  strutils,
-  tables,
-  times,
-]
-import stacks
-
-import ./language/[
-  ast,
-  parser,
-]
-import ./[
-  argument,
-  deliscript,
-  deliprocess,
-]
-import ./delitypes/[
-  casts,
-  ops,
-  functions,
-]
+import
+  system/exceptions,
+  std/[
+    lists,
+    sequtils,
+    streams,
+    strutils,
+    tables,
+    times,
+  ],
+  stacks,
+  ./language/[
+    ast,
+    parser,
+  ],
+  ./[
+    argument,
+    deliscript,
+    deliprocess,
+  ],
+  ./delitypes/[
+    casts,
+    ops,
+    functions,
+  ]
 
 include ./engine/[
   common,

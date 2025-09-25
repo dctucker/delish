@@ -234,18 +234,18 @@ proc toString*(node: DeliNode): string =
       result &= " "
     return result
 
-
   if node.kind in dkStreamKinds:
     return dkStreamKindStrings[node.kind]
   if node.kind in dkStatementKinds:
     return ""
 
   return case node.kind
-  of dkInner, dkNone, dkFunctionCall, dkType:
+  of dkInner, dkNone, dkFunctionCall, dkType, dkLazy, dkForLoop, dkCode, dkStatement:
     ""
-  of dkAssignOp: "="
-  of dkAppendOp: "+="
-  of dkRemoveOp: "-="
+  of dkAssignOp:   "="
+  of dkAppendOp:   "+="
+  of dkRemoveOp:   "-="
+  of dkVarDeref:   "$"
   of dkIdentifier: node.id
   of dkPath,
      dkStrLiteral,
@@ -257,7 +257,9 @@ proc toString*(node: DeliNode): string =
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
   of dkDateTime:   $(node.dtVal)
-  of dkVarDeref:   "$"
+  of dkObject,
+     dkRan:        objFormat(node)
+  of dkArray:      arrayFormat(node)
   of dkArgDefault:
     if node.sons.len > 0:
       $(node.sons[0])
@@ -272,10 +274,6 @@ proc toString*(node: DeliNode): string =
     "--" & node.argName
   of dkArgExpr:
     argFormat(node)
-  of dkObject, dkRan:
-    objFormat(node)
-  of dkArray:
-    arrayFormat(node)
   of dkJump:
     if node.list_node != nil:
       $node.list_node.value.line
