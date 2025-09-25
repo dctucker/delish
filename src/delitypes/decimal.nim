@@ -37,6 +37,14 @@ proc conform(a, b: Decimal, decimals: int): (Decimal, Decimal) =
 proc conform(a, b: Decimal): (Decimal, Decimal) =
   return conform(a, b, max(a.decimals, b.decimals))
 
+proc scaleUp(d: Decimal): int =
+  return d.whole * E10(d.decimals) + d.fraction
+
+proc scaleDown(i, decimals: int): Decimal =
+  result.whole    = i div E10(decimals)
+  result.fraction = i mod E10(decimals)
+  result.decimals = decimals
+
 # 123.45
 #   0.45678
 proc `+`*(a0, b0: Decimal): Decimal =
@@ -69,11 +77,10 @@ proc `-`*(a0, b0: Decimal): Decimal =
 # = 56389.491
 proc `*`*(a0, b0: Decimal): Decimal =
   let (a, b) = conform(a0, b0)
-  result.whole  = a.whole * E10(a.decimals) + a.fraction
-  result.whole *= b.whole * E10(b.decimals) + b.fraction
-  result.decimals = a.decimals + b.decimals
-  result.fraction = result.whole mod E10(result.decimals)
-  result.whole    = result.whole div E10(result.decimals)
+  result  = scaleDown(
+    a.scaleUp * b.scaleUp,
+    a.decimals + b.decimals
+  )
 
 #      2.3  ->    2300
 # /    4.5  ->      45
@@ -81,22 +88,21 @@ proc `*`*(a0, b0: Decimal): Decimal =
 # =    0.51
 proc `/`*(a0, b0: Decimal): Decimal =
   let (a, b) = conform(a0, b0)
-  result.decimals = a.decimals + b.decimals + 1
-  result.whole = (a.whole * E10(a.decimals) + a.fraction) * E10(result.decimals)
-  result.whole = result.whole div (b.whole * E10(b.decimals) + b.fraction)
-  result.fraction = result.whole mod E10(result.decimals)
-  result.whole    = result.whole div E10(result.decimals)
+  let decimals = a.decimals + b.decimals + 1
+  result = scaleDown(
+    a.scaleUp * E10(decimals) div b.scaleUp,
+    decimals
+  )
 
 #     123.45
 # %     3.2
 # =     1.85
 proc `mod`*(a0, b0: Decimal): Decimal =
-  let (a, b) = conform(a0, b0)
-  result.decimals = a.decimals
-  result.whole = a.whole * E10(a.decimals) + a.fraction
-  result.whole = result.whole mod (b.whole * E10(b.decimals) + b.fraction)
-  result.fraction = result.whole mod E10(result.decimals)
-  result.whole    = result.whole div E10(result.decimals)
+  var (a, b) = conform(a0, b0)
+  result = scaleDown(
+    a.scaleUp mod b.scaleUp,
+    a.decimals
+  )
 
 proc `==`*(a0, b0: Decimal): bool =
   let (a, b) = conform(a0, b0)
