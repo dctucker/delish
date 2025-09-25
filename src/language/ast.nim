@@ -17,10 +17,12 @@ grammarToEnum( @["None","Inner","Ran","Jump","Lazy","A","C","S","W","U"])
 grammarToCEnum(@["None","Inner","Ran","Jump","Lazy","A","C","S","W","_"])
 grammarSubKinds("Statement")
 grammarSubKinds("Type")
+grammarSubKinds("Stream")
 grammarSubKinds("CompExpr")
 grammarSubKinds("CompOp")
 grammarSubKinds("RedirOp")
 grammarKindStrings("Type")
+grammarSubKindStrings("Stream")
 grammarSubKindStrings("CompOp")
 
 type
@@ -65,6 +67,11 @@ type
     sons*: seq[DeliNode]
     line*: int
     script*:     DeliScript
+
+proc name*(kind: DeliKind): string =
+  return ($kind).substr(2)
+
+proc todo*(msg: varargs[string, `$`])
 
 proc isNone*(node: DeliNode):bool =
   if node.kind == dkNone:
@@ -210,17 +217,32 @@ proc objFormat(node: DeliNode): string =
     result &= key & ": " & value.toString() & "; "
   result &= "]"
 
+proc arrayFormat(node: DeliNode): string =
+  result = "[ "
+  for value in node.sons:
+    result &= value.toString() & ", "
+  result = result[0..^3] & " ]"
+
 proc `$`*(decimal: Decimal): string =
   return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
 
 proc toString*(node: DeliNode): string =
-  if node.kind == dkExpr:
+  if node.kind in { dkExpr, dkExprList }:
     result = ""
     for s in node.sons:
       result &= s.toString()
       result &= " "
     return result
+
+
+  if node.kind in dkStreamKinds:
+    return dkStreamKindStrings[node.kind]
+  if node.kind in dkStatementKinds:
+    return ""
+
   return case node.kind
+  of dkInner, dkNone, dkFunctionCall, dkType:
+    ""
   of dkAssignOp: "="
   of dkAppendOp: "+="
   of dkRemoveOp: "-="
@@ -252,15 +274,16 @@ proc toString*(node: DeliNode): string =
     argFormat(node)
   of dkObject, dkRan:
     objFormat(node)
+  of dkArray:
+    arrayFormat(node)
   of dkJump:
     if node.list_node != nil:
       $node.list_node.value.line
     else:
       "Jump"
-  else: ""
-
-proc name*(kind: DeliKind): string =
-  return ($kind).substr(2)
+  else:
+    todo "toString " & node.kind.name
+    ""
 
 proc `$`*(node: DeliNode): string =
   let value = node.toString()

@@ -304,7 +304,8 @@ BoolAnd       <- "and"                                               { DK( BoolA
 Comparison    <- e1:CompExpr S+ o:CompOp S+ e2:CompExpr             ~{ ER("expected comparable expression"); }
                                                                      { DK( Comparison, o, e1, e2 ); }
 CompExpr      <-
-              (  s:FunctionCall / s:VarDeref / s:StrBlock / s:StrLiteral / s:Regex
+              (  s:FunctionCall / s:VarDeref
+              /  s:StrBlock / s:StrLiteral / s:Regex
               /  s:Number / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
 CompOp        <-

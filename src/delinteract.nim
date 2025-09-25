@@ -1,26 +1,51 @@
 import std/terminal
+import std/paths
+
+import ./language/ast
 import ./deliengine
 
-type Nteract* = ref object
-  engine: Engine
-  filename: string
-  line: int
-  cmdline: string
-  pos: int
+type
+  Nteract* = ref object
+    engine: Engine
+    filename: string
+    line: int
+    cmdline: string
+    ps1: string
+    promptKind: DeliKind
+    pos: int
 
 proc newNteract*(engine: Engine): Nteract =
-  return NTeract(engine: engine)
+  result = Nteract(engine: engine)
+  result.promptKind = dkScript
+
+proc setPrompt*(nt: Nteract, kind: DeliKind) =
+  case kind
+  of dkPath:
+    nt.ps1 = "Path.pwd, \" . \""
+  of dkScript:
+    nt.ps1 = "Script.name, \":\", Script.line, \"> \""
+  else:
+    nt.ps1 = "> "
+    return
+
+  nt.promptKind = kind
 
 proc prompt*(nt: Nteract): string =
-  return nt.filename & ":" & $(nt.line.abs)
+  case nt.promptKind
+  of dkPath:
+    return $getCurrentDir()
+  of dkScript:
+    return nt.filename & ":" & $(nt.line.abs)
+  else:
+    return nt.ps1
 
 proc clear(nt: Nteract) =
   nt.pos = 0
   nt.cmdline = ""
   stdout.write("\r\27[2K")
-  stdout.write("\27[30;1m")
+  stdout.write("\27[36;4m")
   stdout.write(nt.prompt)
-  stdout.write("\27[0m> ")
+  stdout.write("\27[24;1m> \27[0m")
   stdout.flushFile()
 
 proc `filename=`*(nt: Nteract, fn: string) =

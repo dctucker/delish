@@ -1,6 +1,7 @@
 import std/[
-  appdirs,
-  paths,
+  #appdirs,
+  os,
+  #paths,
   posix,
   tables,
 ]
@@ -191,18 +192,25 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
 
 # file and directory operations
 proc dChdir(nodes: varargs[DeliNode]): DeliNode =
-  var arg: DeliNode
-  var arg_i = 0
+  argvars
   nextarg dkPath
   result = DKBool( chdir(arg.strVal.cstring) == 0 )
 
 proc dPwd(nodes: varargs[DeliNode]): DeliNode =
   noargs
-  result = DKPath($getCurrentDir())
+  result = DKPath($os.getCurrentDir())
 
 proc dHome(nodes: varargs[DeliNode]): DeliNode =
   noargs
-  result = DKPath($getHomeDir())
+  result = DKPath($os.getHomeDir())
+
+proc dListDir(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextarg dkPath
+  let path = arg
+  result = DK(dkArray)
+  for p in walkDir(path.strVal, relative=true):
+    result.sons.add DKPath(p.path)
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "stat": dStat,
@@ -210,6 +218,7 @@ let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nim
   "pwd": dPwd,
   "home": dHome,
   "chdir": dChdir,
+  "list": dListDir,
   #"mkdir": dMkdir,
   #"unlink": dUnlink,
   #"rename": dRename,

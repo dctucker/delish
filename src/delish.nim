@@ -93,6 +93,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     parsed = parser.parse()
     engine = newEngine(parsed, debug)
     nteract = newNteract(engine)
+    nteract.setPrompt(dkPath)
 
     var line = 0
     while true:
@@ -114,12 +115,12 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
               errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
             continue
 
-          echo parsed.repr
+          #echo parsed.repr
           for s in parsed.sons:
             engine.insertStmt(s)
             line += 1
 
-        engine.printStatements(true)
+        #engine.printStatements(true)
         for line in engine.tick():
           if debug > 0:
             echo engine.lineInfo()

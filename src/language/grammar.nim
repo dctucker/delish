@@ -5,6 +5,8 @@ import std/[
   macros,
 ]
 
+const deepDebug {.booldefine.}: bool = false
+
 #let file_io_funcs = """
 #  unlink
 #  rename
@@ -70,7 +72,7 @@ proc getSubKinds(kind: string): seq[string] {.compileTime.} =
 macro grammarSubKinds*(kind: static[string]) =
   let kinds = getSubKinds(kind)
   let stmt = "const dk" & kind & "Kinds = { " & kinds.join(", ") & " }"
-  #echo stmt
+  when deepDebug: echo stmt
   result = parseStmt(stmt)
 
 proc getKindStrings(kind: string): seq[string] {.compileTime.} =
@@ -79,7 +81,7 @@ proc getKindStrings(kind: string): seq[string] {.compileTime.} =
 macro grammarKindStrings*(kind: static[string]) =
   let kinds = getKindStrings(kind)
   let stmt = "const dk" & kind & "Strings = [" & kinds.join(", ") & "]"
-  #echo stmt
+  when deepDebug: echo stmt
   result = parseStmt(stmt)
 
 macro grammarSubKindStrings*(kind: static[string]) =
@@ -88,8 +90,8 @@ macro grammarSubKindStrings*(kind: static[string]) =
   for k in kinds:
     let str = getKindStrings(k[2..^1]).join("")
     stmt &= "  " & k & ": " & str & ",\n"
-  stmt &= "}"
-  #echo stmt
+  stmt &= "}.toTable"
+  when deepDebug: echo stmt
   result = parseStmt(stmt)
 
 
