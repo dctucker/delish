@@ -122,6 +122,9 @@ proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
 
+proc DKDec*(decVal: Decimal): DeliNode =
+  return DeliNode(kind: dkDecimal, decVal: decVal)
+
 proc DKDecimal*(whole, fraction: int, decimals: int): DeliNode =
   return DeliNode(kind: dkDecimal, decVal: Decimal(whole: whole, fraction: fraction, decimals: decimals))
 

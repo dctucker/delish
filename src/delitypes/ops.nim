@@ -125,12 +125,10 @@ proc `not`*(a: DeliNode): DeliNode =
 proc `+`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
-    of dkInteger:
-      return DeliNode(kind: dkInteger, intVal: a.intVal + b.intval)
-    of dkDecimal:
-      return DeliNode(kind: dkDecimal, decVal: a.decVal + b.decVal)
-    of dkString, dkPath:
-      return DeliNode(kind: dkString, strVal: a.strVal & b.strVal)
+    of dkInteger: return DKInt(a.intVal + b.intval)
+    of dkDecimal: return DKDec(a.decVal + b.decVal)
+    of dkString,
+      dkPath:     return DKStr(a.strVal & b.strVal)
     of dkArray:
       result = DeliNode(kind: dkArray)
       for n in a.sons:
@@ -158,33 +156,37 @@ proc `+`*(a, b: DeliNode): DeliNode =
 proc `-`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
-    of dkInteger:
-      return DeliNode(kind: dkInteger, intVal: a.intVal - b.intval)
-    of dkDecimal:
-      return DeliNode(kind: dkDecimal, decVal: a.decVal - b.decVal)
-    else:
-      todo "sub ", a.kind, " - ", b.kind
-      return deliNone()
+    of dkInteger: return DKInt(a.intVal - b.intval)
+    of dkDecimal: return DKDec(a.decVal - b.decVal)
+    else: discard
+  todo "sub ", a.kind, " - ", b.kind
   return deliNone()
 
 proc `*`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
-    of dkInteger:
-      return DeliNode(kind: dkInteger, intVal: a.intVal * b.intval)
-    else:
-      todo "mul ", a.kind, " * ", b.kind
-      return deliNone()
+    of dkInteger: return DKInt(a.intVal * b.intVal)
+    of dkDecimal: return DKDec(a.decVal * b.decVal)
+    else: discard
+  todo "mul ", a.kind, " * ", b.kind
   return deliNone()
 
 proc `/`*(a, b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
-    of dkInteger:
-      return DeliNode(kind: dkInteger, intVal: (a.intVal / b.intval).int)
-    else:
-      todo "div ", a.kind, " / ", b.kind
-      return deliNone()
+    of dkInteger: return DKInt(a.intVal div b.intVal)
+    of dkDecimal: return DKDec(a.decVal / b.decVal)
+    else: discard
+  todo "div ", a.kind, " / ", b.kind
+  return deliNone()
+
+proc `mod`*(a, b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt(a.intVal mod b.intVal)
+    of dkDecimal: return DKDec(a.decVal mod b.decVal)
+    else: discard
+  todo "mod ", a.kind, " % ", b.kind
   return deliNone()
 
 proc `and`*(a,b: DeliNode): DeliNode =

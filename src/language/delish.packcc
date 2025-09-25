@@ -298,7 +298,10 @@ CompOper      <-
               /  o:EqOp / o:NeOp / o:MatchOp
               )                                                      { $$ = o; }
 
-VarDeref      <- &VarOp n:Variable                                   { DK( VarDeref, n ); }
+VarDeref      <-
+              (  &VarOp n:Variable                                   { DK( VarDeref, n ); }
+              /         f:FunctionCall                               { DK( VarDeref, f ); }
+              )
               (  DerefOp
                ( s:StrLiteral / s:Integer
                / s:Variable   / s:Identifier  )                     ~{ ER("expected literal, variable or identifier after `.`"); }

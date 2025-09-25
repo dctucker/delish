@@ -24,16 +24,18 @@ const decimalPowers = [ # instead of math.pow(10, x)
 template E10(x): int =
   decimalPowers[x]
 
-proc conform(a, b: Decimal): (Decimal, Decimal) =
-  if a.decimals == b.decimals:
+proc conform(a, b: Decimal, decimals: int): (Decimal, Decimal) =
+  if a.decimals == decimals and b.decimals == decimals:
     return (a, b)
   result[0] = a
   result[1] = b
-  let decimals = max(a.decimals, b.decimals)
   result[0].fraction *= E10(decimals - a.decimals)
   result[1].fraction *= E10(decimals - b.decimals)
   result[0].decimals = decimals
   result[1].decimals = decimals
+
+proc conform(a, b: Decimal): (Decimal, Decimal) =
+  return conform(a, b, max(a.decimals, b.decimals))
 
 # 123.45
 #   0.45678
@@ -60,6 +62,34 @@ proc `-`*(a0, b0: Decimal): Decimal =
   if result.fraction < 0:
     result.whole -= 1
     result.fraction += E10(result.decimals)
+
+#      123.45
+# *    456.78
+#   563894910
+# = 56389.491
+proc `*`*(a0, b0: Decimal): Decimal =
+  let (a, b) = conform(a0, b0)
+  result.whole  = a.whole * E10(a.decimals) + a.fraction
+  result.whole *= b.whole * E10(b.decimals) + b.fraction
+  result.decimals = a.decimals + b.decimals
+  result.fraction = result.whole mod E10(result.decimals)
+  result.whole    = result.whole div E10(result.decimals)
+
+#      2.3  ->    2300
+# /    4.5  ->      45
+#     51
+# =    0.51
+proc `/`*(a0, b0: Decimal): Decimal =
+  let (a, b) = conform(a0, b0)
+  result.decimals = a.decimals + b.decimals + 1
+  result.whole = (a.whole * E10(a.decimals) + a.fraction) * E10(result.decimals)
+  result.whole = result.whole div (b.whole * E10(b.decimals) + b.fraction)
+  result.fraction = result.whole mod E10(result.decimals)
+  result.whole    = result.whole div E10(result.decimals)
+
+proc `mod`*(a0, b0: Decimal): Decimal =
+  todo "mod Decimal / Decimal"
+  return Decimal()
 
 proc `==`*(a0, b0: Decimal): bool =
   let (a, b) = conform(a0, b0)
