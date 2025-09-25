@@ -13,7 +13,7 @@
 	};
 	
 	#define PCC_DEBUG(auxil, event, rule, level, pos, buffer, length) \
-		if( !( dk##rule == dkComment || dk##rule == dkVLine || dk##rule > dkDefaultOp ) ) \
+		if( !( dk##rule == dkComment || dk##rule == dkVLine || dk##rule >= dkA ) ) \
 			deli_event(auxil->parser, event, dk##rule, level, pos, buffer, length)
 	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
 	#define PCC_BUFFERSIZE 1024
@@ -80,11 +80,6 @@ Code          <-                                                     { DK( Code 
 Body          <- ( CLeft _ < c:Code > _ CRight                      ~{ ER("missing `}`"); }
                  )                                                  ~{ ER( expected_body ); }
                                                                      { $$ = c; SL1(c); }
-
-CLeft         <- "{"                                                 { BB('{',  1); }
-CRight        <- "}"                                                 { BB('{', -1); }
-
-S             <- ( "\\" "\n" ) / "\t" / ' '
 
 VLine         <-
               (  ( "\n" / ";" )                                      { $$ = -1; }
@@ -280,12 +275,6 @@ MulExpr       <- l:MulExpr S+ (o:MulOp / o:DivOp / o:ModOp)
                /              r:PrimExpr                             { $$ = r; }
 PrimExpr      <- e:Expr                                              { $$ = e; }
 
-MulOp         <- "*"                                                 { DK( MulOp ); }
-DivOp         <- "/"                                                 { DK( DivOp ); }
-ModOp         <- "%"                                                 { DK( ModOp ); }
-AddOp         <- "+"                                                 { DK( AddOp ); }
-SubOp         <- "-"                                                 { DK( SubOp ); }
-
 BoolExpr      <-
               (      n:BoolNot S+ c:Comparison                       { DK( BoolExpr, n ); NA(n, c); }
                /                  c:Comparison                       { DK( BoolExpr, c ); }
@@ -323,10 +312,6 @@ VarDeref      <- &VarOp n:Variable                                   { DK( VarDe
                                                                      { NA( $$, s ); }
               )*
 
-PipeOp        <- "|"
-VarOp         <- "$"
-DerefOp       <- "."
-
 RedirFlag     <- Redir                                               { DK( RedirFlag ); }
               (  S+
                ( i:VarDeref / i:Path / i:Stream )                   ~{ ER("expected redirection source"); }
@@ -346,9 +331,6 @@ Arg           <- &'-'
               /  s:ArgShort                                          { DK( Arg, s ); }
               )                                                     ~{ ER("invalid argument name"); }
 
-ALeft         <- "["                                                 { BB('[',  1 ); }
-ARight        <- "]"                                                 { BB('[', -1 ); }
-
 Array         <- ALeft S* ARight                                     { DK( Array ); }
               /  ALeft                                               { DK( Array ); }
               (      _  e:Expr                                       { NA( $$, e ); }
@@ -366,8 +348,6 @@ Pair          <-
               /
                  k:KeyExpr    S* PairOp S* v:Expr                   ~{ ER("expected value expression"); }
                                                                      { DK( Pair, k, v ); }
-SepOp         <- ","
-PairOp        <- ":"
 KeyExpr       <-
               (
                  k:Variable / k:StrLiteral / k:Integer
@@ -419,9 +399,6 @@ Run           <- "run"
 
 Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER("expected expression"); }
                                  S*        PRight                    { DK( Cast, t, e ); }
-
-PLeft         <- "("                                                 { BB( '(',  1 ); }
-PRight        <- ")"                                                 { BB( '(', -1 ); }
 
 Type          <- "Integer"                                           { DK( Integer    ); }
               /  "Decimal"                                           { DK( Decimal    ); }
@@ -482,9 +459,21 @@ Stream        <- &[ioe] ( s:StreamIn / s:StreamOut / s:StreamErr )   { DK( Strea
 StreamIn      <- "in"                                                { DK( StreamIn ); }
 StreamOut     <- "out"                                               { DK( StreamOut ); }
 StreamErr     <- "err"                                               { DK( StreamErr ); }
+
+MulOp         <- "*"                                                 { DK( MulOp ); }
+DivOp         <- "/"                                                 { DK( DivOp ); }
+ModOp         <- "%"                                                 { DK( ModOp ); }
+AddOp         <- "+"                                                 { DK( AddOp ); }
+SubOp         <- "-"                                                 { DK( SubOp ); }
+SepOp         <- ","
+PairOp        <- ":"
+PipeOp        <- "|"
+VarOp         <- "$"
+DerefOp       <- "."
 AssignOp      <- "="                                                 { DK( AssignOp ); }
 AppendOp      <- "+="                                                { DK( AppendOp ); }
 RemoveOp      <- "-="                                                { DK( RemoveOp ); }
+DefaultOp     <- "|="                                                { DK( DefaultOp ); }
 RedirOp       <-
               (  o:RedirAppendOp / o:RedirReadOp
               /  o:RedirWriteOp / o:RedirDuplexOp
@@ -493,9 +482,15 @@ RedirAppendOp <- ">>"                                                { DK( Redir
 RedirReadOp   <- "<"                                                 { DK( RedirReadOp ); }
 RedirWriteOp  <- ">"                                                 { DK( RedirWriteOp ); }
 RedirDuplexOp <- "<>"                                                { DK( RedirDuplexOp ); }
-DefaultOp     <- "|="                                                { DK( DefaultOp ); }
-C             <- [^ \n\r\t;]
+CLeft         <- "{"                                                 { BB('{',  1); }
+CRight        <- "}"                                                 { BB('{', -1); }
+ALeft         <- "["                                                 { BB('[',  1); }
+ARight        <- "]"                                                 { BB('[', -1); }
+PLeft         <- "("                                                 { BB('(',  1); }
+PRight        <- ")"                                                 { BB('(', -1); }
 A             <- [A-Za-z]
+C             <- [^ \n\r\t;]
+S             <- ( "\\" "\n" ) / "\t" / ' '
 W             <- [A-Za-z0-9_]
 _             <- [ \n\r\t;]*
 
