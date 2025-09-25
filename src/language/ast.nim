@@ -281,7 +281,7 @@ proc toString*(node: DeliNode): string =
   of dkInner, dkNone:
     ""
   else:
-    if kind.ord <= dkKeyword.ord:
+    if kind.ord <= dkKeyword.ord or kind.ord >= dkLazy.ord:
       ""
     else:
       todo "toString " & kind.name
