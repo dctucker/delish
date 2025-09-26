@@ -35,6 +35,8 @@ type
   Decimal* = object
     whole*, fraction*, decimals*: int
 
+  Iterable* = iterator(iter: DeliNode): DeliNode
+
   DeliNodeObj* = object
     case kind*: DeliKind
     of dkNone:         none:        bool
@@ -63,6 +65,7 @@ type
        dkDoLoop,
        dkConditional,
        dkForLoop:      list_node*:  DeliListNode
+    of dkIterable:     generator*:  Iterable
     else:
       discard
     sons*: seq[DeliNode]

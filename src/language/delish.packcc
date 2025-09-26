@@ -125,7 +125,7 @@ DoLoop        <- Do          S+ c:Body                              ~{ ER( expec
 
 ForLoop       <- For         S+ v:Variable                          ~{ ER( expected_variable ); }
                              S+ In                                  ~{ ER("expected `in`"); }
-                             S+ e:IterExpr                          ~{ ER("expected iterable"); }
+                             S+ e:Iterable                          ~{ ER("expected iterable"); }
                              S+ c:Body                              ~{ ER( expected_body ); }
                              _                                       { DK( ForLoop    , v, e, c ); }
 
@@ -252,7 +252,7 @@ Expr          <-
               /  s:Cast     / s:FunctionCall
               )                                                      { DK( Expr, s); }
 
-IterExpr      <- ( s:Array / s:VarDeref )                            { $$ = s; }
+Iterable      <- ( s:Array / s:VarDeref )                            { DK( Iterable, s ); }
 
 Condition     <- a:OrExpr                                            { $$ = a; }
 OrExpr        <- l:OrExpr  S+ o:BoolOr  S+ r:AndExpr                 { DK( CondExpr, o, l, r); }
