@@ -1,6 +1,7 @@
 #!/usr/bin/deli
 
-for $i in [ 0, 1, 2 ] {
+$arr = [ 0, 1, 2 ]
+for $i in $arr {
   $x = $i
 }
 return

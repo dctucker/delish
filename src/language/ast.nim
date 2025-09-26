@@ -372,16 +372,17 @@ proc printObject(node: DeliNode): string =
     result &= "; "
 
 proc printValue*(v: DeliNode): string =
-  result = "\27[30;1m"
   if( v.sons.len() > 0 ):
     result &= "("
     result &= printSons(v)
     result &= ")"
-  if v.kind == dkObject:
+  elif v.kind == dkObject:
     result &= "["
     result &= printObject(v)
     result &= "]"
-  result &= "\27[0m"
+  #elif v.kind in dkTypeKinds:
+  else:
+    result &= $v
 
 
 proc setLine*(node: var DeliNode, line: int): DeliNode =

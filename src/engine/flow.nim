@@ -140,8 +140,10 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
 
     jump_continue.list_node = engine.write_head
     engine.insertStmt( DKInner(top_line,
-      DK( dkVariableStmt, variable, DK(dkAssignOp),
-        DK( dkVarDeref, things, counter )
+      DK( dkVariableStmt,
+        variable,                         # $var
+        DK(dkAssignOp),                   #      =
+        DK( dkVarDeref, things, counter ) #        $things.$.counter
       )
     ))
 
