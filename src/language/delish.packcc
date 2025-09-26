@@ -213,13 +213,19 @@ RunFlags      <-
               )
 
 FunctionStmt  <- !Keyword c:FunctionCall                             { DK( FunctionStmt, c ); SL(c); }
-FunctionCall  <- !Keyword
-              (  !Type i:Identifier                                  { DK( FunctionCall, i ); }
-              /  !Type v:Variable DerefOp i:Identifier               { DK( FunctionCall, DK( VarDeref, v ), i ); }
-              /        t:Type     DerefOp i:Identifier               { DK( FunctionCall, DK( Type, t ), i); }
-              )
-              (  S+ e:Expr                                           { NA( $$, e ); }
+FunctionCall  <- !Keyword c:Callable                                 { DK( FunctionCall, c ); }
+              (                          S+ e:Expr                   { NA( $$, e ); }
               )*
+
+Callable      <- !Type i:Identifier                                  { DK( Callable, i ); }
+                                   ( DerefOp i:Identifier            { NA( $$, i ); }
+                                                             )*
+              /  !Type v:Variable                                    { DK( Callable, DK( VarDeref, v ) ); }
+                                   ( DerefOp i:Identifier            { NA( $$, i ); }
+                                                             )+
+              /        t:Type                                        { DK( Callable, DK( Type, t ) ); }
+                                   ( DerefOp i:Identifier            { NA( $$, i ); }
+                                                             )+
 
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
 EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }
@@ -300,7 +306,6 @@ CompOper      <-
 
 VarDeref      <-
               (  &VarOp n:Variable                                   { DK( VarDeref, n ); }
-              /         f:FunctionCall                               { DK( VarDeref, f ); }
               )
               (  DerefOp
                ( s:StrLiteral / s:Integer

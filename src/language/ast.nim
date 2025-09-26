@@ -284,7 +284,7 @@ proc toString*(node: DeliNode): string =
       $node.list_node.value.line
     else:
       "Jump"
-  of dkInner, dkNone:
+  of dkInner, dkNone, dkType:
     ""
   else:
     if kind.ord <= dkKeyword.ord or kind.ord >= dkLazy.ord:
