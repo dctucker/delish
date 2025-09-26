@@ -67,7 +67,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
 
   of dkFunctionStmt:
     let call = s.sons[0]
-    discard engine.evalFunctionCall(call.sons[0], call.sons[1 .. ^1])
+    discard engine.evaluate(call)
 
   of dkContinueStmt:
     var to = engine.getVariable(".continue")

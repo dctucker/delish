@@ -36,6 +36,7 @@ type
     whole*, fraction*, decimals*: int
 
   Iterable* = iterator(iter: DeliNode): DeliNode
+  DeliFunction* = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 
   DeliNodeObj* = object
     case kind*: DeliKind
@@ -66,6 +67,7 @@ type
        dkConditional,
        dkForLoop:      list_node*:  DeliListNode
     of dkIterable:     generator*:  Iterable
+    of dkCallable:     function*:   DeliFunction
     else:
       discard
     sons*: seq[DeliNode]
@@ -172,6 +174,9 @@ proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
     node.line = line
     sons.add(node)
   return DeliNode(kind: dkInner, sons: sons, line: line)
+
+proc DKCallable*(fn: DeliFunction, sons: seq[DeliNode]): DeliNode =
+  result = DeliNode(kind: dkCallable, function: fn, sons: sons)
 
 let DKTrue*  = DeliNode(kind: dkBoolean, boolVal: true)
 let DKFalse* = DeliNode(kind: dkBoolean, boolVal: false)

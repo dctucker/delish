@@ -5,7 +5,7 @@ import std/[
   macros,
 ]
 
-const deepDebug {.booldefine.}: bool = false
+const revealGrammar {.booldefine.}: bool = false
 
 #let file_io_funcs = """
 #  unlink
@@ -71,7 +71,7 @@ proc getSubKinds(kind: string): seq[string] {.compileTime.} =
 macro grammarSubKinds*(kind: static[string]) =
   let kinds = getSubKinds(kind)
   let stmt = "const dk" & kind & "Kinds = { " & kinds.join(", ") & " }"
-  when deepDebug: echo stmt
+  when revealGrammar: echo stmt
   result = parseStmt(stmt)
 
 proc getKindStrings(kind: string): seq[string] {.compileTime.} =
@@ -80,7 +80,7 @@ proc getKindStrings(kind: string): seq[string] {.compileTime.} =
 macro grammarKindStrings*(kind: static[string]) =
   let kinds = getKindStrings(kind)
   let stmt = "const dk" & kind & "Strings = [" & kinds.join(", ") & "]"
-  when deepDebug: echo stmt
+  when revealGrammar: echo stmt
   result = parseStmt(stmt)
 
 macro grammarSubKindStrings*(kind: static[string]) =
@@ -90,7 +90,7 @@ macro grammarSubKindStrings*(kind: static[string]) =
     let str = getKindStrings(k[2..^1]).join("")
     stmt &= "  " & k & ": " & str & ",\n"
   stmt &= "}.toTable"
-  when deepDebug: echo stmt
+  when revealGrammar: echo stmt
   result = parseStmt(stmt)
 
 proc getOperatorKinds(): seq[string] {.compileTime.} =
@@ -101,7 +101,7 @@ proc getOperatorKinds(): seq[string] {.compileTime.} =
 macro grammarOpKinds*() =
   let ops = getOperatorKinds()
   let stmt = "const dkOperatorKinds = { " & ops.join(", ") & " }"
-  when deepDebug: echo stmt
+  when revealGrammar: echo stmt
   result = parseStmt(stmt)
 
 macro grammarOpKindStrings*() =
@@ -116,7 +116,7 @@ macro grammarOpKindStrings*() =
 
     stmt &= "  " & k & ": " & str & ",\n"
   stmt &= "}.toTable"
-  when deepDebug: echo stmt
+  when revealGrammar: echo stmt
   result = parseStmt(stmt)
 
 macro grammarToEnum*(extra: static[seq[string]]) =

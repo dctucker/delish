@@ -218,14 +218,14 @@ FunctionCall  <- !Keyword c:Callable                                 { DK( Funct
               )*
 
 Callable      <- !Type i:Identifier                                  { DK( Callable, i ); }
-                                   ( DerefOp i:Identifier            { NA( $$, i ); }
-                                                             )*
+                                     ( DerefOp i:Identifier          { NA( $$, i ); }
+                                                            )*
               /  !Type v:Variable                                    { DK( Callable, DK( VarDeref, v ) ); }
-                                   ( DerefOp i:Identifier            { NA( $$, i ); }
-                                                             )+
+                                     ( DerefOp i:Identifier          { NA( $$, i ); }
+                                                            )+
               /        t:Type                                        { DK( Callable, DK( Type, t ) ); }
-                                   ( DerefOp i:Identifier            { NA( $$, i ); }
-                                                             )+
+                                     ( DerefOp i:Identifier          { NA( $$, i ); }
+                                                            )+
 
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
 EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }

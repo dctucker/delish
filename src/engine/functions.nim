@@ -20,35 +20,43 @@ proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[Del
   except KeyError as e:
     engine.runtimeError("Unknown function: ", $ty, ".", $fun.id)
 
+proc evalValueFunction(engine: Engine, value, id: DeliNode, args: seq[DeliNode]): DeliNode =
+  assert id.kind == dkIdentifier
+  result = deliNone()
+  let ty = value.kind
+  if id.id in typeFunctions(ty):
+    var nextArgs = @[value]
+    for arg in args:
+      nextArgs.add arg
+    return engine.evalTypeFunction(ty, id, nextArgs)
+  engine.runtimeError("Unknown function: ", $ty, ".", $id.id)
+
+
 proc evalDerefFunction(engine: Engine, variable: DeliNode, args: seq[DeliNode]): DeliNode =
   result = deliNone()
   if args[0].kind == dkIdentifier:
-    let ty = variable.kind
-    if args[0].id in typeFunctions(ty):
-      var nextArgs = @[variable]
-      for arg in args[1..^1]:
-        nextArgs.add arg
-      return engine.evalTypeFunction(ty, args[0], nextArgs)
+    var nextArgs = @[variable]
+    for arg in args[1..^1]:
+      nextArgs.add arg
+    return engine.evalValueFunction(variable, args[0], nextArgs)
 
-proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
+
+proc evalIdentifierCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
   result = DK( dkLazy, DKVar(".returned") )
   var code: DeliNode
 
-  case fun.kind
-  of dkIdentifier:
-    if fun.id notin engine.functions:
-      engine.runtimeError("Unknown function: " & fun.id)
-      #echo "Unknown function"
-      #return DKInner(0, deliNone())
-    code = engine.functions[fun.id]
-  of dkVarDeref:
-    code = engine.evaluate(fun)
-    if code.kind != dkCode:
-      return engine.evalDerefFunction(code, args)
-  of dkType:
-    return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
-  else:
-    todo "evalFunctionCall ", fun
+  if fun.id notin engine.functions:
+    engine.runtimeError("Unknown function: " & fun.id)
+  code = engine.functions[fun.id]
+
+  #of dkVarDeref:
+  #  code = engine.evaluate(fun)
+  #  if code.kind != dkCode:
+  #    return engine.evalDerefFunction(code, args)
+  #of dkType:
+  #  return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
+  #else:
+  #  todo "evalFunctionCall ", fun
 
   var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
 
@@ -67,6 +75,100 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
 
   engine.debugNext()
 
+proc setupCallCode(engine: Engine, code: DeliNode, args: seq[DeliNode]): DeliNode =
+  result = DK( dkLazy, DKVar(".returned") )
+  var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
+
+  engine.setupPush( -code.sons[0].line + 1, {
+    ".return": jump_return,
+    ".args"  : DeliNode(kind: dkArray, sons: args),
+    ".revtal": result,
+  }.toTable)
+
+  for s in code.sons:
+    engine.insertStmt(s)
+
+  let end_line = -code.sons[^1].line - 1
+  jump_return.list_node = engine.writehead
+  engine.setupPop(end_line)
+
+  engine.debugNext()
+
+
+# Callable( Identifier:hello )                  -> evaluate
+# Callable( VarDeref:lib Identifier:validate )
+# Callable( Type(Path) Identifier:pwd )
+# Callable( Type(Path) Identifier:pwd Identifier:list )
+proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
+  let c0 = callable.sons[0]
+  if callable.sons.len == 0:
+    echo "hoop"
+    return deliNone()
+  if callable.sons.len == 1:
+    return c0
+
+  case c0.kind
+  of dkType:
+    let ty = c0.sons[0].kind
+    let id = callable.sons[1]
+    let function = typeFunction(ty, id)
+
+    var extra: seq[DeliNode]
+    for i in 2..(callable.sons.len - 1):
+      extra.add callable.sons[i]
+
+    return DKCallable(function, extra)
+    #return engine.evalCallable(  )
+  else:
+    discard
+  #of dkIdentifier:
+  #  return DKCallable(setupCallCode, fn.sons[1..^1])
+  ##of dkVarDeref:
+
+  todo "evalCallable " & $c0.kind
+  return deliNone()
+
+    #return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
+
+proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): DeliNode =
+  let callable = engine.evalCallable(callable)
+  if callable.kind == dkIdentifier:
+    return engine.evalIdentifierCall(callable, args)
+  if callable.kind == dkCallable:
+    var next = callable
+    #while callable.sons.len > 0:
+    #  next = evalCallable(next)
+    if next.sons.len == 0:
+      return next.function(args)
+    else:
+      let value = next.function()
+      return engine.evalValueFunction(value, next.sons[0], args)
+
+
+# TODO skip this for now
+#proc checkFunctionCalls(engine: Engine, node: DeliNode) =
+#  case node.kind:
+#  of dkFunctionStmt:
+#    let args = node.sons[0].sons
+#    case args[0].kind
+#    of dkIdentifier:
+#      let id = args[0].id
+#      if id notin engine.functions:
+#        engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
+#    of dkType:
+#      let deliType = args[0].sons[0].kind
+#      let id = args[1].id
+#      if id notin typeFunctions(deliType):
+#        engine.setupError("Unknown function: \"" & $deliType & "." & id & "\" at " & node.script.filename & ":" & $node.line)
+#    of dkVarDeref:
+#      # TODO needs more static analysis
+#      discard
+#    else:
+#      engine.setupError("Invalid function call: " & $args)
+#  else:
+#    for son in node.sons:
+#      engine.checkFunctionCalls(son)
+
 proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   if id.id in engine.functions:
     return
@@ -82,29 +184,6 @@ proc doFunctionDefs(engine: Engine, node: DeliNode) =
     for son in node.sons:
       engine.doFunctionDefs(son)
 
-proc checkFunctionCalls(engine: Engine, node: DeliNode) =
-  case node.kind:
-  of dkFunctionStmt:
-    let args = node.sons[0].sons
-    case args[0].kind
-    of dkIdentifier:
-      let id = args[0].id
-      if id notin engine.functions:
-        engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
-    of dkType:
-      let deliType = args[0].sons[0].kind
-      let id = args[1].id
-      if id notin typeFunctions(deliType):
-        engine.setupError("Unknown function: \"" & $deliType & "." & id & "\" at " & node.script.filename & ":" & $node.line)
-    of dkVarDeref:
-      # TODO needs more static analysis
-      discard
-    else:
-      engine.setupError("Invalid function call: " & $args)
-  else:
-    for son in node.sons:
-      engine.checkFunctionCalls(son)
-
 proc initFunctions(engine: Engine, script: DeliNode) =
   engine.doFunctionDefs(script)
-  engine.checkFunctionCalls(script)
+  #engine.checkFunctionCalls(script)

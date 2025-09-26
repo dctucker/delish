@@ -5,7 +5,6 @@ import ./[
   integer,
 ]
 
-type DeliFunction = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 type DeliFunctionTable = Table[string, DeliFunction]
 type TypeFunctionTable = Table[DeliKind, DeliFunctionTable]
 
