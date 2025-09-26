@@ -9,6 +9,31 @@ if $z != 580.23 {
   return 1
 }
 
+if $y <= $x {
+  out "<= failed"
+  return 1
+}
+
+if $x < $y {
+  out "< failed"
+  return 1
+}
+
+if $x == $y {
+  out "== failed"
+  return 1
+}
+
+if $y >= $x {
+  out ">= failed"
+  return 1
+}
+
+if $y > $x {
+  out "> failed"
+  return 1
+}
+
 $z = ( $x * $y )
 if $z != 56389.491 {
   out "multiplication failed: ", $z, " != 56389.4910"

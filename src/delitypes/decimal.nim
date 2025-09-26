@@ -104,12 +104,39 @@ proc `mod`*(a0, b0: Decimal): Decimal =
     a.decimals
   )
 
-proc `==`*(a0, b0: Decimal): bool =
+proc `<`*(a0, b0: Decimal): bool =
+  if a0.whole >= b0.whole:
+    return false
   let (a, b) = conform(a0, b0)
-  return a.whole == b.whole and a.fraction == b.fraction
+  return a.whole < b.whole or (
+    a.whole == b.whole and a.fraction < b.fraction
+  )
+proc `<=`*(a0, b0: Decimal): bool =
+  if a0.whole > b0.whole:
+    return false
+  let (a, b) = conform(a0, b0)
+  return a.whole < b.whole or (
+    a.whole == b.whole and a.fraction <= b.fraction
+  )
 
-#proc `<=`*(o1, o2: DeliNode): bool =
-#  let dw = t1.whole - t2.whole
-#  return (dw < 0) or (
-#    dw == 0 and t1.fraction < t2.fraction
-#  )
+proc `==`*(a0, b0: Decimal): bool =
+  if a0.whole != b0.whole:
+    return false
+  let (a, b) = conform(a0, b0)
+  return a.fraction == b.fraction
+
+proc `>=`*(a0, b0: Decimal): bool =
+  if a0.whole < b0.whole:
+    return false
+  let (a, b) = conform(a0, b0)
+  return a.whole > b.whole or (
+    a.whole == b.whole and a.fraction >= b.fraction
+  )
+
+proc `>`*(a0, b0: Decimal): bool =
+  if a0.whole <= b0.whole:
+    return false
+  let (a, b) = conform(a0, b0)
+  return a.whole > b.whole or (
+    a.whole == b.whole and a.fraction > b.fraction
+  )
