@@ -69,6 +69,13 @@ proc toInteger*(src: DeliNode): DeliNode =
     todo "toInteger ", src.kind
     deliNone()
 
+proc toDecimal*(src: DeliNode): DeliNode =
+  result = case src.kind
+  of dkInteger: DKDecimal(src.intVal, 0, 0)
+  else:
+    todo "toDecimal ", src.kind
+    deliNone()
+
 proc toPath*(src: DeliNode): DeliNode =
   result = case src.kind
   of dkPath,
@@ -170,6 +177,9 @@ proc toStream*(src: DeliNode): DeliNode =
   else: raise Incompatible(dkStream, src)
 
 proc toKind*(src: DeliNode, dest: DeliKind): DeliNode =
+  if src.kind == dest:
+    result = src
+    return result # TODO: verify this is a copy
   result = case dest
   #of dkString:  toString  src
   of dkIdentifier: toIdentifier src
@@ -179,6 +189,7 @@ proc toKind*(src: DeliNode, dest: DeliKind): DeliNode =
      dkArgLong:    toArg        src
   of dkPath:       toPath       src
   of dkInteger:    toInteger    src
+  of dkDecimal:    toDecimal    src
   of dkBoolean:    toBoolean    src
   of dkArray:      toArray      src
   of dkObject:     toObject     src

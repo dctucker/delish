@@ -7,12 +7,17 @@ proc isTruthy(engine: Engine, node: DeliNode): bool =
     return false
 
 proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
+  var (a, b) = (v1, v2)
+  if {a.kind, b.kind} == {dkInteger, dkDecimal}:
+    a = a.toKind(dkDecimal)
+    b = b.toKind(dkDecimal)
+
   return case op.kind
-  of dkAddOp: v1 + v2
-  of dkSubOp: v1 - v2
-  of dkMulOp: v1 * v2
-  of dkDivOp: v1 / v2
-  of dkModOp: v1 mod v2
+  of dkAddOp: a  +  b
+  of dkSubOp: a  -  b
+  of dkMulOp: a  *  b
+  of dkDivOp: a  /  b
+  of dkModOp: a mod b
   else:
     todo "evalMath " & $op
     deliNone()
