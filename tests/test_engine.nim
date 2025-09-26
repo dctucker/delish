@@ -102,7 +102,7 @@ suite "engine":
 
   test "for loop":
     script(
-      DK( dkForLoop, DKVar("i"), DK( dkArray, DKInt(0), DKInt(1), DKInt(2) ),
+      DK( dkForLoop, DKVar("i"), DK( dkIterable, DK( dkArray, DKInt(0), DKInt(1), DKInt(2) ) ),
         DK( dkCode,
           DKVarStmt("x", dkAssignOp, DKVar("i")),
         )
