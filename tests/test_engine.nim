@@ -89,7 +89,7 @@ suite "engine":
     let id = DeliNode(kind: dkIdentifier, id: "foo")
     script(
       DKVarStmt("x", dkAssignOp, DKInt(0)),
-      DK( dkFunction, id, DK( dkCode,
+      DK( dkFunctionDef, id, DK( dkCode,
         DKVarStmt("x", dkAssignOp, DKInt(1)),
       )),
       DK( dkFunctionStmt, DK( dkFunctionCall, id ) ),

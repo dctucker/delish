@@ -1,12 +1,5 @@
 ### Functions ###
 
-proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
-  if id.id in engine.functions:
-    return
-  engine.functions[id.id] = code
-  debug 3:
-    echo "define ", engine.functions
-
 proc reduceExprs(engine: Engine, args: seq[DeliNode]): seq[DeliNode] =
   for i in 0..args.len - 1:
     var arg = args[i]
@@ -74,9 +67,16 @@ proc evalFunctionCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliN
 
   engine.debugNext()
 
+proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
+  if id.id in engine.functions:
+    return
+  engine.functions[id.id] = code
+  debug 3:
+    echo "define ", engine.functions
+
 proc doFunctionDefs(engine: Engine, node: DeliNode) =
   case node.kind:
-  of dkFunction:
+  of dkFunctionDef:
     engine.doStmt(node)
   else:
     for son in node.sons:

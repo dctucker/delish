@@ -96,7 +96,7 @@ Block         <-
                / &Do    a:DoLoop
                / &While a:WhileLoop
                / &For   a:ForLoop
-               / a:Function
+               / a:FunctionDef
                )
               /  a:Subshell
               )                                                      { DK( Block    , a ); SL(a); }
@@ -129,9 +129,9 @@ ForLoop       <- For         S+ v:Variable                          ~{ ER( expec
                              S+ c:Body                              ~{ ER( expected_body ); }
                              _                                       { DK( ForLoop    , v, e, c ); }
 
-Function      <- !Keyword i:Identifier S* AssignOp
+FunctionDef   <- !Keyword i:Identifier S* AssignOp
                                        S* c:Body                    ~{ ER( expected_body ); }
-                                       _                             { DK( Function   , i, c ); }
+                                       _                             { DK( FunctionDef, i, c ); }
 
 Subshell      <- Sub   S+ c:Body                                    ~{ ER( expected_body ); }
                        _                                             { DK( Subshell   , c ); }

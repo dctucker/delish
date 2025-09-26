@@ -62,7 +62,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkDoLoop:
     engine.doDoLoop(s)
 
-  of dkFunction:
+  of dkFunctionDef:
     engine.doFunctionDef(s.sons[0], s.sons[1])
 
   of dkFunctionStmt:
