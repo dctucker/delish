@@ -178,6 +178,9 @@ proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
 proc DKCallable*(fn: DeliFunction, sons: seq[DeliNode]): DeliNode =
   result = DeliNode(kind: dkCallable, function: fn, sons: sons)
 
+proc DKType*(kind: DeliKind): DeliNode =
+  result = DK( dkType, DK( kind ) )
+
 let DKTrue*  = DeliNode(kind: dkBoolean, boolVal: true)
 let DKFalse* = DeliNode(kind: dkBoolean, boolVal: false)
 

@@ -3,12 +3,14 @@ import ./[
   common,
   path,
   integer,
+  array,
 ]
 
 type DeliFunctionTable = Table[string, DeliFunction]
 type TypeFunctionTable = Table[DeliKind, DeliFunctionTable]
 
 let TypeFunctions: TypeFunctionTable = {
+  dkArray: ArrayFunctions,
   dkPath: PathFunctions,
   dkInteger: IntegerFunctions,
 }.toTable

@@ -1,3 +1,4 @@
+import std/tables
 import ../language/ast
 
 template shift*() =
@@ -26,4 +27,8 @@ template noargs*() =
   if nodes.len > 0:
     raise newException(ValueError, "too many arguments: " & $nodes)
 
+proc dNop*(args: varargs[DeliNode]): DeliNode =
+  return deliNone()
+
 export ast
+export tables

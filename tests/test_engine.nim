@@ -92,7 +92,7 @@ suite "engine":
       DK( dkFunctionDef, id, DK( dkCode,
         DKVarStmt("x", dkAssignOp, DKInt(1)),
       )),
-      DK( dkFunctionStmt, DK( dkFunctionCall, id ) ),
+      DK( dkFunctionStmt, DK( dkFunctionCall, DeliNode(kind: dkCallable, sons: @[id]) ) ),
     )
     check engine.nextLen == 3
     check nextVar("x") == 0

@@ -98,29 +98,49 @@ proc setupCallCode(engine: Engine, code: DeliNode, args: seq[DeliNode]): DeliNod
 # Callable( Identifier:hello )                  -> evaluate
 # Callable( VarDeref:lib Identifier:validate )
 # Callable( Type(Path) Identifier:pwd )
-# Callable( Type(Path) Identifier:pwd Identifier:list )
+# Callable( Callable( Type(Path) Identifier:pwd ) Identifier:list )
+
+
+# Callable(
+#   FunctionCall( Callable( Type( Path ) Identifier:pwd ) )
+#   Identifier:list
+# )
 proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
-  let c0 = callable.sons[0]
   if callable.sons.len == 0:
-    echo "hoop"
-    return deliNone()
+    todo "evalCallable zero"
+  let c0 = callable.sons[0]
   if callable.sons.len == 1:
     return c0
 
   case c0.kind
+  of dkCallable:
+    todo "evalCallable " & $c0.sons
+    #return engine.evalCallable(c0)
+  of dkFunctionCall:
+    result = DeliNode(kind: dkCallable)
+    result.sons.add engine.evaluate(c0)
+    for i in 1..(callable.sons.len - 1):
+      result.sons.add callable.sons[i]
+    return result
   of dkType:
     let ty = c0.sons[0].kind
     let id = callable.sons[1]
-    let function = typeFunction(ty, id)
 
-    var extra: seq[DeliNode]
-    for i in 2..(callable.sons.len - 1):
-      extra.add callable.sons[i]
+    try:
+      let function = typeFunction(ty, id)
 
-    return DKCallable(function, extra)
-    #return engine.evalCallable(  )
+      var extra: seq[DeliNode]
+      for i in 2..(callable.sons.len - 1):
+        extra.add callable.sons[i]
+
+      return DKCallable(function, extra)
+
+    except KeyError as e:
+      engine.runtimeError("Unknown function: ", $ty, ".", id.id)
   else:
-    discard
+    if c0.kind in dkTypeKinds:
+      let id = callable.sons[1]
+      return DK(dkFunctionCall, DK(dkCallable, DKType(c0.kind), id), c0)
   #of dkIdentifier:
   #  return DKCallable(setupCallCode, fn.sons[1..^1])
   ##of dkVarDeref:
@@ -131,18 +151,30 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
     #return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
 
 proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): DeliNode =
-  let callable = engine.evalCallable(callable)
-  if callable.kind == dkIdentifier:
-    return engine.evalIdentifierCall(callable, args)
-  if callable.kind == dkCallable:
-    var next = callable
-    #while callable.sons.len > 0:
+  var c = callable
+  while c.kind == dkCallable and c.function == nil:
+    c = engine.evalCallable(c)
+    echo "evalCallback returned ", c.repr
+
+  case c.kind
+  of dkFunctionCall:
+    return engine.evaluate(c)
+  of dkIdentifier:
+    return engine.evalIdentifierCall(c, args)
+  of dkCallable:
+    var next = c
+    var value: DeliNode
+    #while c.sons.len > 0:
     #  next = evalCallable(next)
-    if next.sons.len == 0:
-      return next.function(args)
-    else:
-      let value = next.function()
+    if next.sons.len > 0:
+      value = next.function()
       return engine.evalValueFunction(value, next.sons[0], args)
+    else:
+      return next.function(args)
+  else: discard
+
+  todo "evalFunctionCall " & $c.kind
+  return deliNone()
 
 
 # TODO skip this for now

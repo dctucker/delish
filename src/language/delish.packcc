@@ -213,18 +213,18 @@ RunFlags      <-
               )
 
 FunctionStmt  <- !Keyword c:FunctionCall                             { DK( FunctionStmt, c ); SL(c); }
-FunctionCall  <- !Keyword c:Callable                                 { DK( FunctionCall, c ); }
+FunctionCall  <- !Keyword c:Callable                                 { $$ = c; }
               (                          S+ e:Expr                   { NA( $$, e ); }
               )*
 
 Callable      <- !Type i:Identifier                                  { DK( Callable, i ); }
-                                     ( DerefOp i:Identifier          { NA( $$, i ); }
+                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
                                                             )*
-              /  !Type v:Variable                                    { DK( Callable, DK( VarDeref, v ) ); }
-                                     ( DerefOp i:Identifier          { NA( $$, i ); }
+              /  !Type v:Variable                                    { DK( VarDeref, v ); }
+                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
                                                             )+
-              /        t:Type                                        { DK( Callable, DK( Type, t ) ); }
-                                     ( DerefOp i:Identifier          { NA( $$, i ); }
+              /        t:Type                                        { DK( Type, t ); }
+                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
                                                             )+
 
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }

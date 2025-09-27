@@ -70,7 +70,7 @@ proc getSubKinds(kind: string): seq[string] {.compileTime.} =
 
 macro grammarSubKinds*(kind: static[string]) =
   let kinds = getSubKinds(kind)
-  let stmt = "const dk" & kind & "Kinds = { " & kinds.join(", ") & " }"
+  let stmt = "const dk" & kind & "Kinds* = { " & kinds.join(", ") & " }"
   when revealGrammar: echo stmt
   result = parseStmt(stmt)
 
