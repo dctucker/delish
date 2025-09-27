@@ -1,7 +1,15 @@
 ls = {
   local $pwd = Path.pwd
   for $f in $pwd.list {
-    out $f
+    $stat = $f.stat
+    $str = ""
+    if $stat.mode > 040000 {
+      $str += "d"
+    } else {
+      $str += "-"
+    }
+    out $str, " ", $f
+    #.stat.mode.oct, " ", $f
   }
 }
-out ls
+ls

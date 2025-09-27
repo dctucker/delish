@@ -53,6 +53,7 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
        dkPath:
       if son.kind == dkIdentifier:
         # TODO this shouldn't execute the function, it should turn it into a function call
+        #result = DKCallable(typeFunction(result.kind, son), @[result])
         result = typeFunction(result.kind, son)(result)
       else:
         result = deliNone()

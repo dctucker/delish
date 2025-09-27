@@ -4,6 +4,7 @@ import ./[
   path,
   integer,
   array,
+  object,
 ]
 
 type DeliFunctionTable = Table[string, DeliFunction]
@@ -11,6 +12,7 @@ type TypeFunctionTable = Table[DeliKind, DeliFunctionTable]
 
 let TypeFunctions: TypeFunctionTable = {
   dkArray: ArrayFunctions,
+  dkObject: ObjectFunctions,
   dkPath: PathFunctions,
   dkInteger: IntegerFunctions,
 }.toTable

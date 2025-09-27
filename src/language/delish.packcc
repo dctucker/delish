@@ -326,16 +326,6 @@ AsyncFlag     <- Async                                               { DK( Async
 Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER("expected expression"); }
                                  S*        PRight                    { DK( Cast, t, e ); }
 
-Keyword       <-
-              (  Json   / Sub   / If       / Elif    / Else
-              /  Do     / While / For
-              /  In     / Out   / Err      / Include
-              /  True   / False / Env      / ArgKw   / Local
-              /  Return / Break / Continue
-              /  Async  / Redir / And      / Or      / Not
-              /  Push   / Pop   / Open     / Close   / Run
-              )
-
 Json          <- "json"
 Sub           <- "sub"
 If            <- "if"
@@ -366,6 +356,16 @@ Pop           <- "pop"                                               { DK( Pop )
 Open          <- "open"
 Close         <- "close"
 Run           <- "run"
+
+Keyword       <-
+              (  Json   / Sub   / If       / Elif    / Else
+              /  Do     / While / For
+              /  In     / Out   / Err      / Include
+              /  True   / False / Env      / ArgKw   / Local
+              /  Return / Break / Continue
+              /  Async  / Redir / And      / Or      / Not
+              /  Push   / Pop   / Open     / Close   / Run
+              )
 
 Type          <- "Integer"                                           { DK( Integer    ); }
               /  "Decimal"                                           { DK( Decimal    ); }

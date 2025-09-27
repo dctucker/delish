@@ -18,7 +18,7 @@ proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[Del
   except ValueError as e:
     engine.runtimeError(e.msg)
   except KeyError as e:
-    engine.runtimeError("Unknown function: ", $ty, ".", $fun.id)
+    engine.runtimeError("Unknown type function: ", $ty, ".", $fun.id)
 
 proc evalValueFunction(engine: Engine, value, id: DeliNode, args: seq[DeliNode]): DeliNode =
   assert id.kind == dkIdentifier
@@ -29,7 +29,7 @@ proc evalValueFunction(engine: Engine, value, id: DeliNode, args: seq[DeliNode])
     for arg in args:
       nextArgs.add arg
     return engine.evalTypeFunction(ty, id, nextArgs)
-  engine.runtimeError("Unknown function: ", $ty, ".", $id.id)
+  engine.runtimeError("Unknown value function: ", $ty, ".", $id.id)
 
 
 proc evalDerefFunction(engine: Engine, variable: DeliNode, args: seq[DeliNode]): DeliNode =
@@ -46,7 +46,7 @@ proc evalIdentifierCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): Del
   var code: DeliNode
 
   if fun.id notin engine.functions:
-    engine.runtimeError("Unknown function: " & fun.id)
+    engine.runtimeError("Unknown identifier function: " & fun.id)
   code = engine.functions[fun.id]
 
   var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
@@ -131,6 +131,7 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
       engine.runtimeError("Unknown function: ", $ty, ".", id.id)
   of dkVarDeref:
     let deref = engine.evaluate(c0)
+    #echo "evalCallable VarDeref ", deref.kind
     if deref.kind != dkCode:
       return varFunctionCall(deref, id)
   else:
@@ -177,7 +178,8 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
       value = next.function()
       return engine.evalValueFunction(value, next.sons[0], nextArgs)
     else:
-      echo "calling ", next, " with args ", nextArgs
+      debug 1:
+        echo "calling ", next, " with args ", nextArgs
       return next.function(nextArgs)
   else: discard
 
