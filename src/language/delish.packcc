@@ -217,7 +217,7 @@ FunctionCall  <- !Keyword c:Callable                                 { $$ = c; }
               (                          S+ e:Expr                   { NA( $$, e ); }
               )*
 
-Callable      <- !Type i:Identifier                                  { DK( Callable, i ); }
+Callable      <- !Type i:Identifier                                  { DK( FunctionCall, DK( Callable, i ) ); }
                                      ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
                                                             )*
               /  !Type v:Variable                                    { DK( VarDeref, v ); }

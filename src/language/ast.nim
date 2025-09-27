@@ -287,6 +287,11 @@ proc toString*(node: DeliNode): string =
     "--" & node.argName
   of dkArgExpr:
     argFormat(node)
+  of dkCallable:
+    if node.function != nil:
+      node.function.repr
+    else:
+      ""
   of dkJump:
     if node.list_node != nil:
       $node.list_node.value.line

@@ -150,6 +150,11 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
   let path = arg
 
   shift
+  # TODO don't want to do this type of thing here
+  if arg.kind == dkExpr:
+    arg = arg.sons[0]
+  if arg.kind == dkArg:
+    arg = arg.sons[0]
   let op = arg
   case op.kind
   of dkArg,
@@ -183,7 +188,7 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
     of "o", "older":         isOlder
     of "i", "equal", "same": isSame
     else:
-      raise newException(ValueError, "Unknown test argument: " & $op)
+      raise newException(ValueError, "Unknown test argument: " & $op & " / " & op.argName)
 
     shift
     let path2 = arg
