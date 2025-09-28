@@ -273,12 +273,31 @@ CondExpr      <-
               /  s:VarDeref / s:Boolean
               )                                                      { $$ = s; }
 
-MathExpr      <- a:AddExpr                                           { $$ = a; }
-AddExpr       <- l:AddExpr S+ ( o:AddOp / o:SubOp ) S+ r:MulExpr     { DK( MathExpr, o, l, r ); }
+BitAnd        <- And                                                 { DK( BitAnd ); }
+BitOr         <- Or                                                  { DK( BitOr  ); }
+BitXor        <- Xor                                                 { DK( BitXor ); }
+MathExpr      <- a:BOrExpr                                           { $$ = a; }
+
+BOrExpr       <- l:BOrExpr  S+  o:BitOr
+                            S+                         r:BXorExpr    { DK( MathExpr, o, l, r ); }
+              /                                        r:BXorExpr    { $$ = r; }
+
+BXorExpr      <- l:BXorExpr S+  o:BitXor
+                            S+                         r:BAndExpr    { DK( MathExpr, o, l, r ); }
+              /                                        r:BAndExpr    { $$ = r; }
+
+BAndExpr      <- l:BAndExpr S+  o:BitAnd
+                            S+                         r:AddExpr     { DK( MathExpr, o, l, r ); }
+              /                                        r:AddExpr     { $$ = r; }
+
+AddExpr       <- l:AddExpr S+ ( o:AddOp / o:SubOp )
+                           S+                          r:MulExpr     { DK( MathExpr, o, l, r ); }
                /                                       r:MulExpr     { $$ = r; }
-MulExpr       <- l:MulExpr S+ (o:MulOp / o:DivOp / o:ModOp)
-                           S+ r:PrimExpr                             { DK( MathExpr, o, l, r ); }
-               /              r:PrimExpr                             { $$ = r; }
+
+MulExpr       <- l:MulExpr S+ ( o:MulOp / o:DivOp / o:ModOp )
+                           S+                          r:PrimExpr    { DK( MathExpr, o, l, r ); }
+               /                                       r:PrimExpr    { $$ = r; }
+
 PrimExpr      <- e:Expr                                              { $$ = e; }
 
 BoolExpr      <-
@@ -350,6 +369,7 @@ Async         <- "async"
 Redir         <- "redir"
 And           <- "and"
 Or            <- "or"
+Xor           <- "xor"
 Not           <- "not"
 Push          <- "push"                                              { DK( Push ); }
 Pop           <- "pop"                                               { DK( Pop ); }

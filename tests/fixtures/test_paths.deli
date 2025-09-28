@@ -1,0 +1,15 @@
+#!/usr/bin/deli
+
+$file = ./examples/paths.deli
+if not $file.test -f {
+  out $file, " is not a regular file"
+  return 1
+}
+if $file.test -d {
+  out $file, " is a directory"
+  return 1
+}
+if $file.test -b {
+  out $file, " is not a block file"
+  return 1
+}

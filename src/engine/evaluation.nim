@@ -18,6 +18,9 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
   of dkMulOp: a  *  b
   of dkDivOp: a  /  b
   of dkModOp: a mod b
+  of dkBitOr : a or  b
+  of dkBitAnd: a and b
+  of dkBitXor: a xor b
   else:
     todo "evalMath " & $op
     deliNone()
@@ -174,7 +177,8 @@ proc evaluate(engine: Engine, val: DeliNode): DeliNode =
     return engine.evalMath(val.sons[0], v1, v2)
 
   of dkFunctionCall:
-    return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
+    let v1 = val.sons[0]
+    return engine.evalFunctionCall(v1, val.sons[1 .. ^1])
 
   of dkCast:
     return engine.evaluate(val.sons[1]).toKind(val.sons[0].kind)

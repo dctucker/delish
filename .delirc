@@ -2,9 +2,29 @@ ls = {
   local $pwd = Path.pwd
   for $f in $pwd.list {
     $stat = $f.stat
-    $str = ""
-    if $stat.mode > 040000 {
+    local $mode = $stat.mode
+    local $str = ""
+    $dir = ( $mode and 040000 )
+    $r =   ( $mode and 0400 )
+    $w =   ( $mode and 0200 )
+    $x =   ( $mode and 0100 )
+    if $dir > 0 {
       $str += "d"
+    } else {
+      $str += "-"
+    }
+    if $r > 0 {
+      $str += "r"
+    } else {
+      $str += "-"
+    }
+    if $w > 0 {
+      $str += "w"
+    } else {
+      $str += "-"
+    }
+    if $x > 0 {
+      $str += "x"
     } else {
       $str += "-"
     }

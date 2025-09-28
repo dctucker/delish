@@ -110,7 +110,7 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
 
   case c0.kind
   of dkCallable:
-    todo "evalCallable " & $c0.sons
+    todo "evalCallable dkCallable " & $c0.sons
     #return engine.evalCallable(c0)
 
   of dkFunctionCall:
@@ -136,9 +136,9 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
     #echo "evalCallable VarDeref ", deref.kind
     case deref.kind
     of dkCode:
-      discard # TODO insert code into engine
+      todo "evalCallable dkVarDeref dkCode"
     of dkObject:
-      discard # TODO object table lookup then function
+      return DK(dkCallable, deref, id)
     else:
       return varFunctionCall(deref, id)
   else:
