@@ -1,10 +1,14 @@
-import std/[
-  os,
-  strutils,
-  tables,
-]
-import ./common
-import ./parse
+import
+  std/[
+    os,
+    strutils,
+    tables,
+  ],
+  ./[
+    common,
+    parse,
+    string
+  ]
 
 proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
   let k1 = kind.name
@@ -181,7 +185,7 @@ proc toKind*(src: DeliNode, dest: DeliKind): DeliNode =
     result = src
     return result # TODO: verify this is a copy
   result = case dest
-  #of dkString:  toString  src
+  of dkString:     asString     src
   of dkIdentifier: toIdentifier src
   of dkVariable:   toVariable   src
   of dkArg,

@@ -270,6 +270,7 @@ proc toString*(node: DeliNode): string =
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
   of dkDateTime:   $(node.dtVal)
+  of dkPair:       ""
   of dkObject,
      dkRan:        objFormat(node)
   of dkArray:      arrayFormat(node)
