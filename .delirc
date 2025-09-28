@@ -4,29 +4,55 @@ ls = {
     $stat = $f.stat
     local $mode = $stat.mode
     local $str = ""
-    $dir = ( $mode and 040000 )
-    $r =   ( $mode and 0400 )
-    $w =   ( $mode and 0200 )
-    $x =   ( $mode and 0100 )
-    if $dir > 0 {
+    if ( $mode and 040000 ) == 0 {
+      $str += "-"
+    } else {
       $str += "d"
-    } else {
-      $str += "-"
     }
-    if $r > 0 {
+    if ( $mode and 0400 ) == 0 {
+      $str += "-"
+    } else {
       $str += "r"
-    } else {
-      $str += "-"
     }
-    if $w > 0 {
+    if ( $mode and 0200 ) == 0 {
+      $str += "-"
+    } else {
       $str += "w"
-    } else {
-      $str += "-"
     }
-    if $x > 0 {
-      $str += "x"
-    } else {
+    if ( $mode and 0100 ) == 0 {
       $str += "-"
+    } else {
+      $str += "x"
+    }
+    if ( $mode and 040 ) == 0 {
+      $str += "-"
+    } else {
+      $str += "r"
+    }
+    if ( $mode and 020 ) == 0 {
+      $str += "-"
+    } else {
+      $str += "w"
+    }
+    if ( $mode and 010 ) == 0 {
+      $str += "-"
+    } else {
+      $str += "x"
+    }
+    if ( $mode and 04 ) == 0 {
+      $str += "-"
+    } else {
+      $str += "r"
+    }
+    if ( $mode and 02 ) == 0 {
+      $str += "-"
+    } else {
+      $str += "w"
+    }
+    if ( $mode and 01 ) == 0 {
+      $str += "-"
+    } else {
+      $str += "x"
     }
     out $str, " ", $f
     #.stat.mode.oct, " ", $f

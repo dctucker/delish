@@ -248,7 +248,7 @@ ConstExpr     <-
               )                                                      { $$ = e; }
 
 Expr          <-
-              (  PLeft S* s:MathExpr S* PRight
+              (  s:MathExpr
               /  s:Array    / s:Object
               /  s:Arg      / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
@@ -268,7 +268,8 @@ AndExpr       <- l:AndExpr S+ o:BoolAnd S+ r:NotExpr                 { DK( CondE
 NotExpr       <- o:BoolNot S+ r:CondExpr                             { $$ = o; NA($$, r); }
                /              r:CondExpr                             { $$ = r; }
 CondExpr      <-
-              (  s:Arg / s:BoolExpr
+              (  s:Arg
+              /  s:BoolExpr
               /  s:FunctionCall
               /  s:VarDeref / s:Boolean
               )                                                      { $$ = s; }
@@ -276,7 +277,10 @@ CondExpr      <-
 BitAnd        <- And                                                 { DK( BitAnd ); }
 BitOr         <- Or                                                  { DK( BitOr  ); }
 BitXor        <- Xor                                                 { DK( BitXor ); }
-MathExpr      <- a:BOrExpr                                           { $$ = a; }
+BitShl        <- Shl                                                 { DK( BitShl ); }
+BitShr        <- Shr                                                 { DK( BitShr ); }
+
+MathExpr      <- PLeft S* a:BOrExpr S* PRight                        { $$ = a; }
 
 BOrExpr       <- l:BOrExpr  S+  o:BitOr
                             S+                         r:BXorExpr    { DK( MathExpr, o, l, r ); }
@@ -287,7 +291,11 @@ BXorExpr      <- l:BXorExpr S+  o:BitXor
               /                                        r:BAndExpr    { $$ = r; }
 
 BAndExpr      <- l:BAndExpr S+  o:BitAnd
-                            S+                         r:AddExpr     { DK( MathExpr, o, l, r ); }
+                            S+                         r:BShExpr     { DK( MathExpr, o, l, r ); }
+              /                                        r:BShExpr     { $$ = r; }
+
+BShExpr       <- l:BShExpr S+ ( o:BitShl / o:BitShr )
+                           S+                          r:AddExpr     { DK( MathExpr, o, l, r ); }
               /                                        r:AddExpr     { $$ = r; }
 
 AddExpr       <- l:AddExpr S+ ( o:AddOp / o:SubOp )
@@ -316,6 +324,7 @@ Comparison    <- e1:CompExpr S+ o:CompOper S+ e2:CompExpr           ~{ ER("expec
 CompExpr      <-
               (  s:FunctionCall / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
+              /  s:MathExpr
               /  s:Number / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
 CompOper      <-
@@ -367,6 +376,8 @@ Break         <- "break"
 Continue      <- "continue"
 Async         <- "async"
 Redir         <- "redir"
+Shl           <- "shl"
+Shr           <- "shr"
 And           <- "and"
 Or            <- "or"
 Xor           <- "xor"
