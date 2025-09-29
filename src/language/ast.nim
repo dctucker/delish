@@ -398,6 +398,13 @@ proc `$`*(node: DeliNode): string =
 proc todo*(msg: varargs[string, `$`]) =
   errlog.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")
 
+proc lineage*(node: DeliNode): string =
+  var n = node
+  #result = n.parent.kind.name
+  while n.parent.kind != dkNone:
+    result = n.parent.kind.name & "/" & result
+    n = n.parent
+
 proc repr*(node: DeliNode): string =
   result = ""
 

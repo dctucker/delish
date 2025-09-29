@@ -82,6 +82,8 @@ proc parse*(parser: Parser): DeliNode =
     parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
+  debug 2:
+    echo "entry point = ", parser.entry_point
   return parser.entry_point
 
 proc printSons(node: DeliNode, level: int) =

@@ -143,7 +143,7 @@ proc lineInfo*(engine: Engine): string =
     "."
   let linenum = "\27[1;30m" & filename & delim & $abs(line)
   let source = " \27[0;34;4m" & sline
-  let parsed = "\27[1;24m " & repr(engine.current)
+  let parsed = "\27[1;24m " & engine.current.lineage  & repr(engine.current)
   return linenum & source & parsed & "\27[0m"
 
 proc doInclude(engine: Engine, included: DeliNode) =
