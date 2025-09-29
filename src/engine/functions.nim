@@ -49,7 +49,7 @@ proc evalIdentifierCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): Del
     engine.runtimeError("Unknown identifier function: " & fun.id)
   code = engine.functions[fun.id]
 
-  var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
+  var jump_return = DKJump(-code.sons[0].line + 1)
 
   engine.setupPush( -code.sons[0].line + 1, {
     ".return": jump_return,
@@ -68,7 +68,7 @@ proc evalIdentifierCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): Del
 
 proc setupCallCode(engine: Engine, code: DeliNode, args: seq[DeliNode]): DeliNode =
   result = DK( dkLazy, DKVar(".returned") )
-  var jump_return = DeliNode(kind: dkJump, line: -code.sons[0].line + 1)
+  var jump_return = DKJump(-code.sons[0].line + 1)
 
   engine.setupPush( -code.sons[0].line + 1, {
     ".return": jump_return,

@@ -55,6 +55,14 @@ proc clearStatements*(engine: Engine) =
   engine.statements = @[deliNone()].toSinglyLinkedList
 
 proc insertStmt*(engine: Engine, node: DeliNode) =
+  debug 3:
+    stderr.write node.kind, " "
+    if node.parent.kind != dkNone:
+      stderr.write node.parent
+    else:
+      stderr.write "nil"
+    stderr.write "\n"
+
   if node.script == nil:
     if engine.current.kind != dkNone:
       node.script = engine.current.script
