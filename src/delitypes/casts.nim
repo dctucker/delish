@@ -58,6 +58,7 @@ proc toInteger*(src: DeliNode): DeliNode =
   result = case src.kind
   of dkInteger:    DKInt( src.intVal )
   of dkStream:     DKInt(src.intVal)
+  of dkBoolean:    DKInt(if src.boolVal: 1 else: 0)
   of dkString:     DKInt(src.strVal.parseInteger)
   of dkIdentifier,
      dkVariable,
@@ -65,6 +66,8 @@ proc toInteger*(src: DeliNode): DeliNode =
      dkPath,
      dkRegex:      raise Incompatible(dkInteger, src)
   #of dkString:  DKInt( int(src.strVal) )
+  of dkArray:      DKInt(src.sons.len)
+  of dkObject:     DKInt(src.table.len)
   else:
     todo "toInteger ", src.kind
     deliNone()

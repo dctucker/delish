@@ -49,6 +49,16 @@ suite "cast":
       not DK(dkObject).toKind(dkBoolean).boolVal
       DKPath(".").toKind(dkBoolean).boolVal
 
+  test "cast to integer":
+    check DKStr("123").toKind(dkInteger).intVal == 123
+    check DKStr("0xff").toKind(dkInteger).intVal == 255
+    check DKStr("0177").toKind(dkInteger).intVal == 127
+    check boo.toKind(dkInteger).intVal == 1
+    check arr.toKind(dkInteger).intVal == 2
+    check obj.toKind(dkInteger).intVal == 1
+    check eam.toKind(dkInteger).intVal == 1
+
+
   test "cast to same type is equal":
     check:
       ide.toKind(dkIdentifier) == ide
