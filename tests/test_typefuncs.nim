@@ -69,3 +69,8 @@ suite "type functions":
     check ls.kind == dkArray
     check ls.sons.len > 0
     check ls.sons[0].kind == dkPath
+
+  test "String.split":
+    let fn = typeFunction(dkString, DKId("split"))
+    check arr123s == fn(DKStr("1 2 3"))
+    check arr123s == fn(DKStr("1.2.3"), DKStr("."))
