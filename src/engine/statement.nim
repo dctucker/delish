@@ -18,6 +18,9 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkVariableStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
 
+  of dkVarDerefStmt:
+    engine.doDerefAssign(s.sons[0], s.sons[1], s.sons[2])
+
   of dkCloseStmt:
     engine.doClose(s.sons[0])
 

@@ -21,4 +21,3 @@ let ObjectFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.n
   "": dLookup,
   "keys": dKeys,
 }.toTable
-

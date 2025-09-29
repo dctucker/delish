@@ -21,6 +21,8 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
   of dkBitOr : a or  b
   of dkBitAnd: a and b
   of dkBitXor: a xor b
+  of dkBitShl: a shl b
+  of dkBitShr: a shr b
   else:
     todo "evalMath " & $op
     deliNone()

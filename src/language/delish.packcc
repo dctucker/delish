@@ -102,7 +102,8 @@ Block         <-
               )                                                      { DK( Block    , a ); SL(a); }
 
 Statement     <-
-              (  a:VariableStmt / a:LocalStmt   / a:ArgStmt
+              (  a:VariableStmt / a:VarDerefStmt
+              /  a:LocalStmt    / a:ArgStmt
               /  a:EnvStmt      / a:IncludeStmt / a:StreamStmt
               /  a:CloseStmt    / a:RunStmt
               /  a:FunctionStmt / a:BreakStmt
@@ -149,6 +150,8 @@ VariableStmt  <- &VarOp v:Variable                                  ~{ ER("inval
               /      S* o:AppendOp S* e:AppendExpr S*               ~{ ER( invalid_expression ); }
               /      S* o:RemoveOp S* e:AppendExpr S*               ~{ ER( invalid_expression ); }
               )                                                      { DK( VariableStmt, v, o, e ); }
+
+VarDerefStmt  <- &VarOp v:VarDeref S* o:AssignOp S* e:AssignExpr S*  { DK( VarDerefStmt, v, o, e ); }
 
 AssignExpr    <-
               (  e:OpenExpr / e:ArgExpr /  e:RunStmt

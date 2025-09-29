@@ -211,3 +211,17 @@ proc `or`*(a,b: DeliNode): DeliNode =
     of dkBoolean: return DKBool( a.boolVal or b.boolVal )
     else: discard
   todo "dis ", a.kind, " or ", b.kind
+
+proc `shl`*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt( a.intVal shl b.intVal )
+    else: discard
+  todo "shl ", a.kind, " by ", b.kind
+
+proc `shr`*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt( a.intVal shr b.intVal )
+    else: discard
+  todo "shr ", a.kind, " by ", b.kind

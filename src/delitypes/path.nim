@@ -150,11 +150,7 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
   let path = arg
 
   shift
-  # TODO don't want to do this type of thing here
-  if arg.kind == dkExpr:
-    arg = arg.sons[0]
-  if arg.kind == dkArg:
-    arg = arg.sons[0]
+  express
   let op = arg
   case op.kind
   of dkArg,

@@ -36,7 +36,7 @@ include ./engine/[
   functions,
   evaluation,
   flow,
-  runtime,
+  statement,
 ]
 
 proc newEngine*(debug: int): Engine =

@@ -3,58 +3,20 @@ ls = {
   for $f in $pwd.list {
     $stat = $f.stat
     local $mode = $stat.mode
-    local $str = ""
-    if ( $mode and 040000 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "d"
+    local $modes = ['-','-','-','-','-','-','-','-','-','-']
+    if ( $mode and 040000 ) != 0 {
+      $modes.0 = "d"
     }
-    if ( $mode and 0400 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "r"
+    $curmode = 0400
+    $modechar = [ 'r', 'w', 'x' ]
+    for $i in [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] {
+      if ( $mode and $curmode ) != 0 {
+        $j = ( ( $i - 1 ) % 3 )
+        $modes.$i = $modechar.$j
+      }
+      $curmode = ( $curmode shr 1 )
     }
-    if ( $mode and 0200 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "w"
-    }
-    if ( $mode and 0100 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "x"
-    }
-    if ( $mode and 040 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "r"
-    }
-    if ( $mode and 020 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "w"
-    }
-    if ( $mode and 010 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "x"
-    }
-    if ( $mode and 04 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "r"
-    }
-    if ( $mode and 02 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "w"
-    }
-    if ( $mode and 01 ) == 0 {
-      $str += "-"
-    } else {
-      $str += "x"
-    }
-    out $str, " ", $f
+    out $modes.join, " ", $f
     #.stat.mode.oct, " ", $f
   }
 }
