@@ -30,3 +30,11 @@ suite "type functions":
     let fn = typeFunction(dkInteger, DKId("hex"))
     check fn(DKInt(255)) == DKStr("0xFF")
     check fn(DKInt(63)) == DKStr("0x3F")
+
+  test "Object.keys":
+    let fn = typeFunction(dkObject, DKId("keys"))
+    check fn(DeliObject([
+      ("1", DKStr("1")),
+      ("2", DKStr("2")),
+      ("3", DKStr("3")),
+    ])) == arr123s

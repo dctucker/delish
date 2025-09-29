@@ -1,3 +1,4 @@
+import unittest
 import ../src/language/[
   ast,
   parser,
@@ -31,4 +32,5 @@ export
   deliengine,
   deliscript,
   delish,
-  delilog
+  delilog,
+  unittest

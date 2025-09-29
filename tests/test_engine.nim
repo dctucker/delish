@@ -1,4 +1,3 @@
-import unittest
 import os
 import ../src/delitypes/ops
 import ./common

@@ -30,7 +30,7 @@ type
   DeliNode* = ref DeliNodeObj
   DeliList* = SinglyLinkedList[DeliNode]
   DeliListNode* = SinglyLinkedNode[DeliNode]
-  DeliTable* = Table[string, DeliNode]
+  DeliTable* = OrderedTable[string, DeliNode]
 
   Decimal* = object
     whole*, fraction*, decimals*: int
@@ -73,6 +73,8 @@ type
     sons*: seq[DeliNode]
     line*: int
     script*:     DeliScript
+
+const toTbl* = toOrderedTable[string, DeliNode]
 
 proc name*(kind: DeliKind): string =
   return ($kind).substr(2)
@@ -160,7 +162,7 @@ proc DKRan*(): DeliNode =
     "out": DeliNode(kind: dkNone),
     "err": DeliNode(kind: dkNone),
     "exit": DeliNode(kind: dkNone),
-  }.toTable)
+  }.toTbl)
 
 proc DKPath*(strVal: string): DeliNode =
   return DeliNode(kind: dkPath, strVal: strVal)
@@ -185,7 +187,7 @@ let DKTrue*  = DeliNode(kind: dkBoolean, boolVal: true)
 let DKFalse* = DeliNode(kind: dkBoolean, boolVal: false)
 
 proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
-  return DeliNode(kind: dkObject, table: table.toTable)
+  return DeliNode(kind: dkObject, table: table.toTbl)
 
 proc `$`*(node: DeliNode): string
 proc toString*(node: DeliNode):string
@@ -400,7 +402,6 @@ proc printValue*(v: DeliNode): string =
   #elif v.kind in dkTypeKinds:
   else:
     result &= $v
-
 
 proc setLine*(node: var DeliNode, line: int): DeliNode =
   result = node

@@ -42,14 +42,14 @@ include ./engine/[
 proc newEngine*(debug: int): Engine =
   result = Engine(
     argnum: 1,
-    variables:  initTable[string, DeliNode](),
+    variables:  {:}.toTbl,
     statements: @[deliNone()].toSinglyLinkedList,
     current:    deliNone(),
     debug:      debug
   )
   result.argstack.push(newSeq[Argument]())
   result.clearStatements()
-  result.locals.push(initTable[string, DeliNode]())
+  result.locals.push({:}.toTbl)
   result.retvals.push(DKInt(0))
   result.fds[0] = initFd(stdin)
   result.fds[1] = initFd(stdout)

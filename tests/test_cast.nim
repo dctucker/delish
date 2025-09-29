@@ -1,6 +1,3 @@
-import unittest
-import std/tables
-
 import ../src/delitypes/casts
 import ../src/delitypes/ops
 import ./common
@@ -28,7 +25,7 @@ suite "cast":
   let num = DKInt(1)
   let boo = DKTrue
   let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
-  let obj = DeliNode(kind: dkObject, table: {"onions": DKStr("fresh")}.toTable)
+  let obj = DeliNode(kind: dkObject, table: {"onions": DKStr("fresh")}.toTbl)
   let reg = DeliNode(kind: dkRegex, pattern: "[A-Za-z0-9]")
   let eam = DeliNode(kind: dkStream, intVal: 1)
 

@@ -55,7 +55,7 @@ proc evalIdentifierCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): Del
     ".return": jump_return,
     ".args"  : DeliNode(kind: dkArray, sons: args),
     ".revtal": result,
-  }.toTable)
+  }.toTbl)
 
   for s in code.sons:
     engine.insertStmt(s)
@@ -74,7 +74,7 @@ proc setupCallCode(engine: Engine, code: DeliNode, args: seq[DeliNode]): DeliNod
     ".return": jump_return,
     ".args"  : DeliNode(kind: dkArray, sons: args),
     ".revtal": result,
-  }.toTable)
+  }.toTbl)
 
   for s in code.sons:
     engine.insertStmt(s)

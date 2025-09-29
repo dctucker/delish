@@ -74,7 +74,7 @@ proc doDoLoop(engine: Engine, loop: DeliNode) =
     engine.setupPush(top_line, {
       ".break"   : jump_break,
       ".continue": jump_continue,
-    }.toTable)
+    }.toTbl)
 
     jump_continue.list_node = engine.write_head
     engine.insertStmt(code.sons)
@@ -100,7 +100,7 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
     engine.setupPush(top_line, {
       ".break"   : jump_break,
       ".continue": jump_continue,
-    }.toTable)
+    }.toTbl)
 
     jump_continue.list_node = engine.write_head
     discard engine.setupConditional( DK(dkBoolNot, condition), dkBreakStmt, top_line )
@@ -153,7 +153,7 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
       ".counter" : DKInt(0),
       ".break"   : jump_break,
       ".continue": jump_continue,
-    }.toTable)
+    }.toTbl)
 
     jump_continue.list_node = engine.write_head
     discard engine.setupNext(variable, iter)
