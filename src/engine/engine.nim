@@ -124,8 +124,7 @@ proc sourceFile*(engine: Engine): string =
     result = engine.current.script.filename
 
 proc sourceLine*(engine: Engine): string =
-  if engine.current.script != nil:
-    return engine.current.script.getLine( engine.current.line )
+  return engine.current.findScript.getLine( engine.current.line )
 
 proc lineInfo*(engine: Engine): string =
   var filename: string

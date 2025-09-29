@@ -95,6 +95,12 @@ proc parent*(node: DeliNode): DeliNode =
     return None0
   return node.parents[0]
 
+# TODO temporary fix
+proc findScript*(node: DeliNode): DeliScript =
+  if node.script != nil:
+    return node.script
+  return node.parent.findScript
+
 proc `line=`*(node: DeliNode, line: int) =
   case node.kind
   of dkJump,

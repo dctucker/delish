@@ -54,8 +54,10 @@ suite "parser":
     check script.traverse(1,0).kind == dkVariableStmt
     check script.traverse(2,0).kind == dkVariableStmt
     check script.traverse(3,0).kind == dkConditional
-    check script.traverse(3,0,0).kind == dkBoolExpr
-    check script.traverse(3,0,0,0).kind == dkComparison
+    check script.traverse(3,0,0).kind == dkCondition
+    check script.traverse(3,0,0,0).kind == dkBoolExpr
+    check script.traverse(3,0,0,0,0).kind == dkComparison
     check script.traverse(4,0).kind == dkConditional
-    check script.traverse(4,0,0).kind == dkBoolExpr
-    check script.traverse(4,0,0,0).kind == dkComparison
+    check script.traverse(4,0,0).kind == dkCondition
+    check script.traverse(4,0,0,0).kind == dkBoolExpr
+    check script.traverse(4,0,0,0,0).kind == dkComparison
