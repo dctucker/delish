@@ -14,6 +14,7 @@ template shift*() =
   arg_i += 1
 
 template expect*(k) =
+  express
   if arg.kind != k:
     raise newException(ValueError, "expected " & k.name & ", not " & arg.kind.name)
 
@@ -21,11 +22,12 @@ template nextarg*(k: static[DeliKind]) =
   shift
   expect k
 
-template nextopt*(default: static[DeliNode]) =
+template nextopt*(default: DeliNode) =
   if arg_i >= nodes.len:
     arg = default
   else:
     arg = nodes[arg_i]
+    express
     arg_i += 1
     if arg.kind != default.kind:
       raise newException(ValueError, "expected " & default.kind.name & ", not " & arg.kind.name)
