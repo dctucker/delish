@@ -1,3 +1,4 @@
+import std/[sequtils, tables]
 import ./common
 
 import ../src/delitypes/functions
@@ -38,3 +39,18 @@ suite "type functions":
       ("2", DKStr("2")),
       ("3", DKStr("3")),
     ])) == arr123s
+
+  test "Path.stat":
+    let fn = typeFunction(dkPath, DKId("stat"))
+    let stat = fn(DKPath("."))
+    check:
+      stat.kind == dkObject
+      stat.table.keys.toSeq == ["dev","ino","mode","nlink","uid","gid","rdev","size","atime","mtime","ctime","blksize","blocks"]
+
+  test "Path.test":
+    let fn = typeFunction(dkPath, DKid("test"))
+    check fn(DKPath("."), DKArg("d")) == DKBool(true)
+    check fn(DKPath("."), DKArg("f")) == DKBool(false)
+    check fn(DKPath("tests/test_typefuncs.nim"), DKArg("f")) == DKBool(true)
+    check fn(DKPath("tests/test_typefuncs.nim"), DKArg("L")) == DKBool(false)
+
