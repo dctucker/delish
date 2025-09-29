@@ -54,3 +54,18 @@ suite "type functions":
     check fn(DKPath("tests/test_typefuncs.nim"), DKArg("f")) == DKBool(true)
     check fn(DKPath("tests/test_typefuncs.nim"), DKArg("L")) == DKBool(false)
 
+  test "Path.pwd":
+    let fn = typeFunction(dkPath, DKId("pwd"))
+    check fn().kind == dkPath
+
+  test "Path.chdir":
+    let fn = typeFunction(dkPath, DKId("chdir"))
+    check fn(DKPath("tests")) == DKBool(true)
+    check fn(DKPath("..")) == DKBool(true)
+
+  test "Path.list":
+    let fn = typeFunction(dkPath, DKId("list"))
+    let ls = fn(DKPath("."))
+    check ls.kind == dkArray
+    check ls.sons.len > 0
+    check ls.sons[0].kind == dkPath

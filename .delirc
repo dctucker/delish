@@ -4,7 +4,9 @@ ls = {
     $stat = $f.stat
     local $mode = $stat.mode
     local $modes = ['-','-','-','-','-','-','-','-','-','-']
-    if ( $mode and 040000 ) != 0 {
+    if ( $mode and 0120000 ) == 0120000 {
+      $modes.0 = "l"
+    } elif ( $mode and 040000 ) != 0 {
       $modes.0 = "d"
     }
     $curmode = 0400
