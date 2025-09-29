@@ -1,7 +1,23 @@
 ls = {
   local $pwd = Path.pwd
   for $f in $pwd.list {
-    out $f
+    $stat = $f.stat
+    local $mode = $stat.mode
+    local $modes = ['-','-','-','-','-','-','-','-','-','-']
+    if ( $mode and 040000 ) != 0 {
+      $modes.0 = "d"
+    }
+    $curmode = 0400
+    $modechar = [ 'r', 'w', 'x' ]
+    for $i in [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] {
+      if ( $mode and $curmode ) != 0 {
+        $j = ( ( $i - 1 ) % 3 )
+        $modes.$i = $modechar.$j
+      }
+      $curmode = ( $curmode shr 1 )
+    }
+    out $modes.join, " ", $f
+    #.stat.mode.oct, " ", $f
   }
 }
-out ls
+ls

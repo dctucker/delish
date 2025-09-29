@@ -3,13 +3,16 @@ import ./[
   common,
   path,
   integer,
+  array,
+  object,
 ]
 
-type DeliFunction = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 type DeliFunctionTable = Table[string, DeliFunction]
 type TypeFunctionTable = Table[DeliKind, DeliFunctionTable]
 
 let TypeFunctions: TypeFunctionTable = {
+  dkArray: ArrayFunctions,
+  dkObject: ObjectFunctions,
   dkPath: PathFunctions,
   dkInteger: IntegerFunctions,
 }.toTable

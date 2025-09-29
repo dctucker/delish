@@ -42,6 +42,12 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
         engine.runtimeError("$" & variable.varName & " does not contain \"" & str & "\"")
       result = result.table[str]
     of dkArray:
+      if son.kind == dkIdentifier:
+        if son.id in typeFunctions(dkArray):
+          result = typeFunction(result.kind, son)(result)
+        else:
+          engine.runtimeError("Unknown array function: " & son.id)
+        continue
       #echo engine.evaluate(son.repr).repr
       engine.printLocals()
       let idx = engine.evaluate(son).intVal
@@ -53,6 +59,7 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
        dkPath:
       if son.kind == dkIdentifier:
         # TODO this shouldn't execute the function, it should turn it into a function call
+        #result = DKCallable(typeFunction(result.kind, son), @[result])
         result = typeFunction(result.kind, son)(result)
       else:
         result = deliNone()
@@ -83,6 +90,22 @@ proc varAssignLazy(engine: Engine, key: DeliNode, op: DeliNode, value: DeliNode)
     ))
   else:
     engine.assignVariable(key.varName, value)
+
+proc doDerefAssign(engine: Engine, into: DeliNode, op: DeliNode, expr: DeliNode) =
+  let val = if expr.kind == dkExpr:
+      expr.sons[0]
+    else:
+      expr
+  case op.kind
+  of dkAssignOp:
+    let key = into.sons[0].varName
+    var index = into.sons[1]
+    if index.kind == dkVariable:
+      index = engine.evaluate(index)
+    let value = engine.evaluate(val)
+    engine.getVariable(key).sons[index.intVal] = value
+  else:
+    todo "doDerefAssign ", op.kind
 
 proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
   let val = if expr.kind == dkExpr:

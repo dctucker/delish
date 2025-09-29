@@ -36,6 +36,7 @@ type
     whole*, fraction*, decimals*: int
 
   Iterable* = iterator(iter: DeliNode): DeliNode
+  DeliFunction* = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 
   DeliNodeObj* = object
     case kind*: DeliKind
@@ -66,6 +67,7 @@ type
        dkConditional,
        dkForLoop:      list_node*:  DeliListNode
     of dkIterable:     generator*:  Iterable
+    of dkCallable:     function*:   DeliFunction
     else:
       discard
     sons*: seq[DeliNode]
@@ -173,6 +175,12 @@ proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
     sons.add(node)
   return DeliNode(kind: dkInner, sons: sons, line: line)
 
+proc DKCallable*(fn: DeliFunction, sons: seq[DeliNode]): DeliNode =
+  result = DeliNode(kind: dkCallable, function: fn, sons: sons)
+
+proc DKType*(kind: DeliKind): DeliNode =
+  result = DK( dkType, DK( kind ) )
+
 let DKTrue*  = DeliNode(kind: dkBoolean, boolVal: true)
 let DKFalse* = DeliNode(kind: dkBoolean, boolVal: false)
 
@@ -262,6 +270,7 @@ proc toString*(node: DeliNode): string =
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
   of dkDateTime:   $(node.dtVal)
+  of dkPair:       ""
   of dkObject,
      dkRan:        objFormat(node)
   of dkArray:      arrayFormat(node)
@@ -279,12 +288,17 @@ proc toString*(node: DeliNode): string =
     "--" & node.argName
   of dkArgExpr:
     argFormat(node)
+  of dkCallable:
+    if node.function != nil:
+      node.function.repr
+    else:
+      ""
   of dkJump:
     if node.list_node != nil:
       $node.list_node.value.line
     else:
       "Jump"
-  of dkInner, dkNone:
+  of dkInner, dkNone, dkType:
     ""
   else:
     if kind.ord <= dkKeyword.ord or kind.ord >= dkLazy.ord:

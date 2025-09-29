@@ -18,6 +18,9 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkVariableStmt:
     engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
 
+  of dkVarDerefStmt:
+    engine.doDerefAssign(s.sons[0], s.sons[1], s.sons[2])
+
   of dkCloseStmt:
     engine.doClose(s.sons[0])
 
@@ -62,12 +65,12 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkDoLoop:
     engine.doDoLoop(s)
 
-  of dkFunction:
+  of dkFunctionDef:
     engine.doFunctionDef(s.sons[0], s.sons[1])
 
   of dkFunctionStmt:
     let call = s.sons[0]
-    discard engine.evalFunctionCall(call.sons[0], call.sons[1 .. ^1])
+    discard engine.evaluate(call)
 
   of dkContinueStmt:
     var to = engine.getVariable(".continue")

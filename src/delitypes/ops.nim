@@ -188,18 +188,40 @@ proc `mod`*(a, b: DeliNode): DeliNode =
   todo "mod ", a.kind, " % ", b.kind
   return deliNone()
 
+proc `xor`*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt( a.intVal xor b.intVal )
+    of dkBoolean: return DKBool( a.boolVal xor b.boolVal )
+    else: discard
+  todo "excl ", a.kind, " xor ", b.kind
+
 proc `and`*(a,b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
-    of dkBoolean:
-      return DKBool( a.boolVal and b.boolVal )
-    else:
-      todo "con ", a.kind, " and ", b.kind
+    of dkInteger: return DKInt( a.intVal and b.intVal )
+    of dkBoolean: return DKBool( a.boolVal and b.boolVal )
+    else: discard
+  todo "con ", a.kind, " and ", b.kind
 
 proc `or`*(a,b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
-    of dkBoolean:
-      return DKBool( a.boolVal or b.boolVal )
-    else:
-      todo "dis ", a.kind, " or ", b.kind
+    of dkInteger: return DKInt( a.intVal or b.intVal )
+    of dkBoolean: return DKBool( a.boolVal or b.boolVal )
+    else: discard
+  todo "dis ", a.kind, " or ", b.kind
+
+proc `shl`*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt( a.intVal shl b.intVal )
+    else: discard
+  todo "shl ", a.kind, " by ", b.kind
+
+proc `shr`*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt( a.intVal shr b.intVal )
+    else: discard
+  todo "shr ", a.kind, " by ", b.kind

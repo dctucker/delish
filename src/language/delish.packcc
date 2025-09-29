@@ -96,13 +96,14 @@ Block         <-
                / &Do    a:DoLoop
                / &While a:WhileLoop
                / &For   a:ForLoop
-               / a:Function
+               / a:FunctionDef
                )
               /  a:Subshell
               )                                                      { DK( Block    , a ); SL(a); }
 
 Statement     <-
-              (  a:VariableStmt / a:LocalStmt   / a:ArgStmt
+              (  a:VariableStmt / a:VarDerefStmt
+              /  a:LocalStmt    / a:ArgStmt
               /  a:EnvStmt      / a:IncludeStmt / a:StreamStmt
               /  a:CloseStmt    / a:RunStmt
               /  a:FunctionStmt / a:BreakStmt
@@ -129,9 +130,9 @@ ForLoop       <- For         S+ v:Variable                          ~{ ER( expec
                              S+ c:Body                              ~{ ER( expected_body ); }
                              _                                       { DK( ForLoop    , v, e, c ); }
 
-Function      <- !Keyword i:Identifier S* AssignOp
+FunctionDef   <- !Keyword i:Identifier S* AssignOp
                                        S* c:Body                    ~{ ER( expected_body ); }
-                                       _                             { DK( Function   , i, c ); }
+                                       _                             { DK( FunctionDef, i, c ); }
 
 Subshell      <- Sub   S+ c:Body                                    ~{ ER( expected_body ); }
                        _                                             { DK( Subshell   , c ); }
@@ -149,6 +150,8 @@ VariableStmt  <- &VarOp v:Variable                                  ~{ ER("inval
               /      S* o:AppendOp S* e:AppendExpr S*               ~{ ER( invalid_expression ); }
               /      S* o:RemoveOp S* e:AppendExpr S*               ~{ ER( invalid_expression ); }
               )                                                      { DK( VariableStmt, v, o, e ); }
+
+VarDerefStmt  <- &VarOp v:VarDeref S* o:AssignOp S* e:AssignExpr S*  { DK( VarDerefStmt, v, o, e ); }
 
 AssignExpr    <-
               (  e:OpenExpr / e:ArgExpr /  e:RunStmt
@@ -213,13 +216,19 @@ RunFlags      <-
               )
 
 FunctionStmt  <- !Keyword c:FunctionCall                             { DK( FunctionStmt, c ); SL(c); }
-FunctionCall  <- !Keyword
-              (  !Type i:Identifier                                  { DK( FunctionCall, i ); }
-              /  !Type v:Variable DerefOp i:Identifier               { DK( FunctionCall, DK( VarDeref, v ), i ); }
-              /        t:Type     DerefOp i:Identifier               { DK( FunctionCall, DK( Type, t ), i); }
-              )
-              (  S+ e:Expr                                           { NA( $$, e ); }
+FunctionCall  <- !Keyword c:Callable                                 { $$ = c; }
+              (                          S+ e:Expr                   { NA( $$, e ); }
               )*
+
+Callable      <- !Type i:Identifier                                  { DK( FunctionCall, DK( Callable, i ) ); }
+                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
+                                                            )*
+              /  !Type v:Variable                                    { DK( VarDeref, v ); }
+                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
+                                                            )+
+              /        t:Type                                        { DK( Type, t ); }
+                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
+                                                            )+
 
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
 EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }
@@ -242,7 +251,7 @@ ConstExpr     <-
               )                                                      { $$ = e; }
 
 Expr          <-
-              (  PLeft S* s:MathExpr S* PRight
+              (  s:MathExpr
               /  s:Array    / s:Object
               /  s:Arg      / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
@@ -262,17 +271,44 @@ AndExpr       <- l:AndExpr S+ o:BoolAnd S+ r:NotExpr                 { DK( CondE
 NotExpr       <- o:BoolNot S+ r:CondExpr                             { $$ = o; NA($$, r); }
                /              r:CondExpr                             { $$ = r; }
 CondExpr      <-
-              (  s:Arg / s:BoolExpr
+              (  s:Arg
+              /  s:BoolExpr
               /  s:FunctionCall
               /  s:VarDeref / s:Boolean
               )                                                      { $$ = s; }
 
-MathExpr      <- a:AddExpr                                           { $$ = a; }
-AddExpr       <- l:AddExpr S+ ( o:AddOp / o:SubOp ) S+ r:MulExpr     { DK( MathExpr, o, l, r ); }
+BitAnd        <- And                                                 { DK( BitAnd ); }
+BitOr         <- Or                                                  { DK( BitOr  ); }
+BitXor        <- Xor                                                 { DK( BitXor ); }
+BitShl        <- Shl                                                 { DK( BitShl ); }
+BitShr        <- Shr                                                 { DK( BitShr ); }
+
+MathExpr      <- PLeft S* a:BOrExpr S* PRight                        { $$ = a; }
+
+BOrExpr       <- l:BOrExpr  S+  o:BitOr
+                            S+                         r:BXorExpr    { DK( MathExpr, o, l, r ); }
+              /                                        r:BXorExpr    { $$ = r; }
+
+BXorExpr      <- l:BXorExpr S+  o:BitXor
+                            S+                         r:BAndExpr    { DK( MathExpr, o, l, r ); }
+              /                                        r:BAndExpr    { $$ = r; }
+
+BAndExpr      <- l:BAndExpr S+  o:BitAnd
+                            S+                         r:BShExpr     { DK( MathExpr, o, l, r ); }
+              /                                        r:BShExpr     { $$ = r; }
+
+BShExpr       <- l:BShExpr S+ ( o:BitShl / o:BitShr )
+                           S+                          r:AddExpr     { DK( MathExpr, o, l, r ); }
+              /                                        r:AddExpr     { $$ = r; }
+
+AddExpr       <- l:AddExpr S+ ( o:AddOp / o:SubOp )
+                           S+                          r:MulExpr     { DK( MathExpr, o, l, r ); }
                /                                       r:MulExpr     { $$ = r; }
-MulExpr       <- l:MulExpr S+ (o:MulOp / o:DivOp / o:ModOp)
-                           S+ r:PrimExpr                             { DK( MathExpr, o, l, r ); }
-               /              r:PrimExpr                             { $$ = r; }
+
+MulExpr       <- l:MulExpr S+ ( o:MulOp / o:DivOp / o:ModOp )
+                           S+                          r:PrimExpr    { DK( MathExpr, o, l, r ); }
+               /                                       r:PrimExpr    { $$ = r; }
+
 PrimExpr      <- e:Expr                                              { $$ = e; }
 
 BoolExpr      <-
@@ -291,6 +327,7 @@ Comparison    <- e1:CompExpr S+ o:CompOper S+ e2:CompExpr           ~{ ER("expec
 CompExpr      <-
               (  s:FunctionCall / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
+              /  s:MathExpr
               /  s:Number / s:Boolean / s:Path / s:Arg
               )                                                      { $$ = s; }
 CompOper      <-
@@ -300,7 +337,6 @@ CompOper      <-
 
 VarDeref      <-
               (  &VarOp n:Variable                                   { DK( VarDeref, n ); }
-              /         f:FunctionCall                               { DK( VarDeref, f ); }
               )
               (  DerefOp
                ( s:StrLiteral / s:Integer
@@ -320,16 +356,6 @@ AsyncFlag     <- Async                                               { DK( Async
 
 Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER("expected expression"); }
                                  S*        PRight                    { DK( Cast, t, e ); }
-
-Keyword       <-
-              (  Json   / Sub   / If       / Elif    / Else
-              /  Do     / While / For
-              /  In     / Out   / Err      / Include
-              /  True   / False / Env      / ArgKw   / Local
-              /  Return / Break / Continue
-              /  Async  / Redir / And      / Or      / Not
-              /  Push   / Pop   / Open     / Close   / Run
-              )
 
 Json          <- "json"
 Sub           <- "sub"
@@ -353,14 +379,27 @@ Break         <- "break"
 Continue      <- "continue"
 Async         <- "async"
 Redir         <- "redir"
+Shl           <- "shl"
+Shr           <- "shr"
 And           <- "and"
 Or            <- "or"
+Xor           <- "xor"
 Not           <- "not"
 Push          <- "push"                                              { DK( Push ); }
 Pop           <- "pop"                                               { DK( Pop ); }
 Open          <- "open"
 Close         <- "close"
 Run           <- "run"
+
+Keyword       <-
+              (  Json   / Sub   / If       / Elif    / Else
+              /  Do     / While / For
+              /  In     / Out   / Err      / Include
+              /  True   / False / Env      / ArgKw   / Local
+              /  Return / Break / Continue
+              /  Async  / Redir / And      / Or      / Not
+              /  Push   / Pop   / Open     / Close   / Run
+              )
 
 Type          <- "Integer"                                           { DK( Integer    ); }
               /  "Decimal"                                           { DK( Decimal    ); }
