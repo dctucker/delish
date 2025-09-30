@@ -264,10 +264,10 @@ Expr          <-
 Iterable      <- ( s:Array / s:VarDeref )                            { DK( Iterable, s ); }
 
 Condition     <- a:OrExpr                                            { $$ = a; }
-OrExpr        <- l:OrExpr  S+ o:BoolOr  S+ r:AndExpr                 { DK( CondExpr, o, l, r); }
-               /                           r:AndExpr                 { $$ = r; }
-AndExpr       <- l:AndExpr S+ o:BoolAnd S+ r:NotExpr                 { DK( CondExpr, o, l, r); }
-               /                           r:NotExpr                 { $$ = r; }
+OrExpr        <- l:OrExpr  S+ ( o:BoolOr / o:BoolNor  ) S+ r:AndExpr { DK( CondExpr, o, l, r); }
+               /                                           r:AndExpr { $$ = r; }
+AndExpr       <- l:AndExpr S+ (o:BoolAnd / o:BoolNand ) S+ r:NotExpr { DK( CondExpr, o, l, r); }
+               /                                           r:NotExpr { $$ = r; }
 NotExpr       <- o:BoolNot S+ r:CondExpr                             { $$ = o; NA($$, r); }
                /              r:CondExpr                             { $$ = r; }
 CondExpr      <-
@@ -277,23 +277,26 @@ CondExpr      <-
               /  s:VarDeref / s:Boolean
               )                                                      { $$ = s; }
 
+BitNand       <- Nand                                                { DK( BitNand ); }
+BitNor        <- Nor                                                 { DK( BitNor  ); }
 BitAnd        <- And                                                 { DK( BitAnd ); }
 BitOr         <- Or                                                  { DK( BitOr  ); }
 BitXor        <- Xor                                                 { DK( BitXor ); }
+BitXnor       <- Xnor                                                { DK( BitXnor ); }
 BitShl        <- Shl                                                 { DK( BitShl ); }
 BitShr        <- Shr                                                 { DK( BitShr ); }
 
 MathExpr      <- PLeft S* a:BOrExpr S* PRight                        { $$ = a; }
 
-BOrExpr       <- l:BOrExpr  S+  o:BitOr
+BOrExpr       <- l:BOrExpr  S+ ( o:BitOr / o:BitNor )
                             S+                         r:BXorExpr    { DK( MathExpr, o, l, r ); }
               /                                        r:BXorExpr    { $$ = r; }
 
-BXorExpr      <- l:BXorExpr S+  o:BitXor
+BXorExpr      <- l:BXorExpr S+ ( o:BitXor / o:BitXnor )
                             S+                         r:BAndExpr    { DK( MathExpr, o, l, r ); }
               /                                        r:BAndExpr    { $$ = r; }
 
-BAndExpr      <- l:BAndExpr S+  o:BitAnd
+BAndExpr      <- l:BAndExpr S+ ( o:BitAnd / o:BitNand )
                             S+                         r:BShExpr     { DK( MathExpr, o, l, r ); }
               /                                        r:BShExpr     { $$ = r; }
 
@@ -317,10 +320,12 @@ BoolExpr      <-
               )(  S+ o:BoolOp2 S+ b:BoolExpr                         { DK( BoolExpr, o, $$, c); }
               )*
 
-BoolOp2       <- o:BoolOr / o:BoolAnd                                { DK( BoolOp2, o ); }
+BoolOp2       <- o:BoolOr / o:BoolNor / o:BoolAnd / o:BoolNand       { DK( BoolOp2, o ); }
 BoolNot       <- Not                                                 { DK( BoolNot ); }
 BoolOr        <- Or                                                  { DK( BoolOr ); }
 BoolAnd       <- And                                                 { DK( BoolAnd ); }
+BoolNor       <- Nor                                                 { DK( BoolNor ); }
+BoolNand      <- Nand                                                { DK( BoolNand ); }
 
 Comparison    <- e1:CompExpr S+ o:CompOper S+ e2:CompExpr           ~{ ER("expected comparable expression"); }
                                                                      { DK( Comparison, o, e1, e2 ); }
@@ -383,7 +388,10 @@ Shl           <- "shl"
 Shr           <- "shr"
 And           <- "and"
 Or            <- "or"
+Nand          <- "nand"
+Nor           <- "nor"
 Xor           <- "xor"
+Xnor          <- "xnor"
 Not           <- "not"
 Push          <- "push"                                              { DK( Push ); }
 Pop           <- "pop"                                               { DK( Pop ); }
