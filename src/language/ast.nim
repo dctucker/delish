@@ -235,6 +235,8 @@ proc objFormat(node: DeliNode): string =
   result &= "]"
 
 proc arrayFormat(node: DeliNode): string =
+  if node.sons.len == 0:
+    return "[]"
   result = "[ "
   for value in node.sons:
     result &= value.toString() & ", "

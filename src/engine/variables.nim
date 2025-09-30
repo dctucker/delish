@@ -9,11 +9,9 @@ proc printVariables(engine: Engine) =
       stdout.write("\n")
 
 proc getVariable*(engine: Engine, name: string): DeliNode =
-  var stack = engine.locals.toSeq()
-  for i in countdown(stack.high, stack.low):
-    let locals = stack[i]
-    if locals.contains(name):
-      return locals[name]
+  let locals = engine.locals.peek
+  if locals.contains(name):
+    return locals[name]
   if engine.variables.contains(name):
     return engine.variables[name]
   elif engine.envars.contains(name):

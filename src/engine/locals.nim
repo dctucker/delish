@@ -22,14 +22,9 @@ proc pushLocals(engine: Engine) =
   var arguments: seq[Argument] = @[]
   engine.argstack.push(arguments)
   engine.retvals.push(deliNone())
+
   #debug 3:
   #  echo "  push locals ", engine.locals
-
-proc setupPush(engine: Engine, line: int, table: DeliTable) =
-  var inner = DKInner(line, DK(dkPush))
-  for k,v in table.pairs():
-    inner.sons.add(DK(dkLocalStmt, DKVar(k), DK( dkAssignOp ), v))
-  engine.insertStmt(inner)
 
 proc popLocals(engine: Engine) =
   debug 3:
@@ -40,6 +35,12 @@ proc popLocals(engine: Engine) =
   engine.argnum = 1
   debug 3:
     echo "  pop locals after ", engine.locals, ", retvals ", engine.retvals
+
+proc setupPush(engine: Engine, line: int, table: DeliTable) =
+  var inner = DKInner(line, DK(dkPush))
+  for k,v in table.pairs():
+    inner.sons.add(DK(dkLocalStmt, DKVar(k), DK( dkAssignOp ), v))
+  engine.insertStmt(inner)
 
 proc setupPop(engine: Engine, line: int) =
   engine.insertStmt( DKInner(line, DK(dkPop)) )

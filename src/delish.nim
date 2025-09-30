@@ -1,3 +1,7 @@
+const nimprof {.booldefine.}: bool = false
+when nimprof:
+  import nimprof
+
 import std/[
   times,
   strutils,

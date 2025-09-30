@@ -8,6 +8,9 @@ SOURCES=$(wildcard src/**/*.nim)
 debug: src/language/packcc.c $(SOURCES)
 	nimble build -f -d:deepDebug
 
+profile: src/language/packcc.c $(SOURCES)
+	nimble build -f -d:nimprof --profiler:on --stacktrace:on
+
 release: debug
 	nimble build -d:release --passC:-ffast-math --opt:size
 
