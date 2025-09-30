@@ -1,1 +1,1 @@
-autocmd BufRead,BufNewFile *.deli set filetype=deli
+autocmd BufRead,BufNewFile *.deli,.delirc set filetype=deli

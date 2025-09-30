@@ -13,16 +13,19 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
     b = b.toKind(dkDecimal)
 
   return case op.kind
-  of dkAddOp: a  +  b
-  of dkSubOp: a  -  b
-  of dkMulOp: a  *  b
-  of dkDivOp: a  /  b
-  of dkModOp: a mod b
-  of dkBitOr : a or  b
-  of dkBitAnd: a and b
-  of dkBitXor: a xor b
-  of dkBitShl: a shl b
-  of dkBitShr: a shr b
+  of dkAddOp  : a  +   b
+  of dkSubOp  : a  -   b
+  of dkMulOp  : a  *   b
+  of dkDivOp  : a  /   b
+  of dkModOp  : a mod  b
+  of dkBitOr  : a or   b
+  of dkBitAnd : a and  b
+  of dkBitXor : a xor  b
+  of dkBitNor : a.nor  b
+  of dkBitNand: a.nand b
+  of dkBitXnor: a.xnor b
+  of dkBitShl : a shl  b
+  of dkBitShr : a shr  b
   else:
     todo "evalMath " & $op
     deliNone()
@@ -52,6 +55,16 @@ proc evalCondExpr(engine: Engine, op: DeliNode, v1: DeliNode, v2: DeliNode): Del
     if v1.boolVal == true:
       return v1
     return engine.evaluate(v2).toBoolean()
+  of dkBoolNand:
+    let v1 = not engine.evaluate(v1).toBoolean()
+    if v1.boolVal == true:
+      return v1
+    return not engine.evaluate(v2).toBoolean()
+  of dkBoolNor:
+    let v1 = not engine.evaluate(v1).toBoolean()
+    if v1.boolVal == false:
+      return v1
+    return not engine.evaluate(v2).toBoolean()
   else:
     todo "evalCondExpr ", op.kind
 

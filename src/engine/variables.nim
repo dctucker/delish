@@ -55,7 +55,8 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
         result = result.sons[idx]
       else:
         result = deliNone()
-    of dkInteger,
+    of dkString,
+       dkInteger,
        dkPath:
       if son.kind == dkIdentifier:
         # TODO this shouldn't execute the function, it should turn it into a function call

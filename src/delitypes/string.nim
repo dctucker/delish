@@ -1,4 +1,5 @@
 import ./common
+import strutils
 
 proc asString*(src: DeliNode): DeliNode
 
@@ -43,3 +44,19 @@ proc asString*(src: DeliNode): DeliNode =
      dkRan:        src.objectToString
   of dkDateTime:   $(src.dtVal)
   else: $src.kind & "?"
+
+
+proc dSplit(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextarg dkString
+  let str = arg
+  nextopt DKStr(" ")
+  let sep = arg
+
+  result = DK(dkArray)
+  for s in str.strVal.split(sep.strVal):
+    result.sons.add DKStr(s)
+
+let StringFunctions* = {
+  "split": dSplit,
+}.toTable

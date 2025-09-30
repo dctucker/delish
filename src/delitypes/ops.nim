@@ -196,6 +196,14 @@ proc `xor`*(a,b: DeliNode): DeliNode =
     else: discard
   todo "excl ", a.kind, " xor ", b.kind
 
+proc xnor*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt(  not ( a.intVal xor b.intVal ) )
+    of dkBoolean: return DKBool( not ( a.boolVal xor b.boolVal ) )
+    else: discard
+  todo "conn ", a.kind, " nxor ", b.kind
+
 proc `and`*(a,b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
@@ -204,6 +212,14 @@ proc `and`*(a,b: DeliNode): DeliNode =
     else: discard
   todo "con ", a.kind, " and ", b.kind
 
+proc nand*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt(  not ( a.intVal  and b.intVal  ) )
+    of dkBoolean: return DKBool( not ( a.boolVal and b.boolVal ) )
+    else: discard
+  todo "ncon ", a.kind, " nand ", b.kind
+
 proc `or`*(a,b: DeliNode): DeliNode =
   if a.kind == b.kind:
     case a.kind
@@ -211,6 +227,14 @@ proc `or`*(a,b: DeliNode): DeliNode =
     of dkBoolean: return DKBool( a.boolVal or b.boolVal )
     else: discard
   todo "dis ", a.kind, " or ", b.kind
+
+proc nor*(a,b: DeliNode): DeliNode =
+  if a.kind == b.kind:
+    case a.kind
+    of dkInteger: return DKInt(  not ( a.intVal  or b.intVal  ) )
+    of dkBoolean: return DKBool( not ( a.boolVal or b.boolVal ) )
+    else: discard
+  todo "ndis ", a.kind, " nor ", b.kind
 
 proc `shl`*(a,b: DeliNode): DeliNode =
   if a.kind == b.kind:

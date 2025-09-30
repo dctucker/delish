@@ -1,4 +1,3 @@
-import unittest
 import ./common
 
 proc setupParser(source_path: string): Parser =

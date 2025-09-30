@@ -1,4 +1,3 @@
-import unittest
 import std/strutils
 import ./common
 

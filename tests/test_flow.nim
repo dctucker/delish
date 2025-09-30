@@ -1,4 +1,3 @@
-import unittest
 import ./common
 
 suite "flow control":
