@@ -1,41 +1,56 @@
+longdesc = {
+  arg $stat
+  $modes = ""
+  if $stat.test -L {
+    $modes += "l"
+  } elif $stat.test -d {
+    $modes += "d"
+  } elif $stat.test -f {
+    $modes += "-"
+  } elif $stat.test -b {
+    $modes += "b"
+  } elif $stat.test -c {
+    $modes += "c"
+  } elif $stat.test -k {
+    $modes += "k"
+  } elif $stat.test -p {
+    $modes += "p"
+  } elif $stat.test -S {
+    $modes += "s"
+  } else {
+    $modes += "?"
+  }
+  $curmode = 0400
+  $modechar = [ 'r', 'w', 'x' ]
+  $seq = Array.seq 1 9
+  for $i in $seq {
+    if ( $stat.mode and $curmode ) != 0 {
+      $j = ( ( $i - 1 ) % 3 )
+      $modes += $modechar.$j
+    } else {
+      $modes += "-"
+    }
+    $curmode = ( $curmode shr 1 )
+  }
+  return $modes
+}
+
+ll = {
+  $list = Path.pwd.list -l
+
+  for $st in $list {
+    $modes = longdesc $st
+    out $modes, " ", $st.path
+  }
+}
+
 ls = {
   local $pwd = Path.pwd
   for $f in $pwd.list {
-    $stat = $f.stat
-    local $modes = ['-','-','-','-','-','-','-','-','-','-']
-    if $stat.test -L {
-      $modes.0 = "l"
-    } elif $stat.test -d {
-      $modes.0 = "d"
-    } elif $stat.test -f {
-      $modes.0 = "-"
-    } elif $stat.test -b {
-      $modes.0 = "b"
-    } elif $stat.test -c {
-      $modes.0 = "c"
-    } elif $stat.test -k {
-      $modes.0 = "k"
-    } elif $stat.test -p {
-      $modes.0 = "p"
-    } elif $stat.test -S {
-      $modes.0 = "s"
-    } else {
-      $modes.0 = "?"
-    }
-    $curmode = 0400
-    $modechar = [ 'r', 'w', 'x' ]
-    $seq = Array.seq 1 9
-    for $i in $seq {
-      if ( $stat.mode and $curmode ) != 0 {
-        $j = ( ( $i - 1 ) % 3 )
-        $modes.$i = $modechar.$j
-      } else {
-        $modes.$i = "-"
-      }
-      $curmode = ( $curmode shr 1 )
-    }
-    out $modes.join, " ", $f
+    $modes = longdesc $f.stat
+    out $modes, " ", $f
     #.stat.mode.oct, " ", $f
   }
 }
-ls
+
+ll

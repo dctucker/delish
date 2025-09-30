@@ -129,13 +129,13 @@ proc testFunc2(op: string): proc(st1, st2: Stat): bool {.nimcall.} =
   else: nop2
 
 converter toStat(node: DeliNode): Stat =
-  result.st_dev       = node.table["dev"].intVal.uint
-  result.st_ino       = node.table["ino"].intVal.uint
+  result.st_dev       = node.table["dev"].intVal.Dev
+  result.st_ino       = node.table["ino"].intVal.Ino
   result.st_mode      = node.table["mode"].intVal.Mode
-  result.st_nlink     = node.table["nlink"].intVal.uint
+  result.st_nlink     = node.table["nlink"].intVal.Nlink
   result.st_uid       = node.table["uid"].intVal.Uid
   result.st_gid       = node.table["gid"].intVal.Gid
-  result.st_rdev      = node.table["rdev"].intVal.uint
+  result.st_rdev      = node.table["rdev"].intVal.Dev
   result.st_size      = node.table["size"].intVal.Off
   result.st_atim      = node.table["atime"].decVal.toTimespec
   result.st_mtim      = node.table["mtime"].decVal.toTimespec
@@ -145,6 +145,8 @@ converter toStat(node: DeliNode): Stat =
 
 converter toStatMode(node: DeliNode): Stat =
   result.st_mode      = node.table["mode"].intVal.Mode
+
+
 
 proc dTest(nodes: varargs[DeliNode]): DeliNode =
   #echo "dTest ", nodes
@@ -214,14 +216,7 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
       raise newException(ValueError, "Unsupported test argument: " & op.kind.name & ":" & $op)
   else: discard
 
-proc dStat(nodes: varargs[DeliNode]): DeliNode =
-  argvars
-  nextarg dkPath
-  let path = arg
-  maxarg
-  var st = Stat()
-  if lstat(path.strVal.cstring, st) != 0:
-    return deliNone()
+converter toObject(st: Stat): DeliNode =
   result = DeliObject([
     ("dev",     DKInt(st.st_dev.int)),
     ("ino",     DKInt(st.st_ino.int)),
@@ -238,6 +233,16 @@ proc dStat(nodes: varargs[DeliNode]): DeliNode =
     ("blocks",  DKInt(st.st_blocks)),
   ])
   result.table["test"] = DKCallable(dTest, @[result])
+
+proc dStat(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextarg dkPath
+  let path = arg
+  maxarg
+  var st = Stat()
+  if lstat(path.strVal.cstring, st) != 0:
+    return deliNone()
+  return st.toObject
 
 # file and directory operations
 proc dChdir(nodes: varargs[DeliNode]): DeliNode =
@@ -260,6 +265,18 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
   argvars
   nextarg dkPath
   let path = arg
+
+  var opt = DKArg("0")
+  var long = false
+  if arg_i < nodes.len:
+    arg = nodes[arg_i]
+    arg_i += 1
+    express
+    opt = arg
+
+  if opt.argName == "l":
+    long = true
+
   result = DK(dkArray)
   result.sons = walkDir(path.strVal, relative=true).toSeq.sorted(
     proc(e1, e2: PathEntry): int =
@@ -268,7 +285,13 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
       return system.cmp[string](s1, s2)
   ).map(
     proc(e: PathEntry): DeliNode =
-      return DKPath(e.path)
+      if long:
+        var st = Stat()
+        discard lstat(e.path.cstring, st)
+        result = st.toObject
+        result.table["path"] = DKPath(e.path)
+      else:
+        result = DKPath(e.path)
   )
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
