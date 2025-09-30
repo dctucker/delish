@@ -118,6 +118,76 @@ proc isOlder(file1: string, file2: string): bool =        # -ot FILE1 -ot FILE2 
 proc DKTime(time: Timespec): DeliNode =
   return DKDecimal(time.tv_sec.int, time.tv_nsec, 9)
 
+proc dTest(nodes: varargs[DeliNode]): DeliNode =
+  echo "dTest ", nodes
+  argvars
+  shift
+  result = deliNone()
+
+  case arg.kind
+  of dkObject: # hope it's a stat object
+    let stat = arg
+
+    shift
+    express
+    let op = arg
+    case op.kind
+    of dkArg,
+       dkArgShort,
+       dkArgLong:
+      case op.argName
+      of "d": return DKBool( S_ISDIR(stat.table["mode"].intVal.Mode) )
+      else: return deliNone()
+    else: return deliNone()
+
+  of dkPath:
+    let path = arg
+
+    shift
+    express
+    let op = arg
+    case op.kind
+    of dkArg,
+       dkArgShort,
+       dkArgLong:
+      let fn1 = case op.argName
+      of "b", "block":  isBlock
+      of "c", "char":   isChar
+      of "d", "dir":    isDir
+      of "e", "exists": exists
+      of "f", "file":   isRegular
+      of "g", "sgid":   isSetGID
+      of "G", "group":  isOwnGroup
+      of "k", "sticky": isSticky
+      of "L", "link":   isLink
+      of "N", "unread": isUnread
+      of "O", "owner":  isOwnUser
+      of "p", "pipe":   isPipe
+      of "r", "read":   isReadable
+      of "s", "size":   isNonzero
+      of "S", "socket": isSocket
+      of "u", "suid":   isSetUID
+      of "w", "write":  isWriteable
+      of "x", "exec":   isExecutable
+      else:             nop
+      if fn1 != nop:
+        return DKBool( fn1(path.strVal) )
+
+      let fn2 = case op.argName
+      of "n", "newer":         isNewer
+      of "o", "older":         isOlder
+      of "i", "equal", "same": isSame
+      else:
+        raise newException(ValueError, "Unknown test argument: " & $op & " / " & op.argName)
+
+      shift
+      let path2 = arg
+      return DKBool( fn2(path.strVal, path2.strVal) )
+
+    else:
+      echo $op
+  else: discard
+
 proc dStat(nodes: varargs[DeliNode]): DeliNode =
   argvars
   nextarg dkPath
@@ -141,57 +211,7 @@ proc dStat(nodes: varargs[DeliNode]): DeliNode =
     ("blksize", DKInt(st.st_blksize)),
     ("blocks",  DKInt(st.st_blocks)),
   ])
-
-proc dTest(nodes: varargs[DeliNode]): DeliNode =
-  argvars
-  shift
-  result = deliNone()
-
-  let path = arg
-
-  shift
-  express
-  let op = arg
-  case op.kind
-  of dkArg,
-     dkArgShort,
-     dkArgLong:
-    let fn1 = case op.argName
-    of "b", "block":  isBlock
-    of "c", "char":   isChar
-    of "d", "dir":    isDir
-    of "e", "exists": exists
-    of "f", "file":   isRegular
-    of "g", "sgid":   isSetGID
-    of "G", "group":  isOwnGroup
-    of "k", "sticky": isSticky
-    of "L", "link":   isLink
-    of "N", "unread": isUnread
-    of "O", "owner":  isOwnUser
-    of "p", "pipe":   isPipe
-    of "r", "read":   isReadable
-    of "s", "size":   isNonzero
-    of "S", "socket": isSocket
-    of "u", "suid":   isSetUID
-    of "w", "write":  isWriteable
-    of "x", "exec":   isExecutable
-    else:             nop
-    if fn1 != nop:
-      return DKBool( fn1(path.strVal) )
-
-    let fn2 = case op.argName
-    of "n", "newer":         isNewer
-    of "o", "older":         isOlder
-    of "i", "equal", "same": isSame
-    else:
-      raise newException(ValueError, "Unknown test argument: " & $op & " / " & op.argName)
-
-    shift
-    let path2 = arg
-    return DKBool( fn2(path.strVal, path2.strVal) )
-
-  else:
-    echo $op
+  result.table["test"] = DKCallable(dTest, @[result])
 
 # file and directory operations
 proc dChdir(nodes: varargs[DeliNode]): DeliNode =

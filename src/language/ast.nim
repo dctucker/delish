@@ -292,7 +292,7 @@ proc toString*(node: DeliNode): string =
     argFormat(node)
   of dkCallable:
     if node.function != nil:
-      node.function.repr
+      "Function=" & node.function.repr
     else:
       ""
   of dkJump:

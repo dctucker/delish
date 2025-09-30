@@ -157,7 +157,16 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
   var c = callable
   while c.kind == dkCallable and c.function == nil:
     if c.sons[0].kind == dkObject:
-      return c.sons[0].table[c.sons[1].id]
+      let value = c.sons[0].table[c.sons[1].id]
+      if value.kind == dkCallable and value.function != nil:
+        var nextArgs: seq[DeliNode]
+        for arg in value.sons:
+          nextArgs.add arg
+        for arg in args:
+          nextArgs.add arg
+        return value.function(nextArgs)
+      else:
+        return value
     c = engine.evalCallable(c)
     debug 1:
       echo "evalCallback returned ", c.repr

@@ -45,7 +45,7 @@ suite "type functions":
     let stat = fn(DKPath("."))
     check:
       stat.kind == dkObject
-      stat.table.keys.toSeq == ["dev","ino","mode","nlink","uid","gid","rdev","size","atime","mtime","ctime","blksize","blocks"]
+      stat.table.keys.toSeq == ["dev","ino","mode","nlink","uid","gid","rdev","size","atime","mtime","ctime","blksize","blocks","test"]
 
   test "Path.test":
     let fn = typeFunction(dkPath, DKid("test"))
