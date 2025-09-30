@@ -2,18 +2,29 @@ ls = {
   local $pwd = Path.pwd
   for $f in $pwd.list {
     $stat = $f.stat
-    local $mode = $stat.mode
     local $modes = ['-','-','-','-','-','-','-','-','-','-']
-    if ( $mode and 0120000 ) == 0120000 {
+    if $stat.test -L {
       $modes.0 = "l"
-    } elif ( $mode and 040000 ) != 0 {
+    } elif $stat.test -d {
       $modes.0 = "d"
+    } elif $stat.test -f {
+      $modes.0 = "-"
+    } elif $stat.test -b {
+      $modes.0 = "b"
+    } elif $stat.test -c {
+      $modes.0 = "c"
+    } elif $stat.test -k {
+      $modes.0 = "k"
+    } elif $stat.test -p {
+      $modes.0 = "p"
+    } elif $stat.test -S {
+      $modes.0 = "s"
     }
     $curmode = 0400
     $modechar = [ 'r', 'w', 'x' ]
     $seq = Array.seq 1 9
     for $i in $seq {
-      if ( $mode and $curmode ) != 0 {
+      if ( $stat.mode and $curmode ) != 0 {
         $j = ( ( $i - 1 ) % 3 )
         $modes.$i = $modechar.$j
       }
