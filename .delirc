@@ -19,6 +19,8 @@ ls = {
       $modes.0 = "p"
     } elif $stat.test -S {
       $modes.0 = "s"
+    } else {
+      $modes.0 = "?"
     }
     $curmode = 0400
     $modechar = [ 'r', 'w', 'x' ]
@@ -27,6 +29,8 @@ ls = {
       if ( $stat.mode and $curmode ) != 0 {
         $j = ( ( $i - 1 ) % 3 )
         $modes.$i = $modechar.$j
+      } else {
+        $modes.$i = "-"
       }
       $curmode = ( $curmode shr 1 )
     }

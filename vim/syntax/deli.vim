@@ -1,22 +1,24 @@
 
 syn match  deliDollarVar  '\$\h\w*'
 syn match  deliQuoted     '\\.'
-syn match  deliComment    '^#.*'
+syn match  deliComment    '^\s*#.*$'
 syn match  deliPath       '\.*/[A-Za-z._/-]*'
 syn match  deliArgument   '--\h[A-Za-z_-]*'
 syn match  deliArgument   '\s-\h\s'
-syn match  deliOperator   '=\~\|=\|+=\|==\|!=\||=\|<\|>'
+syn match  deliOperator   '=\~\|=\|+=\|==\|!=\||=\|<\|>\|%'
 syn match  deliRegex      'r/[^/]\+/'
 syn region deliString matchgroup=deliStringDelimiter start=+"+  end=+"+ fold contains=deliDollarVar,deliQuoted
 syn region deliString matchgroup=deliStringDelimiter start=+'+  end=+'+ fold
 " syn region deliRegex  matchgroup=deliRegexDelimiter  start=+r/+ end=+/+ fold contains=deliQuoted
-syn region deliFunction   start=+\w*(+ end=+)+ fold contains=deliString,deliDollarVar,deliMacro,deliReserved,deliPath
+syn region deliFunction   start=+\w*(+ end=+)+ fold contains=deliString,deliDollarVar,deliMacro,deliReserved,deliPath,deliFunction
 " syn region deliRunStatement start=+\s*run&\? + end=+$+ fold contains=deliString,deliDollarVar,deliArgument
 
-syn keyword deliReserved return break continue for if assert exit arg redir async include and or not set env local run prompt pipe open match
-syn keyword deliMacro in out err true false
+syn keyword deliReserved json sub if elif else do while for include env arg local return break continue async redir shl shr and or nand nor xor xnor not push pop open close run
+syn keyword deliMacro    in out err true false
+syn keyword deliType     Integer Decimal DateTime Arg Array Boolean Identifier Path Object Regex Stream String Variable
 
 hi def link deliReserved         Keyword
+hi def link deliType             Typedef
 hi def link deliDollarVar        Identifier
 hi def link deliString           String
 hi def link deliStringDelimiter  String
