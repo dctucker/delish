@@ -78,7 +78,7 @@ proc parse*(parser: Parser): DeliNode =
   parser.nodes = @[deliNone()]
   discard packcc_main(cstr, parser.script.source.len.cint, parser)
   if parser.brackets.len > 0:
-    let b = parser.brackets.pop()
+    let b = parser.brackets.popUnsafe()
     parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
@@ -139,7 +139,7 @@ proc bracket(parser: Parser, pos: int, c: char, d: int8) {.exportc.} =
     if parser.brackets.len == 0:
       parser.errors.add(ErrorMsg(pos: pos, msg: "Unexpected `" & $c))
       return
-    let c1 = parser.brackets.pop()
+    let c1 = parser.brackets.popUnsafe()
     if c1 != c:
       parser.errors.add(ErrorMsg(pos: pos, msg: "Expected `" & $c1 & "`, got `" & $c & "`"))
 
@@ -254,14 +254,14 @@ when deepDebug:
     parser.metrics[k].evaluate += 1
 
   proc noMatch(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
-    discard parser.symbol_stack.pop()
+    discard parser.symbol_stack.popUnsafe()
     debug 2:
       stderr.write "\r", pos, cDark, parser.symbols, cRed, k.name, cNorm
 
     parser.metrics[k].noMatch += 1
 
   proc match(parser: Parser, k: DeliKind, pos: int, matchStr: string) {.inline.} =
-    discard parser.symbol_stack.pop()
+    discard parser.symbol_stack.popUnsafe()
     debug 2:
       if pos != lastpos:
         stderr.write "\r", cSave, pos, cClear, cDark, parser.symbols, cNorm, k.name, ": ", cToken, matchStr, cNorm, "\n"
@@ -279,6 +279,8 @@ proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize
 
   parser.parsed_len = max(parser.parsed_len, pos.int)
   parser.max_depth = max(parser.max_depth, level)
+
+  if parser.debug == 0: return
 
   when deepDebug:
     var capture = ""
