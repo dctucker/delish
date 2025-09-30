@@ -15,7 +15,6 @@ type
     argnum:     int
     variables:  DeliTable
     locals:     Stack[ DeliTable ]
-    #localnames: set[string]
     envars:     Table[string, string]
     functions:  DeliTable
     current:    DeliNode

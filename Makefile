@@ -9,7 +9,7 @@ debug: src/language/packcc.c $(SOURCES)
 	nimble build -f -d:deepDebug
 
 profile: src/language/packcc.c $(SOURCES)
-	nimble build -f -d:nimprof --profiler:on --stacktrace:on
+	nimble build -f -d:profiler --profiler:on --stacktrace:on
 
 release: debug
 	nimble build -d:release --passC:-ffast-math --opt:size

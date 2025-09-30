@@ -8,12 +8,12 @@ import
     tables,
     times,
   ],
-  stacks,
   ./language/[
     ast,
     parser,
   ],
   ./[
+    stacks,
     argument,
     deliscript,
     deliprocess,

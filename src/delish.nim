@@ -1,5 +1,5 @@
-const nimprof {.booldefine.}: bool = false
-when nimprof:
+const profiler {.booldefine.}: bool = false
+when profiler:
   import nimprof
 
 import std/[

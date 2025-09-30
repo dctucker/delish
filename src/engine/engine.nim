@@ -17,8 +17,6 @@ proc setupError(engine: Engine, msg: varargs[string,`$`]) =
   raise SetupError(msg: "(setup) " & message)
 
 proc setHeads(engine: Engine, list: DeliListNode) =
-  if list == nil:
-    engine.setupError("can't set next node to nil")
   engine.readhead = list
   engine.writehead = engine.readhead
 

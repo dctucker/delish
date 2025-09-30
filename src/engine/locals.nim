@@ -1,8 +1,8 @@
 ### Locals ###
 
 proc printLocals(engine: Engine) =
-  let layer = engine.locals.peek()
   debug 2:
+    let layer = engine.locals.peek()
     echo "\27[36m== Local Variables (", layer.len(), ") =="
     for k,v in layer:
       stdout.write("  $", k, " = ")
@@ -10,7 +10,7 @@ proc printLocals(engine: Engine) =
       stdout.write("\n")
 
 proc assignLocal(engine: Engine, key: string, value: DeliNode) =
-  var locals = engine.locals.pop()
+  var locals = engine.locals.popUnsafe()
   locals[key] = value
   engine.locals.push(locals)
   debug 3:
@@ -29,9 +29,9 @@ proc pushLocals(engine: Engine) =
 proc popLocals(engine: Engine) =
   debug 3:
     echo "  pop locals before ", engine.locals, ", retvals ", engine.retvals
-  discard engine.locals.pop()
-  discard engine.argstack.pop()
-  engine.assignLocal(".returned", engine.retvals.pop())
+  discard engine.locals.popUnsafe()
+  discard engine.argstack.popUnsafe()
+  engine.assignLocal(".returned", engine.retvals.popUnsafe())
   engine.argnum = 1
   debug 3:
     echo "  pop locals after ", engine.locals, ", retvals ", engine.retvals
@@ -46,6 +46,4 @@ proc setupPop(engine: Engine, line: int) =
   engine.insertStmt( DKInner(line, DK(dkPop)) )
 
 proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
-  var locals = engine.locals.pop()
-  locals[name.varName] = engine.evaluate(default)
-  engine.locals.push(locals)
+  engine.locals.peekUnsafe[name.varName] = engine.evaluate(default)

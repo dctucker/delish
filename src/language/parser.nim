@@ -3,8 +3,8 @@ import std/[
   strutils,
   tables,
 ]
-import stacks
 import ./ast
+import ../stacks
 import ../deliscript
 import ../delitypes/parse
 
@@ -37,8 +37,8 @@ proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
 proc initParser(parser: Parser) =
   parser.symbol_stack.clear
-  parser.errors = @[]
   parser.brackets.clear
+  parser.errors = @[]
   parser.metrics.clear
 
 template debug(level: int, code: untyped) =

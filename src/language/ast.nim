@@ -31,6 +31,7 @@ type
   DeliList* = SinglyLinkedList[DeliNode]
   DeliListNode* = SinglyLinkedNode[DeliNode]
   DeliTable* = OrderedTable[string, DeliNode]
+  DeliFastTable* = Table[string, DeliNode]
 
   Decimal* = object
     whole*, fraction*, decimals*: int

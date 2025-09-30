@@ -9,7 +9,7 @@ proc printVariables(engine: Engine) =
       stdout.write("\n")
 
 proc getVariable*(engine: Engine, name: string): DeliNode =
-  let locals = engine.locals.peek
+  let locals = engine.locals.peekUnsafe
   if locals.contains(name):
     return locals[name]
   if engine.variables.contains(name):
@@ -70,7 +70,7 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
 proc assignVariable(engine: Engine, key: string, value: DeliNode) =
   debug 3:
     stdout.write "  "
-  if engine.locals.peek().contains(key):
+  if engine.locals.peekUnsafe.contains(key):
     engine.assignLocal(key, value)
     debug 3:
       stdout.write "local "
