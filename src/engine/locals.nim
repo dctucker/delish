@@ -10,9 +10,7 @@ proc printLocals(engine: Engine) =
       stdout.write("\n")
 
 proc assignLocal(engine: Engine, key: string, value: DeliNode) =
-  var locals = engine.locals.popUnsafe()
-  locals[key] = value
-  engine.locals.push(locals)
+  engine.locals.peekUnsafe[key] = value
   debug 3:
     echo "  locals = ", $(engine.locals)
 

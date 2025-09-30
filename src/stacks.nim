@@ -49,9 +49,6 @@ proc len* [T](s: Stack[T]): int =
     ##   assert a.len == 2
     s.data.len()
 
-proc empty* [T](s: Stack[T]): bool {.deprecated: "use isEmpty() instead".} =
-    s.data.len() == 0
-
 proc isEmpty* [T](s: Stack[T]): bool =
     ## Returns `true` if stack contains no elements, `false` otherwise.
     ##
@@ -85,7 +82,7 @@ proc pop* [T](s: var Stack[T]): T {.raises: [EStackEmpty].} =
     else:
         raise newException(EStackEmpty, "Cannot pop an empty stack")
 
-proc popUnsafe* [T](s: var Stack[T]): T =
+proc popUnsafe* [T](s: var Stack[T]): T {.inline.} =
     ## Pops the top element from the stack without checking if it's not empty.
     ## Make sure the stack is not empty.
     ##
@@ -119,7 +116,7 @@ template peekUnsafe* [T](s: Stack[T]): T =
     ##   check(a.peekUnsafe() == 10)
     s.data[s.data.len - 1]
 
-proc clear* [T](s: var Stack[T]) =
+proc clear* [T](s: var Stack[T]) {.inline.} =
     ## Empties the stack. Does nothing if the stack is already empty.
     ##
     ## .. code-block:: Nim
