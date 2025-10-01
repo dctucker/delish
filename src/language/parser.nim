@@ -34,14 +34,7 @@ type
     metrics:      OrderedTable[DeliKind,Metric]
     max_depth:    int
 
-  Auxil* = ref object
-    input: cstring
-    offset: csize_t
-    length: csize_t
-    parser: Parser
-
 proc packcc_main(input: cstring, offset, len: cint, parser: Parser): cint {.importc.}
-#proc deli_parse(deli_context_t *ctx, ret: pointer): cint {.importc.}
 
 proc initParser(parser: Parser) =
   parser.symbol_stack.clear
@@ -80,13 +73,73 @@ proc printMetrics*(parser: Parser) =
   total.printMetric "Total"
   stderr.write "Maximum depth: ", parser.max_depth, "\n"
 
+
+
+
+
+
+type
+  Auxil* = object
+    input: cstring
+    offset: csize_t
+    length: csize_t
+    parser: Parser
+
+  ContextTag = ref object
+    pos: csize_t    # the position in the input of the first character currently buffered
+    cur: csize_t    # the current parsing position in the character buffer
+    level: csize_t
+    #buffer: object   #pcc_char_array_t t
+    #lrtable: object  #pcc_lr_table_t 
+    #lrstack: object  #pcc_lr_stack_t 
+    #thunks: object   #pcc_thunk_array_t 
+    #auxil: Auxil     #pcc_auxil_t 
+
+proc deli_create(auxil: var Auxil): pointer {.importc.}
+proc deli_parse(ctx: pointer, ret: pointer): cint {.importc.}
+proc deli_destroy(ctx: pointer): void {.importc.}
+
+proc parser_main(input: cstring, offset, l: csize_t, p: Parser) =
+  var auxil = Auxil(
+    input: input,
+    offset: offset,
+    length: l,
+    parser: p,
+  )
+  var ctx = deli_create(auxil)
+  var tag = cast[ContextTag](ctx)
+  tag.pos = offset
+  #ctx.pos = offset
+  while deli_parse(ctx, nil) > 0:
+    discard
+  deli_destroy(ctx)
+
+#int packcc_main(const char *input, int offset, int len, void *p)
+#{
+#	struct deli_t auxil = {
+#		input: input,
+#		offset: offset,
+#		length: len,
+#		parser: p,
+#	};
+#	deli_context_t *ctx = deli_create(&auxil);
+#	ctx->pos = offset;
+#	do {
+#		printf("offset now = %d\n", auxil.offset);
+#	} while(deli_parse(ctx, NULL));
+#
+#	deli_destroy(ctx);
+#	return auxil.offset;
+#}
+
 proc parse*(parser: Parser): DeliNode =
   parser.initParser()
   var cstr = parser.script.source.cstring
 
   while parser.parsed_len < parser.script.source.len and parser.next_pos < parser.script.source.len:
     parser.nodes = @[deliNone()]
-    let pos = packcc_main(cstr, parser.next_pos.cint, parser.script.source.len.cint, parser)
+    #let pos = packcc_main(cstr, parser.next_pos.cint, parser.script.source.len.cint, parser)
+    parser_main(cstr, parser.next_pos.csize_t, parser.script.source.len.csize_t, parser)
     if parser.brackets.len > 0:
       let b = parser.brackets.popUnsafe()
       parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
@@ -94,13 +147,15 @@ proc parse*(parser: Parser): DeliNode =
     if parser.errors.len > 0:
       break
 
-    echo "parser got ", parser.nodes[^1]
+    #echo "parser got ", parser.nodes[^1]
 
   parser.parsed_len = max(parser.parsed_len, parser.next_pos)
 
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
   return parser.entry_point
+
+
 
 proc printSons(node: DeliNode, level: int) =
   for son in node.sons:
