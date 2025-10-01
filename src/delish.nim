@@ -19,12 +19,15 @@ import ./[
 ]
 
 template benchmark(benchmarkName: string, code: untyped) =
-  block:
-    let t0 = epochTime()
+  if debug == 0:
     code
-    let elapsed = 1000 * (epochTime() - t0)
-    if debug > 0:
-      echo "\27[36mCPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms\27[0m"
+  else:
+    block:
+      let t0 = cpuTime()
+      code
+      let elapsed = 1000 * (cpuTime() - t0)
+      if debug > 0:
+        echo "\27[36mCPU Time [", benchmarkName, "] ", elapsed.formatFloat(ffDecimal, 2), "ms\27[0m"
 
 proc exception_handler*(e: ref Exception, debug: int) =
   errlog.write("\27[31m")

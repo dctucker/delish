@@ -60,8 +60,6 @@ type
     of dkArgShort,
        dkArgLong,
        dkArg:          argName*:    string
-    of dkArgStmt:      short_name*, long_name*, default_value*: DeliNode
-    of dkFunctionCall: funcName*:   DeliNode
     of dkJump,
        dkWhileLoop,
        dkDoLoop,

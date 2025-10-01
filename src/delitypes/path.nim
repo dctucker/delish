@@ -236,13 +236,26 @@ converter toObject(st: Stat): DeliNode =
 
 proc dStat(nodes: varargs[DeliNode]): DeliNode =
   argvars
-  nextarg dkPath
-  let path = arg
+  shift
   maxarg
-  var st = Stat()
-  if lstat(path.strVal.cstring, st) != 0:
-    return deliNone()
-  return st.toObject
+
+  case arg.kind
+  of dkArray:
+    result = DK(dkObject)
+    for path in arg.sons:
+      var st = Stat()
+      if lstat(path.strVal.cstring, st) == 0:
+        result.table[path.strVal] = st.toObject
+
+  of dkPath:
+    let path = arg
+    var st = Stat()
+    if lstat(path.strVal.cstring, st) != 0:
+      return deliNone()
+    return st.toObject
+  else:
+    raise newException(ValueError, "Can't stat: " & arg.kind.name)
+
 
 # file and directory operations
 proc dChdir(nodes: varargs[DeliNode]): DeliNode =
@@ -258,6 +271,27 @@ proc dHome(nodes: varargs[DeliNode]): DeliNode =
   noargs
   result = DKPath($os.getHomeDir())
 
+proc dDirname(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  shift
+  expect dkPath
+  if nodes.len == 1:
+    return DKPath($(arg.strVal.cstring.dirname))
+  else:
+    result = DK(dkArray)
+    for node in nodes:
+      result.sons.add DKPath($(node.strVal.cstring.dirname))
+
+proc dBasename(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  shift
+  expect dkPath
+  if nodes.len == 1:
+    return DKPath($(arg.strVal.cstring.basename))
+  else:
+    result = DK(dkArray)
+    for node in nodes:
+      result.sons.add DKPath($(node.strVal.cstring.basename))
 
 type PathEntry = tuple[kind: PathComponent, path: string]
 
@@ -301,6 +335,8 @@ let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nim
   "home": dHome,
   "chdir": dChdir,
   "list": dListDir,
+  "dirname": dDirname,
+  "basename": dBasename,
   #"mkdir": dMkdir,
   #"unlink": dUnlink,
   #"rename": dRename,

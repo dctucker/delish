@@ -1,5 +1,8 @@
-import std/tables
+import std/[strutils,tables]
 import ../language/ast
+
+template argerr*(msg: varargs[string, `$`]) =
+  raise newException(ValueError, msg.join(""))
 
 template express*() =
   if arg.kind == dkExpr:
@@ -9,7 +12,7 @@ template express*() =
 
 template shift*() =
   if arg_i >= nodes.len:
-    raise newException(ValueError, "missing argument; args: " & $nodes)
+    argerr "missing argument; args: ", nodes
   arg = nodes[arg_i]
   arg_i += 1
 
