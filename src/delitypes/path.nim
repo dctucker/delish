@@ -271,27 +271,28 @@ proc dHome(nodes: varargs[DeliNode]): DeliNode =
   noargs
   result = DKPath($os.getHomeDir())
 
-proc dDirname(nodes: varargs[DeliNode]): DeliNode =
-  argvars
-  shift
-  expect dkPath
+template pluralMaybe(node, formula: untyped): untyped =
+  var node: DeliNode
   if nodes.len == 1:
-    return DKPath($(arg.strVal.cstring.dirname))
+    if nodes[0].kind == dkArray:
+      result = DK(dkArray)
+      for node in nodes[0].sons:
+        result.sons.add formula
+    else:
+      let node = nodes[0]
+      return formula
   else:
     result = DK(dkArray)
     for node in nodes:
-      result.sons.add DKPath($(node.strVal.cstring.dirname))
+      result.sons.add formula
+
+proc dDirname(nodes: varargs[DeliNode]): DeliNode =
+  pluralMaybe(node):
+    DKPath($(node.strVal.cstring.dirname))
 
 proc dBasename(nodes: varargs[DeliNode]): DeliNode =
-  argvars
-  shift
-  expect dkPath
-  if nodes.len == 1:
-    return DKPath($(arg.strVal.cstring.basename))
-  else:
-    result = DK(dkArray)
-    for node in nodes:
-      result.sons.add DKPath($(node.strVal.cstring.basename))
+  pluralMaybe(node):
+    DKPath($(node.strVal.cstring.basename))
 
 type PathEntry = tuple[kind: PathComponent, path: string]
 
