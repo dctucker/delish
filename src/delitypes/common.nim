@@ -50,5 +50,20 @@ template noargs*() =
 proc dNop*(nodes: varargs[DeliNode]): DeliNode =
   return deliNone()
 
+template pluralMaybe*(node, formula: untyped): untyped =
+  var node: DeliNode
+  if nodes.len == 1:
+    if nodes[0].kind == dkArray:
+      result = DK(dkArray)
+      for node in nodes[0].sons:
+        result.sons.add formula
+    else:
+      let node = nodes[0]
+      return formula
+  else:
+    result = DK(dkArray)
+    for node in nodes:
+      result.sons.add formula
+
 export ast
 export tables
