@@ -51,6 +51,7 @@
 	int bracket(void*, int, char, char);
 	int parserError(void*, size_t, char*);
 	int setLine(void*, int, int);
+	int setNextPos(void*, int);
 	void deli_event(void*, int, int, int, size_t, char*, size_t);
 
 	const char
@@ -71,25 +72,26 @@
 	}
 }
 
-Script        <- c:Code                                              { DK( Script, c ); }
-
-Code          <-                                                     { DK( Code ); }
-              (  S* l:VLine                                          { if( l >= 0 ) NA( $$, l ); }
-              )+ S*
-
-Body          <- ( CLeft _ < c:Code > _ CRight                      ~{ ER("missing `}`"); }
-                 )                                                  ~{ ER( expected_body ); }
-                                                                     { $$ = c; SL1(c); }
+Script        <- c:VLine                                              { DK( Script, c );  setNextPos(auxil->parser, _0e);}
 
 VLine         <-
-              (  ( "\n" / ";" )                                      { $$ = -1; }
-              /  Comment                                             { $$ = -1; }
+              (  ( "\n" / ";" )                                      { DK( VLine ); }
+              /  Comment                                             { DK( VLine ); }
               /  a:Block                                             { $$ = a; }
               /  a:Statement S* Comment* S* ( "\n" / ";" )           { $$ = a; }
               /  e:Expr                                              { $$ = e; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 
+Code          <-                                                     { DK( Code ); }
+              (  S* l:VLine                                          { if( l >= 0 ) NA( $$, l ); }
+              )+ S*
+
 Comment       <- '#' (! "\n" .)* "\n"
+
+Body          <- ( CLeft _ < c:Code > _ CRight                      ~{ ER("missing `}`"); }
+                 )                                                  ~{ ER( expected_body ); }
+                                                                     { $$ = c; SL1(c); }
+
 Block         <-
               (  !VarOp
                ( &If    a:Conditional
@@ -546,16 +548,20 @@ _             <- [ \n\r\t;]*
 
 %%
 
-int packcc_main(const char *input, int len, void *p)
+int packcc_main(const char *input, int offset, int len, void *p)
 {
 	struct deli_t auxil = {
 		input: input,
-		offset: 0,
+		offset: offset,
 		length: len,
 		parser: p,
 	};
 	deli_context_t *ctx = deli_create(&auxil);
-	while(deli_parse(ctx, NULL));
+	ctx->pos = offset;
+	do {
+		printf("offset now = %d\n", auxil.offset);
+	} while(deli_parse(ctx, NULL));
+
 	deli_destroy(ctx);
-	return 0;
+	return auxil.offset;
 }

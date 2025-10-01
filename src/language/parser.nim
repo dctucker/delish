@@ -24,6 +24,7 @@ type
     debug*:       int
     slowmo*:      bool
     parsed_len*:  int
+    next_pos:     int
     entry_point:  DeliNode
     script*:      DeliScript
     symbol_stack: Stack[DeliKind]
@@ -33,13 +34,21 @@ type
     metrics:      OrderedTable[DeliKind,Metric]
     max_depth:    int
 
-proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
+  Auxil* = ref object
+    input: cstring
+    offset: csize_t
+    length: csize_t
+    parser: Parser
+
+proc packcc_main(input: cstring, offset, len: cint, parser: Parser): cint {.importc.}
+#proc deli_parse(deli_context_t *ctx, ret: pointer): cint {.importc.}
 
 proc initParser(parser: Parser) =
   parser.symbol_stack.clear
   parser.brackets.clear
   parser.errors = @[]
   parser.metrics.clear
+  parser.parsed_len = 0
 
 template debug(level: int, code: untyped) =
   if parser.debug >= level:
@@ -73,13 +82,22 @@ proc printMetrics*(parser: Parser) =
 
 proc parse*(parser: Parser): DeliNode =
   parser.initParser()
-
   var cstr = parser.script.source.cstring
-  parser.nodes = @[deliNone()]
-  discard packcc_main(cstr, parser.script.source.len.cint, parser)
-  if parser.brackets.len > 0:
-    let b = parser.brackets.popUnsafe()
-    parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
+
+  while parser.parsed_len < parser.script.source.len and parser.next_pos < parser.script.source.len:
+    parser.nodes = @[deliNone()]
+    let pos = packcc_main(cstr, parser.next_pos.cint, parser.script.source.len.cint, parser)
+    if parser.brackets.len > 0:
+      let b = parser.brackets.popUnsafe()
+      parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
+
+    if parser.errors.len > 0:
+      break
+
+    echo "parser got ", parser.nodes[^1]
+
+  parser.parsed_len = max(parser.parsed_len, parser.next_pos)
+
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
   return parser.entry_point
@@ -95,11 +113,23 @@ proc printSons(node: DeliNode, level: int) =
 type PackEvent = enum
   peEvaluate, peMatch, peNoMatch
 
-type DeliT = object
+type DeliT = ref object
   input: cstring
   offset: csize_t
   length: csize_t
   parser: Parser
+
+#proc deli_parse(ctx: pointer, ret: pointer): cint {
+#  if (pcc_apply_rule(ctx, pcc_evaluate_rule_Script, &ctx->thunks, ret))
+#    pcc_do_action(ctx, &ctx->thunks, ret)
+#  else
+#    PCC_ERROR(ctx->auxil)
+#  pcc_commit_buffer(ctx)
+#  pcc_thunk_array__revert(ctx->auxil, &ctx->thunks, 0)
+#  return pcc_refill_buffer(ctx, 1) >= 1
+
+
+
 
 proc pccError(parser: Parser): void {.exportc.} =
   when deepDebug:
@@ -217,6 +247,10 @@ proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
   node.script = parser.script
   parser.nodes[dk] = node
 
+proc setNextPos(parser: Parser, pos: cint): cint {.exportc.} =
+  parser.next_pos = pos
+  echo "next_pos = ", pos
+
 proc parserError(parser: Parser, pos: csize_t, msg: cstring) {.exportc.} =
   let length = msg.len()
   var errmsg = newString(length)
@@ -273,12 +307,13 @@ when deepDebug:
 
 
 proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize_t, buffer: cstring, length: csize_t) {.exportc.} =
-  case rule
-  of dkC.ord, dkW.ord, dkU.ord, dkS.ord, dkVLine.ord, dkComment.ord: return
-  else: discard
 
   parser.parsed_len = max(parser.parsed_len, pos.int)
   parser.max_depth = max(parser.max_depth, level)
+
+  case rule
+  of dkC.ord, dkW.ord, dkU.ord, dkS.ord, dkComment.ord: return
+  else: discard
 
   if parser.debug == 0: return
 

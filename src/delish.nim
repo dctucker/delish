@@ -160,11 +160,12 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
     let row = script.line_number(parser.parsed_len)
     let col = script.col_number(parser.parsed_len)
     let errline = script.getLine(row)
-    errlog.write(scriptname, ":", row, ":", col, ": error")
+    errlog.write(scriptname, ":", row, ":", col, ": parsing incomplete")
     for err in parser.errors:
       errlog.write(": ", err.msg)
     errlog.write("\n ", errline, "\n ")
     errlog.write(repeat(" ", col), "^\n")
+    errlog.write(parsed, "\n")
     return 1
 
   # check whether the parser has errors
