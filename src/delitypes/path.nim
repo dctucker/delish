@@ -246,13 +246,27 @@ proc dStat(nodes: varargs[DeliNode]): DeliNode =
   pluralMaybe(node):
     node.statObj
 
+proc dirname(path: string): string  =
+  var pathstr = path
+  prepareMutation(pathstr)
+  var cstr = pathstr.cstring
+  cstr = cstr.dirname
+  return $cstr
+
+proc basename(path: string): string  =
+  var pathstr = path
+  prepareMutation(pathstr)
+  var cstr = pathstr.cstring
+  cstr = cstr.basename
+  return $cstr
+
 proc dDirname(nodes: varargs[DeliNode]): DeliNode =
   pluralMaybe(node):
-    DKPath($(node.strVal.cstring.dirname))
+    DKPath(nodes[0].strVal.dirname)
 
 proc dBasename(nodes: varargs[DeliNode]): DeliNode =
   pluralMaybe(node):
-    DKPath($(node.strVal.cstring.basename))
+    DKPath(node.strVal.basename)
 
 # file and directory operations
 proc dChdir(nodes: varargs[DeliNode]): DeliNode =
