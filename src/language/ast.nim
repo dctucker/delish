@@ -134,6 +134,24 @@ proc DKDec*(decVal: Decimal): DeliNode =
 proc DKDecimal*(whole, fraction: int, decimals: int): DeliNode =
   return DeliNode(kind: dkDecimal, decVal: Decimal(whole: whole, fraction: fraction, decimals: decimals))
 
+proc DKDateTime*(str: string): DeliNode =
+  let strs = str.split({'T','t',' ','+','@'})
+  let date = times.parse(strs[0], "yyyy-MM-dd")
+  let time = times.parse(strs[1], "HH:mm:ss")
+  let dtVal = dateTime(
+    date.year, date.month, date.monthday,
+    time.hour, time.minute, time.second
+  )
+  return DeliNode(kind: dkDateTime, dtVal: dtVal)
+
+proc DKDateTime*(dtVal: DateTime): DeliNode =
+  return DeliNode(kind: dkDateTime, dtVal: dtVal)
+
+proc DKDateTime*(decVal: Decimal): DeliNode =
+  result = DeliNode(kind: dkDateTime)
+  result.dtVal = decVal.whole.fromUnix().local()
+  result.dtVal.nanosecond = decVal.fraction
+
 proc DKBool*(boolVal: bool): DeliNode =
   return DeliNode(kind: dkBoolean, boolVal: boolVal)
 

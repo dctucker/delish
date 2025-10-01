@@ -6,6 +6,8 @@ import ./[
   array,
   object,
   string as str,
+  decimal,
+  datetime,
 ]
 
 type DeliFunctionTable = Table[string, DeliFunction]
@@ -17,6 +19,8 @@ let TypeFunctions: TypeFunctionTable = {
   dkPath: PathFunctions,
   dkInteger: IntegerFunctions,
   dkString: StringFunctions,
+  dkDecimal: DecimalFunctions,
+  dkDateTime: DateTimeFunctions,
 }.toTable
 
 proc typeFunction*(kind: DeliKind, op: DeliNode): DeliFunction =

@@ -473,7 +473,7 @@ Number        <- d:Decimal                                           { $$ = d; }
                / i:Integer                                           { $$ = i; }
 Decimal       <- < [0-9]+ '.' [0-9]+ >                               { NS( Decimal ); }
 
-DateTime      <- d:Date [-Tt .:+@] t:Time                            { DK( DateTime, d, t ); }
+DateTime      <- d:Date [Tt @] t:Time                                { DK( DateTime, d, t ); }
 Date          <- y:Year '-' m:Month  '-' d:Day                       { DK( Date, y, m, d ); }
 Time          <- h:Hour ':' m:Minute ':'                             { DK( Time, h, m ); }
               (  s:Second '.' n:NanoSecond                           { NA( $$, s ); NA( $$, n ); }
