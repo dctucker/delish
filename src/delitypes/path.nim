@@ -90,13 +90,7 @@ proc isOlder(st1, st2: Stat): bool =                    # -ot FILE1 -ot FILE2 #F
     st1.st_mtim < st2.st_mtim
   )
 
-proc DKTime(time: Timespec): DeliNode =
-  return DKDecimal(time.tv_sec.int, time.tv_nsec, 9)
-
-converter toTimespec(decVal: Decimal): Timespec =
-  result.tv_sec = decVal.whole.Time
-  result.tv_nsec = decVal.fraction
-
+#const modeFuncs = {"b","c","d","e","f","g","k","L","p","r","S","u","w","x"}
 proc testFunc1(op: string): proc(st: Stat): bool {.nimcall.} =
   result = case op
   of "b", "block":  isBlock
@@ -119,14 +113,19 @@ proc testFunc1(op: string): proc(st: Stat): bool {.nimcall.} =
   of "x", "exec":   isExecutable
   else:             nop1
 
-#const modeFuncs = {"b","c","d","e","f","g","k","L","p","r","S","u","w","x"}
-
 proc testFunc2(op: string): proc(st1, st2: Stat): bool {.nimcall.} =
   let fn2 = case op
   of "n", "newer":         isNewer
   of "o", "older":         isOlder
   of "i", "equal", "same": isSame
   else: nop2
+
+proc DKTime(time: Timespec): DeliNode =
+  return DKDecimal(time.tv_sec.int, time.tv_nsec, 9)
+
+converter toTimespec(decVal: Decimal): Timespec =
+  result.tv_sec = decVal.whole.Time
+  result.tv_nsec = decVal.fraction
 
 converter toStat(node: DeliNode): Stat =
   result.st_dev       = node.table["dev"].intVal.Dev
