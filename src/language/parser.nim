@@ -104,12 +104,12 @@ type DeliT = object
   length: csize_t
   parser: Parser
 
-proc pccError(parser: Parser): void {.exportc.} =
+proc pccError(parser: Parser, cur: csize_t): void {.exportc.} =
   when deepDebug:
     debug 2:
       stderr.write "\n"
   if parser.errors.len == 0:
-    parser.errors.add ErrorMsg(pos: 0, msg: "syntax error")
+    parser.errors.add ErrorMsg(pos: cur.int, msg: "syntax error")
 
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind

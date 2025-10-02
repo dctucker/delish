@@ -17,7 +17,7 @@
 			deli_event(auxil->parser, event, dk##rule, level, pos, buffer, length)
 	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
 	#define PCC_BUFFERSIZE 1024
-	#define PCC_ERROR(auxil) pccError(auxil->parser); return 0;
+	#define PCC_ERROR(auxil) pccError(auxil->parser, ctx->cur); return 0;
 
 	#define BB(C,I)     bracket( auxil->parser, _0s, C, I )
 	#define NS(K)       __ = nodeString( auxil->parser, dk##K   , _1s, _1e, _1)
@@ -38,7 +38,7 @@
 	#define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
 	#define DK(...) GET_DK( __VA_ARGS__, CN3, CN2, CN1, CN0)(__VA_ARGS__)
 
-	void pccError(void*);
+	void pccError(void*, size_t);
 	int nodeAppend(void*, int, int);
 	int createNode0(void*, int);
 	int createNode1(void*, int, int);
