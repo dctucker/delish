@@ -71,6 +71,14 @@ proc printMetrics*(parser: Parser) =
   total.printMetric "Total"
   stderr.write "Maximum depth: ", parser.max_depth, "\n"
 
+proc printSons(node: DeliNode, level: int) =
+  for son in node.sons:
+    echo indent($son, 4*level)
+    printSons(son, level+1)
+
+
+## Parser
+
 proc parse*(parser: Parser): DeliNode =
   parser.initParser()
 
@@ -83,11 +91,6 @@ proc parse*(parser: Parser): DeliNode =
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
   return parser.entry_point
-
-proc printSons(node: DeliNode, level: int) =
-  for son in node.sons:
-    echo indent($son, 4*level)
-    printSons(son, level+1)
 
 
 ## PackCC integration stuff
@@ -106,7 +109,7 @@ proc pccError(parser: Parser): void {.exportc.} =
     debug 2:
       stderr.write "\n"
   if parser.errors.len == 0:
-    todo "handle syntax error"
+    parser.errors.add ErrorMsg(pos: 0, msg: "syntax error")
 
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind

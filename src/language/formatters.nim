@@ -58,6 +58,23 @@ proc arrayFormat(node: DeliNode): string =
 proc `$`*(decimal: Decimal): string =
   return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
 
+proc timeFormat(node: DeliNode): string =
+  return (
+    align($node.sons[0].intVal, 2, '0') & ":" &
+    align($node.sons[1].intVal, 2, '0') & ":" &
+    align($node.sons[2].intVal, 2, '0') & (
+      if node.sons[3].isNone(): "" else: "." & $node.sons[3].intVal
+    )
+  )
+
+proc dateFormat(node: DeliNode): string =
+  return node.sons.map(proc(x: DeliNode): string =
+    if x.kind == dkNone:
+      ""
+    else:
+      align($x.intVal, 2, '0')
+  ).join("-")
+
 proc toString*(node: DeliNode): string =
   let kind = node.kind
   if kind in { dkExpr, dkExprList }:
@@ -87,6 +104,8 @@ proc toString*(node: DeliNode): string =
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
   of dkDateTime:   $(node.dtVal)
+  of dkTime:       node.timeFormat
+  of dkDate:       node.dateFormat
   of dkPair:       ""
   of dkObject,
      dkRan:        objFormat(node)

@@ -104,8 +104,10 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
 
     var line = 0
     while true:
+      var toeval = newSeq[DeliNode]()
+      nteract.cmdline = ""
+
       try:
-        nteract.cmdline = ""
         let input = nteract.getUserInput()
         if input == "exit":
           break
@@ -115,22 +117,28 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
           parsed = parser.parse()
 
           if parser.errors.len != 0 or parsed.kind != dkScript:
-            errlog.write "parser error"
+            errlog.write "parser error: "
             for err in parser.errors:
               let row = script.line_number(err.pos)
               let col = script.col_number(err.pos)
               errlog.write(scriptname, ":", row, ":", col, ": ", err.msg, "\n")
             continue
 
-          #echo parsed.repr
           for s in parsed.sons:
-            engine.insertStmt(s)
+            if s.kind == dkCode and s.sons[0].kind == dkExpr:
+              toeval.add s.sons[0]
+            else:
+              engine.insertStmt(s)
             line += 1
 
         #engine.printStatements(true)
         for line in engine.tick():
           if debug > 0:
             echo engine.lineInfo()
+
+        for expr in toeval:
+          let x = engine.evaluate(expr)
+          echo x
 
       except InterruptError as e:
         stderr.write "\27[31m", e.msg, "\27[0m\n"

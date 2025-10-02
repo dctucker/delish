@@ -2,10 +2,9 @@ proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
 proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
-  var sons: seq[DeliNode] = @[]
+  result = DeliNode(kind: kind)
   for node in nodes:
-    sons.add(node)
-  return DeliNode(kind: kind, sons: sons)
+    result.sons.add node
 
 proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
   result = DK( dkExpr )
@@ -83,8 +82,12 @@ proc DKNotNone*(node: DeliNode): DeliNode =
 proc DKStr*(strVal: string): DeliNode =
   return DeliNode(kind: dkString, strVal: strVal)
 
-proc DKStream*(intVal: int): DeliNode =
-  return DeliNode(kind: dkStream, intVal: intVal)
+proc DKStream*(intVal: int, args: varargs[DeliNode]): DeliNode =
+  result = DeliNode(kind: dkStream, intVal: intVal)
+  for node in args:
+    result.sons.add node
+
+proc DKOut*(): DeliNode = DKStream(0, DK(dkStreamOut))
 
 proc DKRan*(): DeliNode =
   return DeliNode(kind: dkRan, table: {

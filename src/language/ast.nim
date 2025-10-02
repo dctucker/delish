@@ -2,6 +2,7 @@ import std/[
   lists,
   tables,
   strutils,
+  sequtils,
   times,
 ]
 import ../[
@@ -85,4 +86,3 @@ include ./[
   formatters,
   printers,
 ]
-

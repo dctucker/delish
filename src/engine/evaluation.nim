@@ -6,7 +6,7 @@ proc isTruthy(engine: Engine, node: DeliNode): bool =
   else:
     return false
 
-proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
+proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
   var (a, b) = (v1, v2)
   if {a.kind, b.kind} == {dkInteger, dkDecimal}:
     a = a.toKind(dkDecimal)
@@ -30,7 +30,7 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode =
     todo "evalMath " & $op
     deliNone()
 
-proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
+proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
   let val = case op.kind
   of dkEqOp: v1 == v2
   of dkNeOp: v1 != v2
@@ -43,7 +43,7 @@ proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode =
     false
   return DeliNode(kind: dkBoolean, boolVal: val)
 
-proc evalCondExpr(engine: Engine, op: DeliNode, v1: DeliNode, v2: DeliNode): DeliNode =
+proc evalCondExpr(engine: Engine, op: DeliNode, v1: DeliNode, v2: DeliNode): DeliNode {.inline.} =
   case op.kind
   of dkBoolAnd:
     let v1 = engine.evaluate(v1).toBoolean()
@@ -93,7 +93,7 @@ proc evalPairKey(engine: Engine, k: DeliNode): string =
     todo "evaluate Object with key ", k.kind
     ""
 
-proc evaluate(engine: Engine, val: DeliNode): DeliNode =
+proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
 
   of dkBoolean, dkString, dkIdentifier, dkDecimal, dkInteger, dkPath,

@@ -17,7 +17,7 @@
 			deli_event(auxil->parser, event, dk##rule, level, pos, buffer, length)
 	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
 	#define PCC_BUFFERSIZE 1024
-	#define PCC_ERROR(auxil) pccError(auxil); return 0;
+	#define PCC_ERROR(auxil) pccError(auxil->parser); return 0;
 
 	#define BB(C,I)     bracket( auxil->parser, _0s, C, I )
 	#define NS(K)       __ = nodeString( auxil->parser, dk##K   , _1s, _1e, _1)
@@ -32,9 +32,6 @@
 	#define SL1(X)      setLine( auxil->parser, X, _1s )
 	#define SL2(X)      setLine( auxil->parser, X, _2s )
 	#define SL3(X)      setLine( auxil->parser, X, _3s )
-	#define SL4(X)      setLine( auxil->parser, X, _4s )
-	#define SL5(X)      setLine( auxil->parser, X, _5s )
-	#define SL6(X)      setLine( auxil->parser, X, _6s )
 	#define ER(MSG)     parserError( auxil->parser, _0s, MSG );
 	// fprintf(stderr, "Parsing error: %s\n", MSG)
 
@@ -86,7 +83,7 @@ VLine         <-
               /  Comment                                             { $$ = -1; }
               /  a:Block                                             { $$ = a; }
               /  a:Statement S* Comment* S* ( "\n" / ";" )           { $$ = a; }
-              /  e:Expr                                              { $$ = e; }
+              /  e:Expr ( "\n" / ";" )                               { $$ = e; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 
 Comment       <- '#' (! "\n" .)* "\n"

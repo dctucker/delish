@@ -32,7 +32,7 @@ template debug(level: int, code: untyped) =
     #stdout.write("\27[0m")
 
 proc close         (fd: FileDesc)
-proc evaluate      (engine: Engine, val: DeliNode): DeliNode
+proc evaluate*     (engine: Engine, val: DeliNode): DeliNode
 proc doOpen        (engine: Engine, nodes: seq[DeliNode]): DeliNode
 proc doStmt        (engine: Engine, s: DeliNode)
 proc initArguments (engine: Engine, script: DeliNode)
