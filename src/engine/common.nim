@@ -1,7 +1,4 @@
-type DeliError* = object of CatchableError
-type RuntimeError* = ref object of DeliError
-type SetupError* = ref object of DeliError
-type InterruptError* = ref object of DeliError
+import ../errors
 
 type
   FileDesc = ref object
@@ -44,3 +41,5 @@ proc setHeads      (engine: Engine, list: DeliListNode) {.inline.}
 
 proc getStreamNumber(node: DeliNode): int =
   return node.intVal
+
+export errors

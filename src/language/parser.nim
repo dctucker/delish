@@ -7,6 +7,7 @@ import ./ast
 import ../stacks
 import ../deliscript
 import ../delitypes/parse
+import ../errors
 
 const deepDebug {.booldefine.}: bool = false
 
@@ -17,15 +18,20 @@ type
     length: csize_t
     parser: Parser
 
+  #PccCharArray  {.final,incompleteStruct.} = object
+  #PccLrTable    {.final,incompleteStruct.} = object
+  #PccLrStack    {.final,incompleteStruct.} = object
+  #PccThunkArray {.final,incompleteStruct.} = object
+
   ContextTag = ref object
     pos: csize_t    # the position in the input of the first character currently buffered
     cur: csize_t    # the current parsing position in the character buffer
     level: csize_t
-    #buffer: object   #pcc_char_array_t t
-    #lrtable: object  #pcc_lr_table_t
-    #lrstack: object  #pcc_lr_stack_t
-    #thunks: object   #pcc_thunk_array_t
-    #auxil: Auxil     #pcc_auxil_t
+    #buffer: PccCharArray
+    #lrtable: PccLrTable
+    #lrstack: PccLrStack
+    #thunks: PccThunkArray
+    #auxil: Auxil
 
   ErrorMsg = object
     pos*: int
@@ -41,7 +47,6 @@ type
     slowmo*:      bool
     parsed_len*:  int
     next_pos:     int
-    entry_point:  DeliNode
     script*:      DeliScript
     symbol_stack: Stack[DeliKind]
     brackets:     Stack[char]
@@ -50,7 +55,7 @@ type
     metrics:      OrderedTable[DeliKind,Metric]
     max_depth:    int
     context:      pointer
-    auxil:        Auxil
+    auxil:        ptr Auxil
 
 proc contextTag(parser: Parser): ContextTag =
   return cast[ContextTag](parser.context)
@@ -85,11 +90,13 @@ proc printMetrics*(parser: Parser) =
   total.printMetric "Total"
   stderr.write "Maximum depth: ", parser.max_depth, "\n"
 
+
 proc deli_create(auxil: var Auxil): pointer {.importc.}
+proc deli_setup(p: Parser, str: cstring, l: csize_t): pointer {.importc.}
 proc deli_parse(ctx: pointer, ret: pointer): cint {.importc.}
 proc deli_destroy(ctx: pointer): void {.importc.}
 
-proc parser_main(parser: Parser, offset, l: csize_t) =
+proc parse_from_offset(parser: Parser, offset: csize_t) =
   parser.contextTag.pos = offset
   while deli_parse(parser.context, nil) > 0:
     discard
@@ -102,46 +109,35 @@ proc initParser(parser: Parser) =
   parser.parsed_len = 0
 
   var input = parser.script.source.cstring
-  parser.auxil = Auxil(
-    input: input,
-    offset: 0,
-    length: parser.script.source.len.csize_t,
-    parser: parser,
-  )
-  parser.context = deli_create(parser.auxil)
+  #parser.auxil = Auxil(
+  #  input: input,
+  #  offset: 0,
+  #  length: parser.script.source.len.csize_t,
+  #  parser: parser,
+  #)
+  #parser.context = deli_create(parser.auxil)
+  parser.context = deli_setup(parser, input, parser.script.source.len.csize_t)
 
 iterator parse*(parser: Parser): DeliNode =
   parser.initParser()
 
   while parser.next_pos < parser.script.source.len:
     parser.nodes = @[deliNone()]
-    parser.parser_main(parser.next_pos.csize_t, parser.script.source.len.csize_t)
-    if parser.brackets.len > 0:
-      let b = parser.brackets.popUnsafe()
-      parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
+    try:
+      parser.parse_from_offset(parser.next_pos.csize_t)
+      if parser.brackets.len > 0:
+        let b = parser.brackets.popUnsafe()
+        parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
 
-    if parser.errors.len > 0:
-      #echo parser.errors
+      if parser.errors.len > 0:
+        break
+
+      yield parser.nodes[^1]
+    except ParseError as e:
       break
 
-    #echo parser.nodes[^1].repr
-    yield parser.nodes[^1]
-
-    #for node in parser.nodes:
-    #  all_nodes.add node
-
-
   parser.parsed_len = parser.next_pos
-
-  #parser.nodes = all_nodes
-
-  #parser.entry_point = parser.nodes[^1]
-  #parser.entry_point.script = parser.script
-
-
   deli_destroy(parser.context)
-
-  #return parser.entry_point
 
 proc parseAll*(parser: Parser): DeliNode =
   result = DeliNode(kind: dkScript)
@@ -165,25 +161,13 @@ proc printSons(node: DeliNode, level: int) =
 type PackEvent = enum
   peEvaluate, peMatch, peNoMatch
 
-#proc deli_parse(ctx: pointer, ret: pointer): cint {
-#  if (pcc_apply_rule(ctx, pcc_evaluate_rule_Script, &ctx->thunks, ret))
-#    pcc_do_action(ctx, &ctx->thunks, ret)
-#  else
-#    PCC_ERROR(ctx->auxil)
-#  pcc_commit_buffer(ctx)
-#  pcc_thunk_array__revert(ctx->auxil, &ctx->thunks, 0)
-#  return pcc_refill_buffer(ctx, 1) >= 1
-
-
-
-
 proc pccError(parser: Parser): void {.exportc.} =
   when deepDebug:
     debug 2:
       stderr.write "\n"
   if parser.errors.len == 0:
     parser.errors.add(ErrorMsg(pos: 0, msg: "Syntax error"))
-  raise newException(Exception, "Syntax error")
+  raise newException(ParseError, "Syntax error")
 
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind

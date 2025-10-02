@@ -6,7 +6,7 @@ src/language/packcc.c: src/language/delish.packcc
 
 SOURCES=$(wildcard src/**/*.nim)
 debug: src/language/packcc.c $(SOURCES)
-	nimble build -f -d:deepDebug
+	nimble build -f -d:deepDebug -d:useMalloc
 
 profile: src/language/packcc.c $(SOURCES)
 	nimble build -f -d:profiler --profiler:on --stacktrace:on
@@ -25,7 +25,7 @@ packdeli: src/packcc.c Makefile
 #tests/%.nim: $(SOURCES)
 
 tests/bin/%: tests/%.nim src/language/packcc.c src/language/packcc.h $(SOURCES)
-	nim c --hint:XDeclaredButNotUsed:off -o=tests/bin/ $<
+	nim c -d:useMalloc --hint:XDeclaredButNotUsed:off -o=tests/bin/ $<
 
 test: debug
 test: $(patsubst tests/test_%.nim,tests/bin/test_%,$(wildcard tests/test_*.nim))

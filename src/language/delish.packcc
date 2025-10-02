@@ -547,3 +547,15 @@ W             <- [A-Za-z0-9_]
 _             <- [ \n\r\t;]*
 
 %%
+
+
+void *deli_setup(void *p, const char *input, size_t len)
+{
+	static struct deli_t deli_auxil;
+	deli_auxil.input = input;
+	deli_auxil.offset = 0;
+	deli_auxil.length = len;
+	deli_auxil.parser = p;
+
+	return deli_create(&deli_auxil);
+}
