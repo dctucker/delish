@@ -288,11 +288,12 @@ proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   parser.getNode(p).sons.add(son)
   result = p
 
-proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
+proc setLine(parser: Parser, dk: cint, l: csize_t): cint {.exportc.} =
+  let pos = l - parser.contextTag.pos
   debug 3:
-    stderr.write $dk, " setLine ", $l, "\n"
+    stderr.write $dk, " setLine ", $l, " (pos=", $pos, ")\n"
   var node = parser.getNode(dk)
-  node.line = parser.script.line_number(l.int)
+  node.line = parser.script.line_number(pos.int)
   node.script = parser.script
   parser.nodes[dk] = node
 

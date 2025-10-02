@@ -175,7 +175,7 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
       else:
         return value
     c = engine.evalCallable(c)
-    debug 1:
+    debug 2:
       echo "evalCallback returned ", c.repr
 
   case c.kind
@@ -203,7 +203,7 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
       value = next.function()
       return engine.evalValueFunction(value, next.sons[0], nextArgs)
     else:
-      debug 1:
+      debug 2:
         echo "calling ", next, " with args ", nextArgs
       return next.function(nextArgs)
   else: discard

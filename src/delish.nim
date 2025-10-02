@@ -146,13 +146,18 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
   benchmark "parsing":
     if debug >= 2:
       stderr.write "\27[?7l"
+
     parsed = parser.parseAll()
+
+    if debug >= 2:
+      stderr.write "\27[?7h"
 
     if debug >= 2:
       parser.printMetrics
 
-    if debug >= 2:
-      stderr.write "\27[?7h"
+    if debug >= 1:
+      stderr.write "\27[30;1m", parsed.repr, "\27[0m\n"
+
 
   # check whether the parser read the entire script
   if parser.parsed_len < script.source.len():

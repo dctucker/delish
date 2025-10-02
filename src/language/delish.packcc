@@ -50,7 +50,7 @@
 	int nodeString(void*, int, size_t, size_t, char*);
 	int bracket(void*, int, char, char);
 	int parserError(void*, size_t, char*);
-	int setLine(void*, int, int);
+	int setLine(void*, int, size_t);
 	int setNextPos(void*);
 	void deli_event(void*, int, int, int, size_t, char*, size_t);
 
@@ -72,11 +72,11 @@
 	}
 }
 
-Script        <- c:VLine                                              { DK( Script, c ); setNextPos(auxil->parser); }
+Script        <- c:VLine                                             { if( c > -1 ) DK( Script, c ); setNextPos(auxil->parser); }
 
 VLine         <-
-              (  ( "\n" / ";" )                                      { DK( VLine ); }
-              /  Comment                                             { DK( VLine ); }
+              (  ( "\n" / ";" )                                      { $$ = -1; }
+              /  Comment                                             { $$ = -1; }
               /  a:Block                                             { $$ = a; }
               /  a:Statement S* Comment* S* ( "\n" / ";" )           { $$ = a; }
               /  e:Expr                                              { $$ = e; }
