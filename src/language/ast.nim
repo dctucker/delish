@@ -150,7 +150,9 @@ proc DKDateTime*(dtVal: DateTime): DeliNode =
 proc DKDateTime*(decVal: Decimal): DeliNode =
   result = DeliNode(kind: dkDateTime)
   result.dtVal = decVal.whole.fromUnix().local()
+  {.warning[Deprecated]:off.}
   result.dtVal.nanosecond = decVal.fraction
+  {.warning[Deprecated]:on.}
 
 proc DKBool*(boolVal: bool): DeliNode =
   return DeliNode(kind: dkBoolean, boolVal: boolVal)
