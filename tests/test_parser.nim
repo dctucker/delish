@@ -14,7 +14,7 @@ suite "parser":
     let script = makeScript(source_path, source)
     var parser = Parser(script: script, debug: 0)
 
-    let parsed = parser.parse()
+    let parsed = parser.parseAll()
     check:
       parser.parsed_len == source_len
 
@@ -36,7 +36,7 @@ suite "parser":
 
   test "parse comparisons":
     var parser = setupParser("tests/fixtures/test_integers.deli")
-    let parsed = parser.parse()
+    let parsed = parser.parseAll()
 
     check:
       parser.parsed_len == parser.script.source.len

@@ -51,7 +51,7 @@
 	int bracket(void*, int, char, char);
 	int parserError(void*, size_t, char*);
 	int setLine(void*, int, int);
-	int setNextPos(void*, int);
+	int setNextPos(void*);
 	void deli_event(void*, int, int, int, size_t, char*, size_t);
 
 	const char
@@ -72,7 +72,7 @@
 	}
 }
 
-Script        <- c:VLine                                              { DK( Script, c );  setNextPos(auxil->parser, _0e);}
+Script        <- c:VLine                                              { DK( Script, c ); setNextPos(auxil->parser); }
 
 VLine         <-
               (  ( "\n" / ";" )                                      { DK( VLine ); }

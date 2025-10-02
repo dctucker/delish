@@ -11,6 +11,22 @@ import ../delitypes/parse
 const deepDebug {.booldefine.}: bool = false
 
 type
+  Auxil* = object
+    input: cstring
+    offset: csize_t
+    length: csize_t
+    parser: Parser
+
+  ContextTag = ref object
+    pos: csize_t    # the position in the input of the first character currently buffered
+    cur: csize_t    # the current parsing position in the character buffer
+    level: csize_t
+    #buffer: object   #pcc_char_array_t t
+    #lrtable: object  #pcc_lr_table_t
+    #lrstack: object  #pcc_lr_stack_t
+    #thunks: object   #pcc_thunk_array_t
+    #auxil: Auxil     #pcc_auxil_t
+
   ErrorMsg = object
     pos*: int
     msg*: string
@@ -33,15 +49,13 @@ type
     errors*:      seq[ErrorMsg]
     metrics:      OrderedTable[DeliKind,Metric]
     max_depth:    int
+    context:      pointer
+    auxil:        Auxil
+
+proc contextTag(parser: Parser): ContextTag =
+  return cast[ContextTag](parser.context)
 
 proc packcc_main(input: cstring, offset, len: cint, parser: Parser): cint {.importc.}
-
-proc initParser(parser: Parser) =
-  parser.symbol_stack.clear
-  parser.brackets.clear
-  parser.errors = @[]
-  parser.metrics.clear
-  parser.parsed_len = 0
 
 template debug(level: int, code: untyped) =
   if parser.debug >= level:
@@ -73,87 +87,72 @@ proc printMetrics*(parser: Parser) =
   total.printMetric "Total"
   stderr.write "Maximum depth: ", parser.max_depth, "\n"
 
-
-
-
-
-
-type
-  Auxil* = object
-    input: cstring
-    offset: csize_t
-    length: csize_t
-    parser: Parser
-
-  ContextTag = ref object
-    pos: csize_t    # the position in the input of the first character currently buffered
-    cur: csize_t    # the current parsing position in the character buffer
-    level: csize_t
-    #buffer: object   #pcc_char_array_t t
-    #lrtable: object  #pcc_lr_table_t 
-    #lrstack: object  #pcc_lr_stack_t 
-    #thunks: object   #pcc_thunk_array_t 
-    #auxil: Auxil     #pcc_auxil_t 
-
 proc deli_create(auxil: var Auxil): pointer {.importc.}
 proc deli_parse(ctx: pointer, ret: pointer): cint {.importc.}
 proc deli_destroy(ctx: pointer): void {.importc.}
 
-proc parser_main(input: cstring, offset, l: csize_t, p: Parser) =
-  var auxil = Auxil(
-    input: input,
-    offset: offset,
-    length: l,
-    parser: p,
-  )
-  var ctx = deli_create(auxil)
-  var tag = cast[ContextTag](ctx)
-  tag.pos = offset
-  #ctx.pos = offset
-  while deli_parse(ctx, nil) > 0:
+proc parser_main(parser: Parser, offset, l: csize_t) =
+  parser.contextTag.pos = offset
+  while deli_parse(parser.context, nil) > 0:
     discard
-  deli_destroy(ctx)
 
-#int packcc_main(const char *input, int offset, int len, void *p)
-#{
-#	struct deli_t auxil = {
-#		input: input,
-#		offset: offset,
-#		length: len,
-#		parser: p,
-#	};
-#	deli_context_t *ctx = deli_create(&auxil);
-#	ctx->pos = offset;
-#	do {
-#		printf("offset now = %d\n", auxil.offset);
-#	} while(deli_parse(ctx, NULL));
-#
-#	deli_destroy(ctx);
-#	return auxil.offset;
-#}
+proc initParser(parser: Parser) =
+  parser.symbol_stack.clear
+  parser.brackets.clear
+  parser.errors = @[]
+  parser.metrics.clear
+  parser.parsed_len = 0
 
-proc parse*(parser: Parser): DeliNode =
+  var input = parser.script.source.cstring
+  parser.auxil = Auxil(
+    input: input,
+    offset: 0,
+    length: parser.script.source.len.csize_t,
+    parser: parser,
+  )
+  parser.context = deli_create(parser.auxil)
+
+iterator parse*(parser: Parser): DeliNode =
   parser.initParser()
-  var cstr = parser.script.source.cstring
 
-  while parser.parsed_len < parser.script.source.len and parser.next_pos < parser.script.source.len:
+  while parser.next_pos < parser.script.source.len:
     parser.nodes = @[deliNone()]
-    #let pos = packcc_main(cstr, parser.next_pos.cint, parser.script.source.len.cint, parser)
-    parser_main(cstr, parser.next_pos.csize_t, parser.script.source.len.csize_t, parser)
+    parser.parser_main(parser.next_pos.csize_t, parser.script.source.len.csize_t)
     if parser.brackets.len > 0:
       let b = parser.brackets.popUnsafe()
       parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
 
     if parser.errors.len > 0:
+      #echo parser.errors
       break
 
-    #echo "parser got ", parser.nodes[^1]
+    #echo parser.nodes[^1].repr
+    yield parser.nodes[^1]
 
-  parser.parsed_len = max(parser.parsed_len, parser.next_pos)
+    #for node in parser.nodes:
+    #  all_nodes.add node
 
-  parser.entry_point = parser.nodes[^1]
-  parser.entry_point.script = parser.script
-  return parser.entry_point
+
+  parser.parsed_len = parser.next_pos
+
+  #parser.nodes = all_nodes
+
+  #parser.entry_point = parser.nodes[^1]
+  #parser.entry_point.script = parser.script
+
+
+  deli_destroy(parser.context)
+
+  #return parser.entry_point
+
+proc parseAll*(parser: Parser): DeliNode =
+  result = DeliNode(kind: dkScript)
+
+  for s in parser.parse():
+    if parser.errors.len > 0:
+      break
+    result.sons.add s
+    #echo s.repr
 
 
 
@@ -167,12 +166,6 @@ proc printSons(node: DeliNode, level: int) =
 
 type PackEvent = enum
   peEvaluate, peMatch, peNoMatch
-
-type DeliT = ref object
-  input: cstring
-  offset: csize_t
-  length: csize_t
-  parser: Parser
 
 #proc deli_parse(ctx: pointer, ret: pointer): cint {
 #  if (pcc_apply_rule(ctx, pcc_evaluate_rule_Script, &ctx->thunks, ret))
@@ -191,7 +184,8 @@ proc pccError(parser: Parser): void {.exportc.} =
     debug 2:
       stderr.write "\n"
   if parser.errors.len == 0:
-    todo "handle syntax error"
+    parser.errors.add(ErrorMsg(pos: 0, msg: "Syntax error"))
+  raise newException(Exception, "Syntax error")
 
 proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
@@ -302,9 +296,12 @@ proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
   node.script = parser.script
   parser.nodes[dk] = node
 
-proc setNextPos(parser: Parser, pos: cint): cint {.exportc.} =
-  parser.next_pos = pos
-  echo "next_pos = ", pos
+proc setNextPos(parser: Parser): cint {.exportc.} =
+  #parser.next_pos = pos
+  #echo "  set next pos ", pos, "-", pos2, " offset = ", parser.auxil.offset
+
+  parser.next_pos = parser.contextTag.cur.int
+  #echo parser.contextTag.repr
 
 proc parserError(parser: Parser, pos: csize_t, msg: cstring) {.exportc.} =
   let length = msg.len()

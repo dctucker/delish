@@ -6,7 +6,7 @@ suite "flow control":
     let source = readFile(source_path)
     let script = makeScript(source_path, source)
     var parser = Parser(script: script, debug: 0)
-    var parsed = parser.parse()
+    var parsed = parser.parseAll()
     var node: DeliNode
 
     var engine = newEngine(parsed, 0)

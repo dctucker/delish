@@ -97,7 +97,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
   # interactive mode with no script specified
   if interactive_only:
     echo "Interactive mode"
-    parsed = parser.parse()
+    parsed = parser.parseAll()
     engine = newEngine(parsed, debug)
     nteract = newNteract(engine)
     nteract.setPrompt(dkPath)
@@ -112,7 +112,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
         if input.strip.len > 0:
           script = makeScript(scriptname, "\n".repeat(line) & input & "\n")
           parser.script = script
-          parsed = parser.parse()
+          parsed = parser.parseAll()
 
           if parser.errors.len != 0 or parsed.kind != dkScript:
             errlog.write "parser error"
@@ -146,7 +146,7 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
   benchmark "parsing":
     if debug >= 2:
       stderr.write "\27[?7l"
-    parsed = parser.parse()
+    parsed = parser.parseAll()
 
     if debug >= 2:
       parser.printMetrics
@@ -155,8 +155,8 @@ proc delish_main*(cmdline: seq[string] = @[]): int =
       stderr.write "\27[?7h"
 
   # check whether the parser read the entire script
-  if parser.parsed_len != script.source.len():
-    #errlog.write("\n*** ERROR: Stopped parsing at pos ", parser.parsed_len, "/", script.source.len(), "\n")
+  if parser.parsed_len < script.source.len():
+    errlog.write("\n*** ERROR: Stopped parsing at pos ", parser.parsed_len, "/", script.source.len(), "\n")
     let row = script.line_number(parser.parsed_len)
     let col = script.col_number(parser.parsed_len)
     let errline = script.getLine(row)

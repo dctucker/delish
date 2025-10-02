@@ -56,7 +56,7 @@ proc insertStmt*(engine: Engine, node: DeliNode) =
   if node.script == nil:
     if engine.current.kind != dkNone:
       node.script = engine.current.script
-  if node.kind in @[ dkStatement, dkBlock, dkCode ]:
+  if node.kind in @[ dkStatement, dkBlock, dkCode, dkVLine ]:
     for s in node.sons:
       engine.insertStmt(s)
     return
@@ -141,7 +141,7 @@ proc doInclude(engine: Engine, included: DeliNode) =
   let filename = engine.evaluate(included).toString()
   let script = loadScript(filename)
   let parser = Parser(script: script, debug: engine.debug)
-  let parsed = parser.parse()
+  let parsed = parser.parseAll()
   for s in parsed.sons:
     engine.insertStmt(s.sons)
 
