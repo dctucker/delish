@@ -72,7 +72,7 @@
 	}
 }
 
-Script        <- c:VLine                                             { if( c > -1 ) DK( Script, c ); setNextPos(auxil->parser); }
+Script        <- c:VLine _                                           { if( c > -1 ) DK( Script, c ); setNextPos(auxil->parser); }
 
 VLine         <-
               (  ( "\n" / ";" )                                      { $$ = -1; }
@@ -547,21 +547,3 @@ W             <- [A-Za-z0-9_]
 _             <- [ \n\r\t;]*
 
 %%
-
-int packcc_main(const char *input, int offset, int len, void *p)
-{
-	struct deli_t auxil = {
-		input: input,
-		offset: offset,
-		length: len,
-		parser: p,
-	};
-	deli_context_t *ctx = deli_create(&auxil);
-	ctx->pos = offset;
-	do {
-		printf("offset now = %d\n", auxil.offset);
-	} while(deli_parse(ctx, NULL));
-
-	deli_destroy(ctx);
-	return auxil.offset;
-}

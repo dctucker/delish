@@ -55,8 +55,6 @@ type
 proc contextTag(parser: Parser): ContextTag =
   return cast[ContextTag](parser.context)
 
-proc packcc_main(input: cstring, offset, len: cint, parser: Parser): cint {.importc.}
-
 template debug(level: int, code: untyped) =
   if parser.debug >= level:
     code
