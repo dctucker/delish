@@ -153,6 +153,13 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
 
     #return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
 
+proc dereference(engine: Engine, expr: DeliNode): DeliNode =
+  result = expr
+  if result.kind == dkExpr:
+    result = expr.sons[0]
+  if result.kind == dkVarDeref:
+    result = engine.evalVarDeref(result)
+
 proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): DeliNode =
   var c = callable
   while c.kind == dkCallable and c.function == nil:
@@ -191,7 +198,7 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
     var value: DeliNode
     var nextArgs: seq[DeliNode]
     for arg in args:
-      nextArgs.add arg
+      nextArgs.add engine.dereference(arg)
     if next.sons.len > 0:
       value = next.function()
       return engine.evalValueFunction(value, next.sons[0], nextArgs)

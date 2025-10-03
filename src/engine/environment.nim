@@ -25,5 +25,3 @@ proc doEnv(engine: Engine, name: DeliNode, op: DeliKind = dkNone, default: DeliN
     putEnv(key, def)
   engine.envars[ name.varName ] = getEnv(key, def)
   engine.printEnvars()
-
-

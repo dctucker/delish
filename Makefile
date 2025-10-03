@@ -8,8 +8,11 @@ SOURCES=$(wildcard src/**/*.nim)
 debug: src/language/packcc.c $(SOURCES)
 	nimble build -f -d:deepDebug
 
+profile: src/language/packcc.c $(SOURCES)
+	nimble build -f -d:profiler --profiler:on --stacktrace:on
+
 release: debug
-	nimble build -d:release --passC:-ffast-math --opt:size
+	nimble build -d:release --passC:-ffast-math --opt:speed
 
 strip: release
 	strip --strip-all -R .note -R .comment -R .eh_frame -R .eh_frame_hdr delish

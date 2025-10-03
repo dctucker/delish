@@ -45,7 +45,7 @@ suite "type functions":
     let stat = fn(DKPath("."))
     check:
       stat.kind == dkObject
-      stat.table.keys.toSeq == ["dev","ino","mode","nlink","uid","gid","rdev","size","atime","mtime","ctime","blksize","blocks","test"]
+      stat.table.keys.toSeq == ["dev","ino","mode","nlink","uid","gid","rdev","size","atime","mtime","ctime","blksize","blocks","test","path"]
 
   test "Path.test":
     let fn = typeFunction(dkPath, DKid("test"))
@@ -69,6 +69,14 @@ suite "type functions":
     check ls.kind == dkArray
     check ls.sons.len > 0
     check ls.sons[0].kind == dkPath
+
+  test "Path.basename":
+    let fn = typeFunction(dkPath, DKId("basename"))
+    check fn(DKPath("tests/fixtures")) == DKPath("fixtures")
+
+  test "Path.dirname":
+    let fn = typeFunction(dkPath, DKId("dirname"))
+    check fn(DKPath("tests/fixtures")) == DKPath("tests")
 
   test "String.split":
     let fn = typeFunction(dkString, DKId("split"))

@@ -32,7 +32,7 @@ template debug(level: int, code: untyped) =
     #stdout.write("\27[0m")
 
 proc close         (fd: FileDesc)
-proc evaluate      (engine: Engine, val: DeliNode): DeliNode
+proc evaluate*     (engine: Engine, val: DeliNode): DeliNode
 proc doOpen        (engine: Engine, nodes: seq[DeliNode]): DeliNode
 proc doStmt        (engine: Engine, s: DeliNode)
 proc initArguments (engine: Engine, script: DeliNode)
@@ -40,7 +40,7 @@ proc initIncludes  (engine: Engine, script: DeliNode)
 proc initFunctions (engine: Engine, script: DeliNode)
 proc initScript    (engine: Engine, script: DeliNode)
 proc assignVariable(engine: Engine, key: string, value: DeliNode)
-proc setHeads      (engine: Engine, list: DeliListNode)
+proc setHeads      (engine: Engine, list: DeliListNode) {.inline.}
 
 proc getStreamNumber(node: DeliNode): int =
   return node.intVal

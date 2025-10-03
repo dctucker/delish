@@ -234,15 +234,39 @@ converter toObject(st: Stat): DeliNode =
   ])
   result.table["test"] = DKCallable(dTest, @[result])
 
-proc dStat(nodes: varargs[DeliNode]): DeliNode =
-  argvars
-  nextarg dkPath
-  let path = arg
-  maxarg
+proc statObj(path: DeliNode): DeliNode {.inline.} =
   var st = Stat()
-  if lstat(path.strVal.cstring, st) != 0:
-    return deliNone()
-  return st.toObject
+  if lstat(path.strVal.cstring, st) == 0:
+    result = st.toObject
+    result.table["path"] = path
+    return result
+  return deliNone()
+
+proc dStat(nodes: varargs[DeliNode]): DeliNode =
+  pluralMaybe(node):
+    node.statObj
+
+proc dirname(path: string): string  =
+  var pathstr = path
+  prepareMutation(pathstr)
+  var cstr = pathstr.cstring
+  cstr = cstr.dirname
+  return $cstr
+
+proc basename(path: string): string  =
+  var pathstr = path
+  prepareMutation(pathstr)
+  var cstr = pathstr.cstring
+  cstr = cstr.basename
+  return $cstr
+
+proc dDirname(nodes: varargs[DeliNode]): DeliNode =
+  pluralMaybe(node):
+    DKPath(nodes[0].strVal.dirname)
+
+proc dBasename(nodes: varargs[DeliNode]): DeliNode =
+  pluralMaybe(node):
+    DKPath(node.strVal.basename)
 
 # file and directory operations
 proc dChdir(nodes: varargs[DeliNode]): DeliNode =
@@ -257,7 +281,6 @@ proc dPwd(nodes: varargs[DeliNode]): DeliNode =
 proc dHome(nodes: varargs[DeliNode]): DeliNode =
   noargs
   result = DKPath($os.getHomeDir())
-
 
 type PathEntry = tuple[kind: PathComponent, path: string]
 
@@ -295,11 +318,13 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
   )
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
-  "stat": dStat,
   "test": dTest,
   "pwd": dPwd,
   "home": dHome,
   "chdir": dChdir,
+  "stat": dStat,
+  "dirname": dDirname,
+  "basename": dBasename,
   "list": dListDir,
   #"mkdir": dMkdir,
   #"unlink": dUnlink,

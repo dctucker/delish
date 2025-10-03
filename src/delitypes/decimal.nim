@@ -140,3 +140,21 @@ proc `>`*(a0, b0: Decimal): bool =
   return a.whole > b.whole or (
     a.whole == b.whole and a.fraction > b.fraction
   )
+
+proc dFrac(nodes: varargs[DeliNode]): DeliNode =
+  pluralMaybe(node):
+    DKInt(node.decVal.fraction)
+
+proc dDenom(nodes: varargs[DeliNode]): DeliNode =
+  pluralMaybe(node):
+    DKInt(E10(node.decVal.decimals))
+
+proc dExponent(nodes: varargs[DeliNode]): DeliNode =
+  pluralMaybe(node):
+    DKInt(node.decVal.decimals)
+
+let DecimalFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+  "frac": dFrac,
+  "denominator": dDenom,
+  "exponent": dExponent,
+}.toTable

@@ -45,7 +45,7 @@ ll = {
 }
 
 ls = {
-  local $pwd = Path.pwd
+  $pwd = Path.pwd
   for $f in $pwd.list {
     $modes = longdesc $f.stat
     out $modes, " ", $f

@@ -17,31 +17,32 @@
 			deli_event(auxil->parser, event, dk##rule, level, pos, buffer, length)
 	#define PCC_GETCHAR(auxil) deli_get_character( auxil )
 	#define PCC_BUFFERSIZE 1024
-	#define PCC_ERROR(auxil) pccError(auxil); return 0;
+	#define PCC_ERROR(auxil) pccError(auxil->parser, ctx->cur); return 0;
 
-	#define BB(C,I)     bracket( auxil->parser, _0s, C, I )
-	#define NS(K)       __ = nodeString( auxil->parser, dk##K   , _1s, _1e, _1)
-	#define CN(N, K, ...) __ = createNode##N( auxil->parser, dk##K, __VA_ARGS__ )
-	#define CN0(K) __ = createNode0( auxil->parser, dk##K )
+	#define VARNAME_ACTION_OUT      pcc_action_out
+	#define VARNAME_PROGPRED_OUT    pcc_progpred_out
+	#define VARNAME_CAPTURE_PREFIX  pcc_capture__
+
+	#define BB(C,I)     bracket( auxil->parser, pcc_capture__0s, C, I )
+	#define NS(K)       VARNAME_ACTION_OUT = nodeString( auxil->parser, dk##K   , pcc_capture__1s, pcc_capture__1e, pcc_capture__1)
+	#define CN(N, K, ...) VARNAME_ACTION_OUT = createNode##N( auxil->parser, dk##K, __VA_ARGS__ )
+	#define CN0(K) VARNAME_ACTION_OUT = createNode0( auxil->parser, dk##K )
 	#define CN1(K, ...) CN(1, K, __VA_ARGS__ )
 	#define CN2(K, ...) CN(2, K, __VA_ARGS__ )
 	#define CN3(K, ...) CN(3, K, __VA_ARGS__ )
 	#define NA(P,S)     nodeAppend( auxil->parser, P, S )
-	#define SL(X)       setLine( auxil->parser, X, _0s )
-	#define SLE(X)      setLine( auxil->parser, X, _0e )
-	#define SL1(X)      setLine( auxil->parser, X, _1s )
-	#define SL2(X)      setLine( auxil->parser, X, _2s )
-	#define SL3(X)      setLine( auxil->parser, X, _3s )
-	#define SL4(X)      setLine( auxil->parser, X, _4s )
-	#define SL5(X)      setLine( auxil->parser, X, _5s )
-	#define SL6(X)      setLine( auxil->parser, X, _6s )
-	#define ER(MSG)     parserError( auxil->parser, _0s, MSG );
+	#define SL(X)       setLine( auxil->parser, X, pcc_capture__0s )
+	#define SLE(X)      setLine( auxil->parser, X, pcc_capture__0e )
+	#define SL1(X)      setLine( auxil->parser, X, pcc_capture__1s )
+	#define SL2(X)      setLine( auxil->parser, X, pcc_capture__2s )
+	#define SL3(X)      setLine( auxil->parser, X, pcc_capture__3s )
+	#define ER(MSG)     parserError( auxil->parser, pcc_capture__0s, MSG );
 	// fprintf(stderr, "Parsing error: %s\n", MSG)
 
 	#define GET_DK( _1, _2, _3, _4, NAME, ...) NAME
 	#define DK(...) GET_DK( __VA_ARGS__, CN3, CN2, CN1, CN0)(__VA_ARGS__)
 
-	void pccError(void*);
+	void pccError(void*, size_t);
 	int nodeAppend(void*, int, int);
 	int createNode0(void*, int);
 	int createNode1(void*, int, int);
@@ -86,7 +87,7 @@ VLine         <-
               /  Comment                                             { $$ = -1; }
               /  a:Block                                             { $$ = a; }
               /  a:Statement S* Comment* S* ( "\n" / ";" )           { $$ = a; }
-              /  e:Expr                                              { $$ = e; }
+              /  e:Expr ( "\n" / ";" )                               { $$ = e; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 
 Comment       <- '#' (! "\n" .)* "\n"
@@ -473,7 +474,7 @@ Number        <- d:Decimal                                           { $$ = d; }
                / i:Integer                                           { $$ = i; }
 Decimal       <- < [0-9]+ '.' [0-9]+ >                               { NS( Decimal ); }
 
-DateTime      <- d:Date [-Tt .:+@] t:Time                            { DK( DateTime, d, t ); }
+DateTime      <- d:Date [Tt @] t:Time                                { DK( DateTime, d, t ); }
 Date          <- y:Year '-' m:Month  '-' d:Day                       { DK( Date, y, m, d ); }
 Time          <- h:Hour ':' m:Minute ':'                             { DK( Time, h, m ); }
               (  s:Second '.' n:NanoSecond                           { NA( $$, s ); NA( $$, n ); }

@@ -3,6 +3,7 @@ import
     os,
     strutils,
     tables,
+    times,
   ],
   ./[
     common,
@@ -79,8 +80,17 @@ proc toInteger*(src: DeliNode): DeliNode =
 proc toDecimal*(src: DeliNode): DeliNode =
   result = case src.kind
   of dkInteger: DKDecimal(src.intVal, 0, 0)
+  of dkDateTime: DKDecimal(src.dtVal.toTime().toUnix(), src.dtVal.nanosecond, 9)
   else:
     todo "toDecimal ", src.kind
+    deliNone()
+
+proc toDateTime*(src: DeliNode): DeliNode =
+  result = case src.kind
+  of dkString: DKDateTime(src.strVal)
+  of dkDecimal: DKDateTime(src.decVal)
+  else:
+    todo "toDateTime ", src.kind
     deliNone()
 
 proc toPath*(src: DeliNode): DeliNode =
@@ -197,6 +207,7 @@ proc toKind*(src: DeliNode, dest: DeliKind): DeliNode =
   of dkPath:       toPath       src
   of dkInteger:    toInteger    src
   of dkDecimal:    toDecimal    src
+  of dkDateTime:   toDateTime   src
   of dkBoolean:    toBoolean    src
   of dkArray:      toArray      src
   of dkObject:     toObject     src

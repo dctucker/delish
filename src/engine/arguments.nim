@@ -1,12 +1,10 @@
 ### Arguments ###
 
 proc arguments(engine: Engine): seq[Argument] =
-  engine.argstack.peek()
+  engine.argstack.peekUnsafe
 
 proc addArgument(engine: Engine, arg: Argument) =
-  var arguments = engine.argstack.pop()
-  arguments.add(arg)
-  engine.argstack.push(arguments)
+  engine.argstack.peekUnsafe.add(arg)
 
 proc printArguments(engine: Engine) =
   debug 2:
