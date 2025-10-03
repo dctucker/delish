@@ -4,8 +4,11 @@ import std/[
   tables,
 ]
 import ./ast
-import ../stacks
-import ../deliscript
+import ../[
+  stacks,
+  errors,
+  deliscript,
+]
 import ../delitypes/parse
 
 const deepDebug {.booldefine.}: bool = false
@@ -32,6 +35,9 @@ type
     errors*:      seq[ErrorMsg]
     metrics:      OrderedTable[DeliKind,Metric]
     max_depth:    int
+
+proc `$`*(e: ErrorMsg): string =
+  result = e.msg & " (" & $e.pos & ")"
 
 proc packcc_main(input: cstring, len: cint, parser: Parser): cint {.importc.}
 
@@ -99,6 +105,11 @@ proc quickParse*(str: string): DeliNode =
   var parser = Parser()
   parser.script = makeScript("", str)
   result = parser.parse()
+  if parser.errors.len > 0:
+    var msg = ""
+    for e in parser.errors:
+      msg &= $e & "\n"
+    raise newException(ParserError, msg.strip)
 
 ## PackCC integration stuff
 

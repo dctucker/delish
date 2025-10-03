@@ -18,6 +18,8 @@ while true:
       break
     node = quickParse(input & "\n")
     echo node.treeRepr
+  except ParserError as e:
+    echo "\27[31m", e.msg, "\27[0m"
   except InterruptError as e:
     echo e.msg
     break

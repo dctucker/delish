@@ -116,8 +116,11 @@ proc script*(node: DeliNode): DeliScript =
   return nil
 
 proc `script=`*(node: DeliNode, scr: DeliScript) =
-  if node.kind == dkScript:
+  case node.kind
+  of dkScript:
     node.script = scr
+  of dkNone:
+    discard
   else:
     todo "assign ", node.kind.name, ".script"
 
