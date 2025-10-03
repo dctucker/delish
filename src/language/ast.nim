@@ -41,6 +41,8 @@ type
   DeliFunction* = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 
   DeliNodeObj* = object
+    parents: seq[DeliNode]
+    sons*: seq[DeliNode]
     case kind*: DeliKind
     of dkNone:         none:        bool
     of dkIdentifier:   id*:         string
@@ -64,15 +66,99 @@ type
     of dkJump,
        dkWhileLoop,
        dkDoLoop,
+       dkForLoop,
+       dkBreakStmt,
+       dkContinueStmt,
        dkConditional,
-       dkForLoop:      list_node*:  DeliListNode
+       dkCondition,
+       dkFunctionDef,
+       dkElse,
+       dkInner,
+       dkCode,
+       dkStatement,
+       dkBlock:
+      lineNumber*: int
+      list_node*: DeliListNode
     of dkIterable:     generator*:  Iterable
     of dkCallable:     function*:   DeliFunction
+    of dkScript:       script:      DeliScript
     else:
       discard
-    sons*: seq[DeliNode]
-    line*: int
-    script*:     DeliScript
+
+proc todo*(msg: varargs[string, `$`])
+proc name*(kind: DeliKind): string =
+  return ($kind).substr(2)
+
+let None0 = DeliNode(kind: dkNone)
+
+proc `parent=`*(node: DeliNode, parent: DeliNode) =
+  while node.parents.len > 0:
+    discard node.parents.pop()
+  node.parents.add parent
+
+proc parent*(node: DeliNode): DeliNode =
+  if node.parents.len == 0:
+    return None0
+  return node.parents[0]
+
+proc root*(node: DeliNode): DeliNode =
+  result = node
+  while result.parent.kind != dkNone:
+    result = result.parent
+
+proc script*(node: DeliNode): DeliScript =
+  if node.kind == dkScript:
+    return node.script
+  else:
+    if node.parent.kind != dkNone:
+      return script(node.parent)
+  todo node.kind.name, ".script"
+  return nil
+
+proc `script=`*(node: DeliNode, scr: DeliScript) =
+  if node.kind == dkScript:
+    node.script = scr
+  else:
+    todo "assign ", node.kind.name, ".script"
+
+proc `line=`*(node: DeliNode, line: int) =
+  case node.kind
+  of dkJump,
+     dkWhileLoop,
+     dkDoLoop,
+     dkForLoop,
+     dkBreakStmt,
+     dkContinueStmt,
+     dkConditional,
+     dkCondition,
+     dkFunctionDef,
+     dkElse,
+     dkInner,
+     dkCode,
+     dkStatement,
+     dkBlock:
+    node.lineNumber = line
+  else: discard
+
+proc line*(node: DeliNode): int =
+  case node.kind
+  of dkJump,
+     dkWhileLoop,
+     dkDoLoop,
+     dkForLoop,
+     dkBreakStmt,
+     dkContinueStmt,
+     dkConditional,
+     dkCondition,
+     dkFunctionDef,
+     dkElse,
+     dkInner,
+     dkCode,
+     dkStatement,
+     dkBlock:
+    return node.lineNumber
+  else:
+    return node.parent.line
 
 const toTbl* = toOrderedTable[string, DeliNode]
 

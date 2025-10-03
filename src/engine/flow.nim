@@ -1,12 +1,11 @@
 ### Flow ###
 
-proc setupConditional(engine: Engine, cond: DeliNode, stmt: DeliKind, line: int): DeliNode =
+proc setupConditional(engine: Engine, cond: DeliNode, stmt: DeliNode, line: int): DeliNode =
   var conditional = DK( dkConditional, cond,
-    DK( dkCode, DKInner( line,
-      DeliNode(kind: stmt, line: line)
-    ))
+    DK( dkCode, DKInner( line, stmt ) )
   )
   conditional.line = cond.line
+
   engine.insertStmt( DKInner( -line, conditional ) )
   return conditional
 
@@ -21,7 +20,7 @@ proc doConditional(engine: Engine, cond: DeliNode) =
 
     assert cond.sons.len mod 2 == 0
 
-    var jump_done = DeliNode(kind: dkJump, line: cond.sons[^1].line + 1)
+    var jump_done = DKJump(cond.sons[^1].line + 1)
 
     var i: int = 0
     var sons = cond.sons
@@ -29,8 +28,7 @@ proc doConditional(engine: Engine, cond: DeliNode) =
       let condition = sons[i]
       let code = sons[i + 1]
 
-      var jump_true = DK( dkJump )
-      jump_true.line = condition.line
+      var jump_true = DKJump(condition.line)
 
       var conditional = cond
       if i == 0:
@@ -40,7 +38,7 @@ proc doConditional(engine: Engine, cond: DeliNode) =
         conditional = DeliNode(kind: dkConditional, sons: @[
             condition,
             jump_true,
-        ], line: condition.line)
+        ], lineNumber: condition.line)
         engine.insertStmt(conditional)
 
       engine.insertStmt(code)
@@ -79,7 +77,7 @@ proc doDoLoop(engine: Engine, loop: DeliNode) =
     jump_continue.list_node = engine.write_head
     engine.insertStmt(code.sons)
 
-    discard engine.setupConditional(condition, dkContinueStmt, end_line - 1)
+    discard engine.setupConditional(condition, DKContinue(end_line - 1), end_line - 1)
 
     jump_break.list_node = engine.writehead
     engine.setupPop( end_line - 1 )
@@ -103,7 +101,7 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
     }.toTbl)
 
     jump_continue.list_node = engine.write_head
-    discard engine.setupConditional( DK(dkBoolNot, condition), dkBreakStmt, top_line )
+    discard engine.setupConditional( DK(dkBoolNot, condition), DKBreak(top_line), top_line )
     engine.insertStmt(code.sons)
 
     engine.insertStmt( DKInner(end_line - 1,
@@ -146,8 +144,8 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
     let end_line = -code.sons[^1].line - 1
     let counter  = DKVar(".counter")
 
-    var jump_break    = DeliNode(kind: dkJump, line: end_line + 1)
-    var jump_continue = DeliNode(kind: dkJump, line: end_line + 1)
+    var jump_break    = DKJump(end_line + 1)
+    var jump_continue = DKJump(end_line + 1)
 
     engine.setupPush(top_line, {
       ".counter" : DKInt(0),
@@ -160,7 +158,7 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
 
     var condition = DK( dkComparison, DK(dkEqOp), deliNone(), variable )
     condition.line = top_line
-    discard engine.setupConditional(condition, dkBreakStmt, top_line)
+    discard engine.setupConditional(condition, DKBreak(top_line), top_line)
 
     engine.insertStmt( code.sons )
     engine.insertStmt( DKInner(end_line, DK(dkContinueStmt) ))

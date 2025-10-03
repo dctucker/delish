@@ -1,9 +1,5 @@
-proc todo*(msg: varargs[string, `$`])
 proc `$`*(node: DeliNode): string
 proc toString*(node: DeliNode):string
-
-proc name*(kind: DeliKind): string =
-  return ($kind).substr(2)
 
 proc argFormat(node: DeliNode): string =
   var current_kind = dkNone
@@ -92,6 +88,7 @@ proc toString*(node: DeliNode): string =
     return dkOperatorKindStrings[kind]
 
   return case kind
+  of dkScript:     node.script.filename
   of dkVarDeref:   "$"
   of dkIdentifier: node.id
   of dkPath,
@@ -153,8 +150,17 @@ proc `$`*(node: DeliNode): string =
 proc todo*(msg: varargs[string, `$`]) =
   errlog.write("\27[0;33mTODO: ", msg.join(""), "\27[0m\n")
 
+proc lineage*(node: DeliNode): string =
+  var n = node
+  #result = n.parent.kind.name
+  while n.parent.kind != dkNone:
+    result = n.parent.kind.name & "/" & result
+    n = n.parent
+
 proc repr*(node: DeliNode): string =
   result = ""
+  if node.parents.len == 0:
+    result = "⌱"
 
   if node.kind == dkExpr:
     result &= node.kind.name

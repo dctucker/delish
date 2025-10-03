@@ -28,7 +28,7 @@ suite "flow control":
     check engine.getVariable("k").boolVal == false
 
     check engine.sourceLine() == "if $k {"
-    discard engine.doNext()
+    discard engine.doNext() #; engine.printStatements()
     check engine.sourceLine() == "} elif not $k {"
     discard engine.doNext()
     check engine.sourceLine() == "  $k = \"not\""

@@ -57,9 +57,9 @@ proc newEngine*(debug: int): Engine =
   result.readhead  = result.statements.head
   result.writehead = result.statements.head
 
-proc newEngine*(script: DeliNode, debug: int): Engine =
+proc newEngine*(scr: DeliNode, debug: int): Engine =
   result = newEngine(debug)
-  result.setup(script)
+  result.setup(scr)
 
 proc retval*(engine: Engine): DeliNode =
   engine.retvals.peek()

@@ -108,7 +108,7 @@ Statement     <-
               /  a:EnvStmt      / a:IncludeStmt / a:StreamStmt
               /  a:CloseStmt    / a:RunStmt
               /  a:FunctionStmt / a:BreakStmt
-              /  a:ContinueStmt / a:ReturnStmt  / a:Push / a:Pop )   { DK( Statement  , a ); SL(a); }
+              /  a:ContinueStmt / a:ReturnStmt  / a:Push / a:Pop )   { DK( Statement  , a ); SL($$); }
 
 Conditional   <- If          S+ < e:Condition >                     ~{ ER( expected_condition ); }
                              S+   c:Body                             { DK( Conditional, e, c ); SL1(e); }
@@ -264,7 +264,7 @@ Expr          <-
 
 Iterable      <- ( s:Array / s:VarDeref )                            { DK( Iterable, s ); }
 
-Condition     <- a:OrExpr                                            { $$ = a; }
+Condition     <- a:OrExpr                                            { DK( Condition, a); SL($$); }
 OrExpr        <- l:OrExpr  S+ ( o:BoolOr / o:BoolNor  ) S+ r:AndExpr { DK( CondExpr, o, l, r); }
                /                                           r:AndExpr { $$ = r; }
 AndExpr       <- l:AndExpr S+ (o:BoolAnd / o:BoolNand ) S+ r:NotExpr { DK( CondExpr, o, l, r); }

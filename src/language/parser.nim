@@ -90,6 +90,8 @@ proc parse*(parser: Parser): DeliNode =
     parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
+  debug 2:
+    echo "entry point = ", parser.entry_point
   return parser.entry_point
 
 
@@ -177,7 +179,8 @@ proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
   debug 3:
     stderr.write $result, " createNode1 ", $kind, " ", $s1, "\n"
   let node = DeliNode(kind: kind, sons: @[])
-  node.sons.add(parser.getNode(s1))
+  let son1 = parser.getNode(s1) ; son1.parent = node
+  node.sons.add(son1)
   parser.addNode node
 
 proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.} =
@@ -185,8 +188,10 @@ proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.}
   debug 3:
     stderr.write $result, " createNode2 ", $kind, " ", $s1, " ", $s2, "\n"
   var node = DeliNode(kind: kind, sons: @[])
-  node.sons.add(parser.getNode(s1))
-  node.sons.add(parser.getNode(s2))
+  let son1 = parser.getNode(s1) ; son1.parent = node
+  let son2 = parser.getNode(s2) ; son2.parent = node
+  node.sons.add(son1)
+  node.sons.add(son2)
   parser.addNode node
 
 proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.exportc.} =
@@ -194,22 +199,21 @@ proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.expor
   debug 3:
     stderr.write $result, " createNode3 ", $kind, " ", $s1, " ", $s2, " ", $s3, "\n"
   var node = DeliNode(kind: kind, sons: @[])
-  node.sons.add(parser.getNode(s1))
-  node.sons.add(parser.getNode(s2))
-  node.sons.add(parser.getNode(s3))
+  let son1 = parser.getNode(s1) ; son1.parent = node
+  let son2 = parser.getNode(s2) ; son2.parent = node
+  let son3 = parser.getNode(s3) ; son3.parent = node
+  node.sons.add(son1)
+  node.sons.add(son2)
+  node.sons.add(son3)
   parser.addNode node
 
 proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   let son = parser.getNode(s)
+  let parent = parser.getNode(p)
+  son.parent = parent
   debug 3:
     stderr.write $p, " nodeAppend ", $son.kind, " ", $s, "\n"
-  #case son.kind
-  #of dkPair:
-  #  var k = son.sons[0]
-  #  var v = son.sons[1]
-  #  (parser.getNode(p).table)[k.toString] = v
-  #else:
-  parser.getNode(p).sons.add(son)
+  parent.sons.add(son)
   result = p
 
 proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
@@ -217,7 +221,8 @@ proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
     stderr.write $dk, " setLine ", $l, "\n"
   var node = parser.getNode(dk)
   node.line = parser.script.line_number(l.int)
-  node.script = parser.script
+  if node.kind == dkScript:
+    node.script = parser.script
   parser.nodes[dk] = node
 
 proc parserError(parser: Parser, pos: csize_t, msg: cstring) {.exportc.} =

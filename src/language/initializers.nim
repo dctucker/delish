@@ -1,21 +1,24 @@
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
+proc addSons(parent: DeliNode, nodes: varargs[DeliNode]) =
+  for node in nodes:
+    node.parent = parent
+    #if node.parents.len == 0:
+    #  node.parents.add parent
+    parent.sons.add(node)
+
 proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
   result = DeliNode(kind: kind)
-  for node in nodes:
-    result.sons.add node
+  result.addSons nodes
 
 proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
   result = DK( dkExpr )
-  for node in nodes:
-    result.sons.add(node)
+  result.addSons nodes
 
 proc DKExprList*(nodes: varargs[DeliNode]): DeliNode =
   result = DK( dkExprList )
-  for node in nodes:
-    result.sons.add(node)
-
+  result.addSons nodes
 
 proc DKArg*(argName: string): DeliNode =
   if argName.len == 0:
@@ -75,17 +78,14 @@ proc DKLazy*(node: DeliNode): DeliNode =
   return DeliNode(kind: dkLazy, sons: @[node])
 
 proc DKNotNone*(node: DeliNode): DeliNode =
-  return DeliNode(kind: dkBoolExpr, sons: @[
-    node, DeliNode(kind: dkNeOp), deliNone()
-  ])
+  result = DK(dkBoolExpr, node, DK(dkNeOp), deliNone())
 
 proc DKStr*(strVal: string): DeliNode =
   return DeliNode(kind: dkString, strVal: strVal)
 
 proc DKStream*(intVal: int, args: varargs[DeliNode]): DeliNode =
   result = DeliNode(kind: dkStream, intVal: intVal)
-  for node in args:
-    result.sons.add node
+  result.addSons args
 
 proc DKOut*(): DeliNode = DKStream(0, DK(dkStreamOut))
 
@@ -105,11 +105,23 @@ proc DKStmt*(kind: DeliKind, args: varargs[DeliNode]): DeliNode =
   return DK( dkStatement, DK( kind, args ) )
 
 proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
-  var sons: seq[DeliNode] = @[]
-  for node in nodes:
-    node.line = line
-    sons.add(node)
-  return DeliNode(kind: dkInner, sons: sons, line: line)
+  result = DeliNode(kind: dkInner)
+  result.line = line
+  result.addSons nodes
+  for son in result.sons:
+    son.line = line
+
+proc DKJump*(line: int): DeliNode =
+  result = DeliNode(kind: dkJump)
+  result.line = line
+
+proc DKBreak*(line: int): DeliNode =
+  result = DeliNode(kind: dkBreakStmt)
+  result.line = line
+
+proc DKContinue*(line: int): DeliNode =
+  result = DeliNode(kind: dkContinueStmt)
+  result.line = line
 
 proc DKCallable*(fn: DeliFunction, sons: seq[DeliNode]): DeliNode =
   result = DeliNode(kind: dkCallable, function: fn, sons: sons)
