@@ -174,6 +174,40 @@ proc repr*(node: DeliNode): string =
     result &= ")"
   result &= " "
 
+proc treeRepr*(node: DeliNode, indent: int = 0): string =
+  result = ""
+  if node.parents.len == 0:
+    result = "⌱"
+
+  if node.kind == dkExpr:
+    result &= node.kind.name
+  else:
+    result &= $node
+
+  var nl: string
+  var ni: int
+
+  case node.kind
+  of dkScript,
+     dkExpr,
+     dkStatement:
+    ni = indent
+    nl = ""
+  else:
+    ni = indent + 1
+    nl = "\n" & repeat(" ", ni)
+
+  if node.sons.len > 0:
+    result &= "( " & nl
+    for son in node.sons:
+      result &= treeRepr(son, ni)
+    if ni == indent:
+      result &= ")"
+    else:
+      result &= nl & repeat(" ", indent) & ")"
+  result &= " "
+
+
 proc getOneliner*(node: DeliNode): string =
   case node.kind
   of dkNone:

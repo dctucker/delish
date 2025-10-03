@@ -60,7 +60,7 @@
 		*invalid_expression  = "invalid expression",
 		*expected_body       = "expected body",
 		*expected_variable   = "expected variable",
-		*expected_invocation = "expected invocation";
+		*expected_invocation = "expected invocation",
 		*expected_streamable = "expected streamable expression";
 }
 

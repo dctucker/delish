@@ -95,6 +95,11 @@ proc parse*(parser: Parser): DeliNode =
   return parser.entry_point
 
 
+proc quickParse*(str: string): DeliNode =
+  var parser = Parser()
+  parser.script = makeScript("", str)
+  result = parser.parse()
+
 ## PackCC integration stuff
 
 type PackEvent = enum

@@ -22,6 +22,9 @@ packdeli: src/packcc.c Makefile
 	cd src/language ; packcc -o packcc delish.packcc ; cd ../..
 	gcc -Og src/language/packcc.c -o packdeli
 
+parsley: src/language/packcc.c src/parsley.nim $(SOURCES)
+	nim c --hint:XDeclaredButNotUsed:off -o=parsley src/parsley.nim
+
 #tests/%.nim: $(SOURCES)
 
 tests/bin/%: tests/%.nim src/language/packcc.c src/language/packcc.h $(SOURCES)
