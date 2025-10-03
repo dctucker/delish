@@ -101,12 +101,18 @@ proc parent*(node: DeliNode): DeliNode =
     return None0
   return node.parents[0]
 
+proc root*(node: DeliNode): DeliNode =
+  result = node
+  while result.parent.kind != dkNone:
+    result = result.parent
+
 proc script*(node: DeliNode): DeliScript =
   if node.kind == dkScript:
     return node.script
   else:
     if node.parent.kind != dkNone:
       return script(node.parent)
+  todo node.kind.name, ".script"
   return nil
 
 proc `script=`*(node: DeliNode, scr: DeliScript) =

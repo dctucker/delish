@@ -64,6 +64,10 @@ proc insertStmt*(engine: Engine, node: DeliNode) =
   if node.kind == dkScript and node.script == nil:
     if engine.current.kind == dkScript:
       node.script = engine.current.script
+
+  if node.parent.kind == dkNone:
+    node.parent = engine.current.root
+
   if node.kind in @[ dkStatement, dkBlock, dkCode ]:
     for s in node.sons:
       engine.insertStmt(s)

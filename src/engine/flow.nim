@@ -5,6 +5,7 @@ proc setupConditional(engine: Engine, cond: DeliNode, stmt: DeliNode, line: int)
     DK( dkCode, DKInner( line, stmt ) )
   )
   conditional.line = cond.line
+
   engine.insertStmt( DKInner( -line, conditional ) )
   return conditional
 

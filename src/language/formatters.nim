@@ -159,6 +159,8 @@ proc lineage*(node: DeliNode): string =
 
 proc repr*(node: DeliNode): string =
   result = ""
+  if node.parents.len == 0:
+    result = "⌱"
 
   if node.kind == dkExpr:
     result &= node.kind.name
