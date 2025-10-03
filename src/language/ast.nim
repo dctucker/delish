@@ -52,6 +52,8 @@ type
        dkString:       strVal*:     string
     of dkRegex:        pattern*:    string
     of dkStream,
+       dkYear, dkMonth, dkDay,
+       dkHour, dkMinute, dkSecond,
        dkInteger:      intVal*:     int
     of dkDecimal:      decVal*:     Decimal
     of dkBoolean:      boolVal*:    bool

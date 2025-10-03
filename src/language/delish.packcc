@@ -481,12 +481,12 @@ Time          <- h:Hour ':' m:Minute ':'                             { DK( Time,
               (  s:Second '.' n:NanoSecond                           { NA( $$, s ); NA( $$, n ); }
               /  s:Second                                            { NA( $$, s ); }
               )  z:Timezone?                                         { NA( $$, z ); }
-Year          <- <            [0-9] [0-9] [0-9] [0-9]       >        { NS( Integer ); }
-Month         <- <                        [0-1] [0-9]       >        { NS( Integer ); }
-Day           <- <                        [0-3] [0-9]       >        { NS( Integer ); }
-Hour          <- <                        [0-2] [0-9]       >        { NS( Integer ); }
-Minute        <- <                        [0-6] [0-9]       >        { NS( Integer ); }
-Second        <- <                        [0-6] [0-9]       >        { NS( Integer ); }
+Year          <- <            [0-9] [0-9] [0-9] [0-9]       >        { NS( Year ); }
+Month         <- <                        [0-1] [0-9]       >        { NS( Month ); }
+Day           <- <                        [0-3] [0-9]       >        { NS( Day ); }
+Hour          <- <                        [0-2] [0-9]       >        { NS( Hour ); }
+Minute        <- <                        [0-6] [0-9]       >        { NS( Minute ); }
+Second        <- <                        [0-6] [0-9]       >        { NS( Second ); }
 NanoSecond    <- <                              [0-9]+      >        { NS( NanoSecond ); }
 Timezone      <- <  [-+] [0-2] [0-9] ':'? [0-6] [0-9] / 'Z' >        { NS( Timezone ); }
 

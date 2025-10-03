@@ -144,6 +144,9 @@ proc parseCapture(node: DeliNode, capture: string) =
       node.sons.add(DeliNode(kind:dkString, strVal: capture))
   of dkBoolean:    node.boolVal = parseBoolean(capture)
   of dkInteger:    node.intVal  = parseInteger(capture)
+  of dkYear, dkMonth, dkDay,
+     dkHour, dkMinute, dkSecond,
+     dkInt10:      node.intVal = parseInt10(capture)
   of dkDecimal:    node.decVal  = parseDecimal(capture)
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture

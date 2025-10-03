@@ -1,13 +1,16 @@
 import std/strutils
 import ./common
 
+proc parseInt10*(str: string): int =
+  result = parseInt(str)
+
 proc parseInteger*(str: string): int =
   if str.len > 2 and str[0..1] == "0x":
     result = parseHexInt(str)
   elif str.len > 1 and str[0] == '0':
     result = parseOctInt(str)
   else:
-    result = parseInt(str)
+    result = parseInt10(str)
   #stderr.write "parsed '", str, "'", " = ", result, "\n"
 
 proc parseBoolean*(str: string): bool =

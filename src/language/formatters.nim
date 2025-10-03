@@ -96,7 +96,11 @@ proc toString*(node: DeliNode): string =
      dkStrBlock,
      dkString:     node.strVal
   of dkStream,
+     dkYear,
      dkInteger:    $(node.intVal)
+  of dkMonth, dkDay,
+     dkHour, dkMinute,
+     dkSecond:     align($node.intVal, 2, '0')
   of dkDecimal:    $(node.decVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)
