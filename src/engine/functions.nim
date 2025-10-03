@@ -251,6 +251,6 @@ proc doFunctionDefs(engine: Engine, node: DeliNode) =
     for son in node.sons:
       engine.doFunctionDefs(son)
 
-proc initFunctions(engine: Engine, script: DeliNode) =
-  engine.doFunctionDefs(script)
-  #engine.checkFunctionCalls(script)
+proc initFunctions(engine: Engine, scr: DeliNode) =
+  engine.doFunctionDefs(scr)
+  #engine.checkFunctionCalls(scr)

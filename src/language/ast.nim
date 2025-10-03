@@ -81,9 +81,13 @@ type
       list_node*: DeliListNode
     of dkIterable:     generator*:  Iterable
     of dkCallable:     function*:   DeliFunction
+    of dkScript:       script:      DeliScript
     else:
       discard
-    script*:     DeliScript
+
+proc todo*(msg: varargs[string, `$`])
+proc name*(kind: DeliKind): string =
+  return ($kind).substr(2)
 
 let None0 = DeliNode(kind: dkNone)
 
@@ -97,11 +101,19 @@ proc parent*(node: DeliNode): DeliNode =
     return None0
   return node.parents[0]
 
-# TODO temporary fix
-proc findScript*(node: DeliNode): DeliScript =
-  if node.script != nil:
+proc script*(node: DeliNode): DeliScript =
+  if node.kind == dkScript:
     return node.script
-  return node.parent.findScript
+  else:
+    if node.parent.kind != dkNone:
+      return script(node.parent)
+  return nil
+
+proc `script=`*(node: DeliNode, scr: DeliScript) =
+  if node.kind == dkScript:
+    node.script = scr
+  else:
+    todo "assign ", node.kind.name, ".script"
 
 proc `line=`*(node: DeliNode, line: int) =
   case node.kind

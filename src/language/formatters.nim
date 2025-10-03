@@ -1,9 +1,5 @@
-proc todo*(msg: varargs[string, `$`])
 proc `$`*(node: DeliNode): string
 proc toString*(node: DeliNode):string
-
-proc name*(kind: DeliKind): string =
-  return ($kind).substr(2)
 
 proc argFormat(node: DeliNode): string =
   var current_kind = dkNone
@@ -92,6 +88,7 @@ proc toString*(node: DeliNode): string =
     return dkOperatorKindStrings[kind]
 
   return case kind
+  of dkScript:     node.script.filename
   of dkVarDeref:   "$"
   of dkIdentifier: node.id
   of dkPath,

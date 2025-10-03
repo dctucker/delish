@@ -61,8 +61,8 @@ proc insertStmt*(engine: Engine, node: DeliNode) =
       stderr.write "nil"
     stderr.write "\n"
 
-  if node.script == nil:
-    if engine.current.kind != dkNone:
+  if node.kind == dkScript and node.script == nil:
+    if engine.current.kind == dkScript:
       node.script = engine.current.script
   if node.kind in @[ dkStatement, dkBlock, dkCode ]:
     for s in node.sons:
@@ -94,12 +94,12 @@ proc removeStmt(engine: Engine): DeliNode =
   engine.statements.remove(engine.readhead)
   return stmt
 
-proc initScript(engine: Engine, script: DeliNode) =
+proc initScript(engine: Engine, scr: DeliNode) =
   var endline = 0
   if engine.tail != nil:
     endline = engine.tail.value.line
 
-  for s in script.sons:
+  for s in scr.sons:
     endline = max(endline, s.line)
     for s2 in s.sons:
       endline = max(endline, s2.line)
@@ -108,8 +108,8 @@ proc initScript(engine: Engine, script: DeliNode) =
   engine.tail = engine.writehead
   engine.setHeads(engine.statements.head.next)
 
-  if script.script != nil:
-    endline = max(endline, script.script.line_count + 1)
+  if scr.script != nil:
+    endline = max(endline, scr.script.line_count + 1)
   engine.tail.value.line = endline
   engine.assignVariable(".return", DeliNode( kind: dkJump, list_node: engine.tail ))
 
@@ -122,7 +122,10 @@ proc sourceFile*(engine: Engine): string =
     result = engine.current.script.filename
 
 proc sourceLine*(engine: Engine): string =
-  return engine.current.findScript.getLine( engine.current.line )
+  if engine.current.script != nil:
+    return engine.current.script.getLine( engine.current.line )
+  todo "missing script in ", engine.current.kind
+  return ""
 
 proc lineInfo*(engine: Engine): string =
   var filename: string
@@ -162,8 +165,8 @@ proc doIncludes(engine: Engine, node: DeliNode) =
   else:
     discard
 
-proc initIncludes(engine: Engine, script: DeliNode) =
-  engine.doIncludes(script)
+proc initIncludes(engine: Engine, scr: DeliNode) =
+  engine.doIncludes(scr)
 
 proc debugNext(engine: Engine) =
   debug 3:
@@ -185,11 +188,11 @@ proc nextLen*(engine: Engine): int =
     result += 1
     head = head.next
 
-proc setup*(engine: Engine, script: DeliNode) =
-  engine.initArguments(script)
-  engine.initIncludes(script)
-  engine.initFunctions(script)
-  engine.initScript(script)
+proc setup*(engine: Engine, scr: DeliNode) =
+  engine.initArguments(scr)
+  engine.initIncludes(scr)
+  engine.initFunctions(scr)
+  engine.initScript(scr)
 
 proc teardown(engine: Engine) =
   for k,v in engine.fds.pairs():

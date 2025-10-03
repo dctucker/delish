@@ -16,7 +16,7 @@ proc nextVar(v: string): DeliNode =
   next()
   result = engine.getVariable(v)
 
-proc script(stmts: varargs[DeliNode]) =
+proc DKScript(stmts: varargs[DeliNode]) =
   engine.setup( makeScript(@stmts) )
 
 suite "engine":
@@ -24,14 +24,14 @@ suite "engine":
     engine = newEngine(0)
 
   test "assign variable":
-    script(
+    DKScript(
       DKVarStmt("x", dkAssignOp, DKStr("foo"))
     )
     check:
       nextVar("x") == "foo"
 
   test "increment variable":
-    script(
+    DKScript(
       DKVarStmt("x", dkAssignOp, DKInt(3)),
       DKVarStmt("x", dkAppendOp, DKInt(2)),
     )
@@ -40,7 +40,7 @@ suite "engine":
       nextVar("x") == 5
 
   test "local variables":
-    script(
+    DKScript(
       DKVarStmt("x", dkAssignOp, DKInt(4)),
       DK( dkPush ),
       DKLocalStmt("x", dkAssignOp, DKStr("foo")),
@@ -54,7 +54,7 @@ suite "engine":
 
   test "arguments":
     let arg = DK( dkArg, DeliNode(kind: dkArgShort, argName: "a") )
-    script(
+    DKScript(
       DK( dkArgStmt, DK( dkArgNames, arg ), DK( dkDefaultOp ), DKExpr( DKInt(3) ) ),
       DKVarStmt("x", dkAssignOp, arg),
     )
@@ -62,7 +62,7 @@ suite "engine":
     check nextVar("x") == 3
 
   test "environment":
-    script(
+    DKScript(
       DK( dkEnvStmt, DKVar("USER") ),
       DK( dkEnvStmt, DKVar("PASTRAMI_ON_RYE"), DK( dkDefaultOp ), DK( dkEnvDefault, DKStr("no mayonaise") ) )
     )
@@ -71,7 +71,7 @@ suite "engine":
       nextVar("PASTRAMI_ON_RYE") == "no mayonaise"
 
   test "include":
-    script(
+    DKScript(
       DK( dkIncludeStmt, DKStr("tests/fixtures/test_include.deli") ),
       DKVarStmt("x", dkAssignOp, DKStr("done"))
     )
@@ -86,7 +86,7 @@ suite "engine":
 
   test "functions":
     let id = DeliNode(kind: dkIdentifier, id: "foo")
-    script(
+    DKScript(
       DKVarStmt("x", dkAssignOp, DKInt(0)),
       DK( dkFunctionDef, id, DK( dkCode,
         DKVarStmt("x", dkAssignOp, DKInt(1)),
@@ -100,7 +100,7 @@ suite "engine":
     check nextVar("x") == 1
 
   test "for loop":
-    script(
+    DKScript(
       DK( dkForLoop, DKVar("i"), DK( dkIterable, DK( dkArray, DKInt(0), DKInt(1), DKInt(2) ) ),
         DK( dkCode,
           DKVarStmt("x", dkAssignOp, DKVar("i")),
@@ -115,7 +115,7 @@ suite "engine":
     check nextVar("x") == 2
 
   test "do loop":
-    script(
+    DKScript(
       DKVarStmt("x", dkAssignOp, DKInt(3)),
       DK( dkDoLoop,
         DK( dkCode,
@@ -136,7 +136,7 @@ suite "engine":
       nextVar("x") == 5
 
   test "while loop":
-    script(
+    DKScript(
       DKVarStmt("x", dkAssignOp, DKInt(3)),
       DK( dkWhileLoop,
         DK( dkCondition, DK( dkComparison,
@@ -158,7 +158,7 @@ suite "engine":
       nextVar("x") == 5
 
   test "conditionals":
-    script(
+    DKScript(
       DKVarStmt("y", dkAssignOp, DKFalse),
       DKVarStmt("x", dkAssignOp, DKInt(1)),
       DK( dkConditional,

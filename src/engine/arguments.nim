@@ -77,8 +77,8 @@ proc doArgStmts(engine: Engine, node: DeliNode) =
   else:
     discard
 
-proc initArguments(engine: Engine, script: DeliNode) =
-  for stmt in script.sons:
+proc initArguments(engine: Engine, scr: DeliNode) =
+  for stmt in scr.sons:
     engine.doArgStmts(stmt)
   engine.argnum = 1
 

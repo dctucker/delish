@@ -35,10 +35,10 @@ proc close         (fd: FileDesc)
 proc evaluate*     (engine: Engine, val: DeliNode): DeliNode
 proc doOpen        (engine: Engine, nodes: seq[DeliNode]): DeliNode
 proc doStmt        (engine: Engine, s: DeliNode)
-proc initArguments (engine: Engine, script: DeliNode)
-proc initIncludes  (engine: Engine, script: DeliNode)
-proc initFunctions (engine: Engine, script: DeliNode)
-proc initScript    (engine: Engine, script: DeliNode)
+proc initArguments (engine: Engine, scr: DeliNode)
+proc initIncludes  (engine: Engine, scr: DeliNode)
+proc initFunctions (engine: Engine, scr: DeliNode)
+proc initScript    (engine: Engine, scr: DeliNode)
 proc assignVariable(engine: Engine, key: string, value: DeliNode)
 proc setHeads      (engine: Engine, list: DeliListNode) {.inline.}
 

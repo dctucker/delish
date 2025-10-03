@@ -9,6 +9,8 @@ suite "flow control":
     var parsed = parser.parse()
     var node: DeliNode
 
+    echo parsed.repr
+
     var engine = newEngine(parsed, 0)
     discard engine.doNext()
     check engine.getVariable("k").boolVal == true

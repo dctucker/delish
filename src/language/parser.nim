@@ -221,7 +221,8 @@ proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
     stderr.write $dk, " setLine ", $l, "\n"
   var node = parser.getNode(dk)
   node.line = parser.script.line_number(l.int)
-  node.script = parser.script
+  if node.kind == dkScript:
+    node.script = parser.script
   parser.nodes[dk] = node
 
 proc parserError(parser: Parser, pos: csize_t, msg: cstring) {.exportc.} =
