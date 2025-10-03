@@ -147,6 +147,7 @@ proc parseCapture(node: DeliNode, capture: string) =
   of dkYear, dkMonth, dkDay,
      dkHour, dkMinute, dkSecond,
      dkInt10:      node.intVal = parseInt10(capture)
+  of dkNanoSecond: node.intVal = parseNanoSecond(capture)
   of dkDecimal:    node.decVal  = parseDecimal(capture)
   of dkArgShort:   node.argName = capture
   of dkArgLong:    node.argName = capture

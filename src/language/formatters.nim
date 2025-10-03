@@ -54,21 +54,22 @@ proc arrayFormat(node: DeliNode): string =
 proc `$`*(decimal: Decimal): string =
   return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
 
+proc decFormat02(intVal: int): string =
+  return align($intVal, 2, '0')
+
+proc decFormat09(intVal: int): string =
+  return align($intVal, 9, '0')
+
 proc timeFormat(node: DeliNode): string =
-  return (
-    align($node.sons[0].intVal, 2, '0') & ":" &
-    align($node.sons[1].intVal, 2, '0') & ":" &
-    align($node.sons[2].intVal, 2, '0') & (
-      if node.sons[3].isNone(): "" else: "." & $node.sons[3].intVal
-    )
-  )
+  result = node.sons[0..2].map(proc(x: DeliNode): string =
+    x.intVal.decFormat02
+  ).join(":")
+  if not node.sons[3].isNone():
+    result &= "." & $node.sons[3]
 
 proc dateFormat(node: DeliNode): string =
   return node.sons.map(proc(x: DeliNode): string =
-    if x.kind == dkNone:
-      ""
-    else:
-      align($x.intVal, 2, '0')
+    x.intVal.decFormat02
   ).join("-")
 
 proc toString*(node: DeliNode): string =
@@ -100,7 +101,8 @@ proc toString*(node: DeliNode): string =
      dkInteger:    $(node.intVal)
   of dkMonth, dkDay,
      dkHour, dkMinute,
-     dkSecond:     align($node.intVal, 2, '0')
+     dkSecond:     node.intval.decFormat02
+  of dkNanoSecond: node.intval.decFormat09
   of dkDecimal:    $(node.decVal)
   of dkBoolean:    $(node.boolVal)
   of dkVariable:   $(node.varName)

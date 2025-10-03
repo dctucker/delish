@@ -54,6 +54,7 @@ type
     of dkStream,
        dkYear, dkMonth, dkDay,
        dkHour, dkMinute, dkSecond,
+       dkNanoSecond,
        dkInteger:      intVal*:     int
     of dkDecimal:      decVal*:     Decimal
     of dkBoolean:      boolVal*:    bool

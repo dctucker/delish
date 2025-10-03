@@ -1,6 +1,9 @@
 import std/strutils
 import ./common
 
+proc parseNanoSecond*(str: string): int =
+  result = parseInt(str.alignLeft(9, '0'))
+
 proc parseInt10*(str: string): int =
   result = parseInt(str)
 
