@@ -61,6 +61,7 @@
 		*expected_body       = "expected body",
 		*expected_variable   = "expected variable",
 		*expected_invocation = "expected invocation";
+		*expected_streamable = "expected streamable expression";
 }
 
 %source {
@@ -164,7 +165,7 @@ AppendExpr    <-
               /   e:Cast
               )                                                      { $$ = e; }
 
-OpenExpr      <- Open  (S+ o:RedirOper)? S+ ( p:Path / p:VarDeref ) ~{ ER("expected path after `open`"); }
+OpenExpr      <- Open  (S+ o:RedirOper)? S+ ( p:Path / p:VarDeref ) ~{ ER("expected path"); }
                                                                      { DK( OpenExpr, p, o); }
 CloseStmt     <-
               (  Close   S+ v:Variable                              ~{ ER( expected_variable ); }
@@ -173,7 +174,7 @@ CloseStmt     <-
 
 LocalStmt     <- Local   S+ v:Variable                              ~{ ER( expected_variable ); }
                                                                      { DK( LocalStmt, v ); }
-              (  S* o:AssignOp S* e:AssignExpr                      ~{ ER("expected assignable expression after `=`"); }
+              (  S* o:AssignOp S* e:AssignExpr                      ~{ ER("expected assignable expression"); }
                                                                      { NA( $$, o ); NA( $$, e ); }
               )?
 
@@ -185,19 +186,19 @@ ArgStmt       <- ArgKw
 
 EnvStmt       <- Env   S+ v:Variable                                ~{ ER( expected_variable ); }
                                                                      { DK( EnvStmt, v ); }
-              (  S* o:DefaultOp S* e:EnvDefault                     ~{ ER("expected constant expression after `|=`"); }
+              (  S* o:DefaultOp S* e:EnvDefault                     ~{ ER("expected constant expression"); }
                                                                      { NA( $$, o ); NA( $$, e ); }
               /  S* o:AssignOp  S* e:Expr                           ~{ ER( expected_expression ); }
                                                                      { NA( $$, o ); NA( $$, e ); }
               )?
 
-IncludeStmt   <- Include   S+ s:StrLiteral                          ~{ ER("expected string literal after `include`"); }
+IncludeStmt   <- Include   S+ s:StrLiteral                          ~{ ER("expected string literal"); }
                                                                      { DK( IncludeStmt, s ); }
 
 StreamStmt    <-
-              (  v:Variable DerefOp s:Stream S+ l:ExprList          ~{ ER("expected streamable expression"); }
+              (  v:Variable DerefOp s:Stream S+ l:ExprList          ~{ ER( expected_streamable ); }
                                                                      { DK( StreamStmt,  v, s, l ); }
-              /                     s:Stream S+ l:ExprList          ~{ ER("expected streamable expression"); }
+              /                     s:Stream S+ l:ExprList          ~{ ER( expected_streamable ); }
                                                                      { DK( StreamStmt,  s, l ); }
               )
 
@@ -346,21 +347,21 @@ VarDeref      <-
               )
               (  DerefOp
                ( s:StrLiteral / s:Integer
-               / s:Variable   / s:Identifier  )                     ~{ ER("expected literal, variable or identifier after `.`"); }
+               / s:Variable   / s:Identifier  )                     ~{ ER("expected literal, variable or identifier"); }
                                                                      { NA( $$, s ); }
               )*
 
 RedirFlag     <- Redir                                               { DK( RedirFlag ); }
               (  S+
-               ( i:VarDeref / i:Path / i:Stream )                   ~{ ER("expected redirection source"); }
-                 S* r:RedirOper S*                                  ~{ ER("expected redirection operator"); }
-               ( o:VarDeref / o:Path / o:Stream )                   ~{ ER("expected redirection destination"); }
+               ( i:VarDeref / i:Path / i:Stream )                   ~{ ER("expected source"); }
+                 S* r:RedirOper S*                                  ~{ ER("expected operator"); }
+               ( o:VarDeref / o:Path / o:Stream )                   ~{ ER("expected destination"); }
                                                                      { NA( r, i ); NA( r, o ); NA( $$, r ); }
               )+
 
 AsyncFlag     <- Async                                               { DK( AsyncFlag ); }
 
-Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER("expected expression"); }
+Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER( expected_expression ); }
                                  S*        PRight                    { DK( Cast, t, e ); }
 
 Json          <- "json"
