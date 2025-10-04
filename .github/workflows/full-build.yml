@@ -29,9 +29,9 @@ jobs:
         nimble
 
     - uses: actions/checkout@v4
-      with: 
+      with:
         repository: dctucker/packcc
-        ref: unquoted-debug
+        ref: main
         path: packcc
 
     - name: Build and install packcc
