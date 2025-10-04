@@ -316,6 +316,48 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
         result = DKPath(e.path)
   )
 
+const
+  modeU = S_IRUSR or S_IWUSR or S_IXUSR
+  modeG = S_IRGRP or S_IWGRP or S_IXGRP
+  modeO = S_IROTH or S_IWOTH or S_IXOTH
+  modeR = S_IRUSR or S_IRGRP or S_IROTH
+  modeW = S_IWUSR or S_IWGRP or S_IWOTH
+  modeX = S_IXUSR or S_IXGRP or S_IXOTH
+  modeS = S_ISUID or S_ISGID
+  modeT = S_ISVTX
+  modeD = S_IFDIR
+
+proc parseMode*(str: string, curmode: int): int =
+  var op: char
+  var who, what: int
+  for ch in str:
+    case ch
+    of 'u': who = who or modeU
+    of 'g': who = who or modeG
+    of 'o': who = who or modeO
+    of 'a': who = who or modeU or modeG or modeO
+    of '+',
+       '-',
+       '=': op = ch
+    of 'r': what = what or modeR
+    of 'w': what = what or modeW
+    of 'x': what = what or modeX
+    of 'X':
+      if (curmode and modeD) != 0:
+        what = what or modeX
+      elif (curmode and modeX) != 0:
+        what = what or modeX
+    of 's': what = what or modeS
+    of 't': what = what or modeT
+    else:
+      argerr "Unsupported mode: ", str
+  case op
+  of '+': result =     (who and what) or  curmode
+  of '-': result = not (who and what) and curmode
+  of '=': result =     (who and what) or (curmode and not who)
+  else:
+    argerr "Unsupported mode operation: ", $op
+
 proc dChmod(nodes: varargs[DeliNode]): DeliNode =
   argvars
   nextarg dkPath
@@ -323,14 +365,21 @@ proc dChmod(nodes: varargs[DeliNode]): DeliNode =
   shift
   let mode = arg
 
-  case mode.kind
-  of dkInteger:
-    discard
+  let modeval = case mode.kind
+  of dkInt8:
+    mode.intVal.Mode
   of dkString:
-    discard
+    var st = Stat()
+    if stat(path.strVal.cstring, st) != 0:
+      raise newException(RuntimeError, "Unable to get current mode for " & path.strVal)
+    mode.strVal.parseMode(st.st_mode.int).Mode
   else:
-    discard
+    argerr "Unsupported mode: ", mode
 
+  if chmod(path.strVal.cstring, modeval) == 0:
+    return DKBool(true)
+  else:
+    return DKBool(false) # TODO return POSIX errno
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "test": dTest,

@@ -3,6 +3,7 @@ import ./common
 
 import ../src/delitypes/functions
 import ../src/delitypes/ops
+import ../src/delitypes/path
 
 suite "type functions":
   let arr123i = DK( dkArray,
@@ -82,3 +83,14 @@ suite "type functions":
     let fn = typeFunction(dkString, DKId("split"))
     check arr123s == fn(DKStr("1 2 3"))
     check arr123s == fn(DKStr("1.2.3"), DKStr("."))
+
+  test "Path.parseMode":
+    var curmode = 0o777
+    check parseMode("a-x"  , 0o777) == 0o666
+    check parseMode("u-x"  , 0o777) == 0o677
+    check parseMode("g-x"  , 0o777) == 0o767
+    check parseMode("o-x"  , 0o777) == 0o776
+    check parseMode("o-rwx", 0o777) == 0o770
+    check parseMode("g+rwx", 0o010) == 0o070
+    check parseMode("g=x"  , 0o644) == 0o614
+    check parseMode("u+rx" , 0o010) == 0o510

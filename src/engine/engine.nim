@@ -6,7 +6,7 @@ proc runtimeError(engine: Engine, msg: varargs[string,`$`]) =
   var message = ""
   for m in msg:
     message &= m
-  raise RuntimeError(msg: message)
+  raise newException(RuntimeError, message)
 
 proc setupError(engine: Engine, msg: varargs[string,`$`]) =
   #engine.readhead.next = nil

@@ -1,5 +1,6 @@
 import std/[strutils,tables]
 import ../language/ast
+import ../errors
 
 template argerr*(msg: varargs[string, `$`]) =
   raise newException(ValueError, msg.join(""))
@@ -67,3 +68,4 @@ template pluralMaybe*(node, formula: untyped): untyped =
 
 export ast
 export tables
+export errors
