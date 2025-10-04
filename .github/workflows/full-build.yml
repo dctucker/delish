@@ -36,7 +36,7 @@ jobs:
 
     - name: Build and install packcc
       run: |
-        pushd ${GITHUB_WORKSPACE}/packcc/build/gcc
+        pushd ${GITHUB_WORKSPACE}/packcc
         gcc -o packcc src/packcc.c
         sudo cp packcc /usr/local/bin/
         popd
