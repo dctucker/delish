@@ -316,6 +316,22 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
         result = DKPath(e.path)
   )
 
+proc dChmod(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextarg dkPath
+  let path = arg
+  shift
+  let mode = arg
+
+  case mode.kind
+  of dkInteger:
+    discard
+  of dkString:
+    discard
+  else:
+    discard
+
+
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "test": dTest,
   "pwd": dPwd,
@@ -329,6 +345,6 @@ let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nim
   #"unlink": dUnlink,
   #"rename": dRename,
   #"chown": dChown,
-  #"chmod": dChmod,
+  "chmod": dChmod,
   #"symlink": dSymlink,
 }.toTable

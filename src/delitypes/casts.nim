@@ -61,7 +61,10 @@ proc toBoolean*(src: DeliNode): DeliNode =
 
 proc toInteger*(src: DeliNode): DeliNode =
   result = case src.kind
-  of dkInteger:    DKInt( src.intVal )
+  of dkInt8,
+     dkInt16,
+     dkInt10,
+     dkInteger:    DKInt( src.intVal )
   of dkStream:     DKInt(src.intVal)
   of dkBoolean:    DKInt(if src.boolVal: 1 else: 0)
   of dkString:     DKInt(src.strVal.parseInteger)

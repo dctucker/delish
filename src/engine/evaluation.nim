@@ -1,5 +1,11 @@
 ### Evaluation ###
 
+proc remakeInt(node: var DeliNode, kind: DeliKind) =
+  if node.kind in dkIntegerKinds and kind in dkIntegerKinds:
+    {.push warning[CaseTransition]: off.}
+    node.kind = kind
+    {.pop.}
+
 proc isTruthy(engine: Engine, node: DeliNode): bool =
   case node.kind
   of dkBoolean: return node.boolVal
@@ -12,7 +18,12 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
     a = a.toKind(dkDecimal)
     b = b.toKind(dkDecimal)
 
-  return case op.kind
+  var final_kind = a.kind
+  if a.kind in dkIntegerKinds and b.kind in dkIntegerKinds:
+    a = DKInt(a.intVal)
+    b = DKInt(b.intVal)
+
+  result = case op.kind
   of dkAddOp  : a  +   b
   of dkSubOp  : a  -   b
   of dkMulOp  : a  *   b
@@ -29,6 +40,8 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
   else:
     todo "evalMath " & $op
     deliNone()
+
+  result.remakeInt(final_kind)
 
 proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
   let val = case op.kind
@@ -97,6 +110,7 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
 
   of dkBoolean, dkString, dkIdentifier, dkDecimal, dkInteger, dkPath,
+     dkInt10, dkInt8, dkInt16,
      dkStrBlock, dkStrLiteral, dkJump, dkNone, dkRegex, dkCode:
     return val
 
@@ -192,7 +206,10 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
     return engine.evalMath(val.sons[0], v1, v2)
 
   of dkBitNot:
-    return not engine.evaluate( val.sons[0] ).toInteger()
+    let v = engine.evaluate( val.sons[0] )
+    result = not v.toInteger()
+    result.remakeInt v.kind
+    return result
 
   of dkFunctionCall:
     let v1 = val.sons[0]

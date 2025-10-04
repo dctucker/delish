@@ -27,6 +27,8 @@ grammarSubKindStrings("CompOper")
 grammarOpKinds()
 grammarOpKindStrings()
 
+const dkIntegerKinds* = { dkInt10, dkInt8, dkInt16, dkInteger, dkYear, dkMonth, dkDay, dkHour, dkMinute, dkSecond }
+
 type
   DeliNode* = ref DeliNodeObj
   DeliList* = SinglyLinkedList[DeliNode]
@@ -55,6 +57,9 @@ type
        dkYear, dkMonth, dkDay,
        dkHour, dkMinute, dkSecond,
        dkNanoSecond,
+       dkInt10,
+       dkInt16,
+       dkInt8,
        dkInteger:      intVal*:     int
     of dkDecimal:      decVal*:     Decimal
     of dkBoolean:      boolVal*:    bool

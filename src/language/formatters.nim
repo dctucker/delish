@@ -54,6 +54,12 @@ proc arrayFormat(node: DeliNode): string =
 proc `$`*(decimal: Decimal): string =
   return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
 
+proc formatInt16(intVal: int): string =
+  return "0x" & intVal.toHex.strip(chars={'0'}, trailing=false)
+
+proc formatInt8(intVal: int): string =
+  return "0" & intVal.toOct(intVal.sizeof).strip(chars={'0'}, trailing=false)
+
 proc decFormat02(intVal: int): string =
   return align($intVal, 2, '0')
 
@@ -96,8 +102,11 @@ proc toString*(node: DeliNode): string =
      dkStrLiteral,
      dkStrBlock,
      dkString:     node.strVal
+  of dkInt16:      node.intVal.formatInt16
+  of dkInt8:       node.intVal.formatInt8
   of dkStream,
      dkYear,
+     dkInt10,
      dkInteger:    $(node.intVal)
   of dkMonth, dkDay,
      dkHour, dkMinute,
