@@ -108,7 +108,10 @@ proc initScript(engine: Engine, scr: DeliNode) =
     for s2 in s.sons:
       endline = max(endline, s2.line)
       engine.insertStmt(s2)
-  engine.insertStmt(DKInner(0, deliNone()))
+
+  var final = DKInner(0, deliNone())
+  final.parent = scr
+  engine.insertStmt(final)
   engine.tail = engine.writehead
   engine.setHeads(engine.statements.head.next)
 

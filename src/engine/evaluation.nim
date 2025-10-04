@@ -191,6 +191,9 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
     let v2 = engine.evaluate(val.sons[2])
     return engine.evalMath(val.sons[0], v1, v2)
 
+  of dkBitNot:
+    return not engine.evaluate( val.sons[0] ).toInteger()
+
   of dkFunctionCall:
     let v1 = val.sons[0]
     return engine.evalFunctionCall(v1, val.sons[1 .. ^1])

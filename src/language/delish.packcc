@@ -287,6 +287,7 @@ BitXor        <- Xor                                                 { DK( BitXo
 BitXnor       <- Xnor                                                { DK( BitXnor ); }
 BitShl        <- Shl                                                 { DK( BitShl ); }
 BitShr        <- Shr                                                 { DK( BitShr ); }
+BitNot        <- Not                                                 { DK( BitNot  ); }
 
 MathExpr      <- PLeft S* a:BOrExpr S* PRight                        { $$ = a; }
 
@@ -311,7 +312,11 @@ AddExpr       <- l:AddExpr S+ ( o:AddOp / o:SubOp )
                /                                       r:MulExpr     { $$ = r; }
 
 MulExpr       <- l:MulExpr S+ ( o:MulOp / o:DivOp / o:ModOp )
-                           S+                          r:PrimExpr    { DK( MathExpr, o, l, r ); }
+                           S+                          r:BNotExpr    { DK( MathExpr, o, l, r ); }
+               /                                       r:BNotExpr    { $$ = r; }
+
+BNotExpr      <-                o:BitNot
+                           S+                          r:PrimExpr    { $$ = o; NA($$, r); }
                /                                       r:PrimExpr    { $$ = r; }
 
 PrimExpr      <- e:Expr                                              { $$ = e; }

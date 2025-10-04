@@ -119,6 +119,8 @@ proc `not`*(a: DeliNode): DeliNode =
   case a.kind:
   of dkBoolean:
     return DeliNode(kind: dkBoolean, boolVal: not a.boolVal)
+  of dkInteger:
+    return DeliNode(kind: dkInteger, intVal: not a.intVal)
   else:
     todo "not ", a.kind
 
