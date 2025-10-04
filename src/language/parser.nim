@@ -30,7 +30,7 @@ type
     entry_point:  DeliNode
     script*:      DeliScript
     symbol_stack: Stack[DeliKind]
-    brackets:     Stack[char]
+    brackets*:    Stack[char]
     nodes:        seq[DeliNode]
     errors*:      seq[ErrorMsg]
     metrics:      OrderedTable[DeliKind,Metric]
@@ -50,9 +50,6 @@ proc initParser(parser: Parser) =
 template debug(level: int, code: untyped) =
   if parser.debug >= level:
     code
-
-proc indent(parser: Parser, msg: string): string =
-  return indent( msg, 4*parser.symbol_stack.len() )
 
 proc total*(m: Metric): int =
   return m.match + m.noMatch + m.evaluate
@@ -92,7 +89,7 @@ proc parse*(parser: Parser): DeliNode =
   parser.nodes = @[deliNone()]
   discard packcc_main(cstr, parser.script.source.len.cint, parser)
   if parser.brackets.len > 0:
-    let b = parser.brackets.popUnsafe()
+    let b = parser.brackets.peekUnsafe()
     parser.errors.add(ErrorMsg(pos: parser.script.source.len, msg: "expected closing `" & b & "`"))
   parser.entry_point = parser.nodes[^1]
   parser.entry_point.script = parser.script
@@ -100,9 +97,7 @@ proc parse*(parser: Parser): DeliNode =
     echo "entry point = ", parser.entry_point
   return parser.entry_point
 
-
-proc quickParse*(str: string): DeliNode =
-  var parser = Parser()
+proc quickParse*(parser: Parser, str: string): DeliNode =
   parser.script = makeScript("", str)
   result = parser.parse()
   if parser.errors.len > 0:
@@ -111,16 +106,14 @@ proc quickParse*(str: string): DeliNode =
       msg &= $e & "\n"
     raise newException(ParserError, msg.strip)
 
+proc quickParse*(str: string): DeliNode =
+  var parser = Parser()
+  return parser.quickParse(str)
+
 ## PackCC integration stuff
 
 type PackEvent = enum
   peEvaluate, peMatch, peNoMatch
-
-type DeliT = object
-  input: cstring
-  offset: csize_t
-  length: csize_t
-  parser: Parser
 
 proc pccError(parser: Parser, cur: csize_t): void {.exportc.} =
   when deepDebug:
@@ -158,6 +151,7 @@ proc addNode(parser: Parser, node: DeliNode) =
   parser.nodes.add node
 
 proc bracket(parser: Parser, pos: int, c: char, d: int8) {.exportc.} =
+  #echo "\n", pos, $c, $d, "\n"
   if d > 0:
     parser.brackets.push(c)
   elif d < 1:

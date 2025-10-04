@@ -24,6 +24,8 @@ proc setPrompt*(nt: Nteract, kind: DeliKind) =
     nt.ps1 = "Path.pwd, \" . \""
   of dkScript:
     nt.ps1 = "Script.name, \":\", Script.line, \"> \""
+  of dkBody:
+    nt.ps1 = "Script.name, \":\", Script.line, \"… \""
   else:
     nt.ps1 = "> "
     return
@@ -35,7 +37,9 @@ proc prompt*(nt: Nteract): string =
   of dkPath:
     return $getCurrentDir()
   of dkScript:
-    return nt.filename & ":" & $(nt.line.abs)
+    return nt.filename & ":" & $(nt.line.abs) & "\27[24m>"
+  of dkBody:
+    return nt.filename & ":" & $(nt.line.abs) & "\27[24m…"
   else:
     return nt.ps1
 
@@ -45,7 +49,7 @@ proc clear(nt: Nteract) =
   stdout.write("\r\27[2K")
   stdout.write("\27[36;4m")
   stdout.write(nt.prompt)
-  stdout.write("\27[24;1m> \27[0m")
+  stdout.write(" \27[0m")
   stdout.flushFile()
 
 proc `filename=`*(nt: Nteract, fn: string) =

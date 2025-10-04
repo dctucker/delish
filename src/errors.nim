@@ -1,5 +1,6 @@
-type DeliError* = object of CatchableError
-type RuntimeError* = ref object of DeliError
-type SetupError* = ref object of DeliError
-type InterruptError* = ref object of DeliError
-type ParserError* = object of DeliError
+type
+  DeliError* = object of CatchableError
+  RuntimeError* = ref object of DeliError
+  SetupError* = ref object of DeliError
+  InterruptError* = ref object of DeliError
+  ParserError* = object of DeliError

@@ -111,8 +111,8 @@ proc toString*(node: DeliNode): string =
   of dkDate:       node.dateFormat
   of dkPair:       ""
   of dkObject,
-     dkRan:        objFormat(node)
-  of dkArray:      arrayFormat(node)
+     dkRan:        node.objFormat
+  of dkArray:      node.arrayFormat
   of dkArgDefault:
     if node.sons.len > 0:
       $(node.sons[0])
@@ -181,7 +181,8 @@ proc repr*(node: DeliNode): string =
   result &= " "
 
 proc treeRepr*(node: DeliNode, indent: int = 0): string =
-  result = ""
+  result = "\n" & repeat(" ", indent)
+
   if node.parents.len == 0:
     result = "⌱"
 
@@ -190,29 +191,11 @@ proc treeRepr*(node: DeliNode, indent: int = 0): string =
   else:
     result &= $node
 
-  var nl: string
-  var ni: int
-
-  case node.kind
-  of dkScript,
-     dkExpr,
-     dkStatement:
-    ni = indent
-    nl = ""
-  else:
-    ni = indent + 1
-    nl = "\n" & repeat(" ", ni)
-
   if node.sons.len > 0:
-    result &= "( " & nl
+    result &= "("
     for son in node.sons:
-      result &= treeRepr(son, ni)
-    if ni == indent:
-      result &= ")"
-    else:
-      result &= nl & repeat(" ", indent) & ")"
-  result &= " "
-
+      result &= treeRepr(son, indent + 1)
+    result &= "\n" & repeat(" ", indent) & ")"
 
 proc getOneliner*(node: DeliNode): string =
   case node.kind

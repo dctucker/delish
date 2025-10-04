@@ -534,12 +534,12 @@ RedirAppendOp <- ">>"                                                { DK( Redir
 RedirReadOp   <- "<"                                                 { DK( RedirReadOp ); }
 RedirWriteOp  <- ">"                                                 { DK( RedirWriteOp ); }
 RedirDuplexOp <- "<>"                                                { DK( RedirDuplexOp ); }
-CLeft         <- "{"                                                 { BB('{',  1); }
-CRight        <- "}"                                                 { BB('{', -1); }
-ALeft         <- "["                                                 { BB('[',  1); }
-ARight        <- "]"                                                 { BB('[', -1); }
-PLeft         <- "("                                                 { BB('(',  1); }
-PRight        <- ")"                                                 { BB('(', -1); }
+CLeft         <- "{"                                                &{ BB('{',  1); }
+CRight        <- "}"                                                &{ BB('{', -1); }
+ALeft         <- "["                                                &{ BB('[',  1); }
+ARight        <- "]"                                                &{ BB('[', -1); }
+PLeft         <- "("                                                &{ BB('(',  1); }
+PRight        <- ")"                                                &{ BB('(', -1); }
 A             <- [A-Za-z]
 C             <- [^ \n\r\t;]
 S             <- ( "\\" "\n" ) / "\t" / ' '
