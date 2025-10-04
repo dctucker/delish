@@ -6,13 +6,13 @@ import ./common
 
 proc dOct(nodes: varargs[DeliNode]): DeliNode =
   argvars
-  nextarg dkInteger
+  nextarg dkIntegerKinds
   maxarg
   return DKStr("0" & arg.intVal.toOct(arg.intVal.sizeof).strip(chars={'0'}, trailing=false))
 
 proc dHex(nodes: varargs[DeliNode]): DeliNode =
   argvars
-  nextarg dkInteger
+  nextarg dkIntegerKinds
   maxarg
   return DKStr("0x" & arg.intVal.toHex.strip(chars={'0'}, trailing=false))
 

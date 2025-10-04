@@ -26,6 +26,12 @@ template nextarg*(k: static[DeliKind]) =
   shift
   expect k
 
+template nextarg*(kinds: static[set[DeliKind]]) =
+  shift
+  express
+  if arg.kind notin kinds:
+    argerr "expected one of ", kinds, ", not ", arg.kind.name
+
 template nextopt*(default: DeliNode) =
   if arg_i >= nodes.len:
     arg = default

@@ -44,7 +44,10 @@ proc `!=`*(o1, o2: DeliNode): bool =
   case o1.kind
   of dkDecimal:
     return o1.decVal != o2.decVal
-  of dkInteger:
+  of dkInt8,
+     dkInt16,
+     dkInt10,
+     dkInteger:
     return o1.intVal != o2.intVal
   of dkPath, dkString, dkStrLiteral, dkStrBlock:
     return o1.strVal != o2.strVal
@@ -62,7 +65,10 @@ proc `==`*(o1, o2: DeliNode): bool =
   case o1.kind
   of dkDecimal:
     return o1.decVal == o2.decVal
-  of dkInteger:
+  of dkInt10,
+     dkInt8,
+     dkInt16,
+     dkInteger:
     return o1.intVal == o2.intVal
   of dkPath, dkString, dkStrLiteral, dkStrBlock:
     return o1.strVal == o2.strVal
@@ -100,7 +106,7 @@ proc `==`*(o1, o2: DeliNode): bool =
     todo "== ", o1.kind, " ", o2.kind
 
 proc `==`*(o: DeliNode, i: int): bool =
-  if o.kind == dkInteger:
+  if o.kind in dkIntegerKinds:
     return o.intVal == i
   return false
 

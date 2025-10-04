@@ -27,7 +27,7 @@ suite "parser":
         DK( dkStream, DK( dkStreamOut ) ),
         DK( dkExprList,
           DK( dkExpr, DK( dkString ) ),
-          DK( dkExpr, DK( dkInteger ) )
+          DK( dkExpr, DK( dkInt10 ) )
         )
       )
     )))
