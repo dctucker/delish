@@ -3,7 +3,7 @@
 Delish is a line-oriented scripting language. A line may contain a statement or a block followed by a comment.
 Comments begin with the `#` character.
 
-Full grammar [here](blob/main/src/language/delish.packcc)
+Full grammar [here](delish/blob/main/src/language/delish.packcc)
 
 ## Data types
 
