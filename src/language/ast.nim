@@ -9,6 +9,7 @@ import ../[
   deliscript,
   delilog,
   errnos,
+  signals,
 ]
 import ./[
   grammar
@@ -56,6 +57,7 @@ type
     of dkRegex:        pattern*:    string
     of dkStream,
        dkError,
+       dkSignal,
        dkYear, dkMonth, dkDay,
        dkHour, dkMinute, dkSecond,
        dkNanoSecond,

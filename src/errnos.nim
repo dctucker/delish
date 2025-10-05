@@ -1,5 +1,5 @@
-import std/[posix]
 type PosixError* {.pure.} = enum
+  Error0 = 0,
   EPERM = 1,
   ENOENT = 2,
   ESRCH = 3,

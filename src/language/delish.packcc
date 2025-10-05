@@ -257,8 +257,8 @@ Expr          <-
               /  s:Array    / s:Object
               /  s:Arg      / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
-              /  s:DateTime / s:Number / s:Boolean
-              /  s:BoolExpr / s:Error
+              /  s:DateTime / s:Number     / s:Boolean
+              /  s:BoolExpr / s:Error      / s:Signal
               /  s:Path     / s:JsonBlock
               /  s:Cast     / s:FunctionCall
               )                                                      { DK( Expr, s); }
@@ -424,6 +424,7 @@ Type          <- "Integer"                                           { DK( Integ
               /  "Boolean"                                           { DK( Boolean    ); }
               /  "Identifier"                                        { DK( Identifier ); }
               /  "Error"                                             { DK( Error      ); }
+              /  "Signal"                                            { DK( Signal     ); }
               /  "Path"                                              { DK( Path       ); }
               /  "Object"                                            { DK( Object     ); }
               /  "Regex"                                             { DK( Regex      ); }
@@ -476,7 +477,8 @@ ArgShort      <-   '-'  <       W+              >                    { NS( ArgSh
 ArgLong       <-  "--"  <     ( W ( '-' W )* )+ >                    { NS( ArgLong ); }
 String        <-        <       C+              >                    { NS( String ); }
 Regex         <-  'r/'  <    ( '\/' / !'/' . )+ > '/'                { NS( Regex ); }
-Error         <-        < 'E' [A-Z]+            >                    { NS( Error ); }
+Error         <-        <  'E'        [A-Z]+    >                    { NS( Error ); }
+Signal        <-        < "SIG"       [A-Z]+    >                    { NS( Signal ); }
 
 Number        <- d:Decimal                                           { $$ = d; }
                / i:Integer                                           { $$ = i; }

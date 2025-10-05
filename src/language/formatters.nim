@@ -57,6 +57,9 @@ proc `$`*(decimal: Decimal): string =
 proc formatError(intVal: int): string =
   return $PosixError(intVal)
 
+proc formatSignal(intVal: int): string =
+  return $PosixSignal(intVal)
+
 proc formatInt16(intVal: int): string =
   return "0x" & intVal.toHex.strip(chars={'0'}, trailing=false)
 
@@ -112,6 +115,7 @@ proc toString*(node: DeliNode): string =
      dkInt10,
      dkInteger:    $(node.intVal)
   of dkError:      node.intVal.formatError
+  of dkSignal:     node.intVal.formatSignal
   of dkMonth, dkDay,
      dkHour, dkMinute,
      dkSecond:     node.intval.decFormat02
