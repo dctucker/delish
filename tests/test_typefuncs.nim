@@ -26,12 +26,12 @@ suite "type functions":
 
   test "Integer.oct":
     let fn = typeFunction(dkInteger, DKId("oct"))
-    check fn(DKInt(126)) == DKStr("0176")
+    check fn(DKInt(126)) == DeliNode(kind: dkInt8, intVal: 0o176)
 
   test "Integer.hex":
     let fn = typeFunction(dkInteger, DKId("hex"))
-    check fn(DKInt(255)) == DKStr("0xFF")
-    check fn(DKInt(63)) == DKStr("0x3F")
+    check fn(DKInt(255)) == DeliNode(kind: dkInt16, intVal: 0xFF)
+    check fn(DKInt(63)) == DeliNode(kind: dkInt16, intVal: 0x3F)
 
   test "Object.keys":
     let fn = typeFunction(dkObject, DKId("keys"))

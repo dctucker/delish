@@ -1,6 +1,5 @@
 import std/[
   strutils,
-  tables,
 ]
 import ./common
 
@@ -8,13 +7,13 @@ proc dOct(nodes: varargs[DeliNode]): DeliNode =
   argvars
   nextarg dkIntegerKinds
   maxarg
-  return DKStr("0" & arg.intVal.toOct(arg.intVal.sizeof).strip(chars={'0'}, trailing=false))
+  return DeliNode(kind: dkInt8, intVal: arg.intVal)
 
 proc dHex(nodes: varargs[DeliNode]): DeliNode =
   argvars
   nextarg dkIntegerKinds
   maxarg
-  return DKStr("0x" & arg.intVal.toHex.strip(chars={'0'}, trailing=false))
+  return DeliNode(kind: dkInt16, intVal: arg.intVal)
 
 let IntegerFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "oct": dOct,

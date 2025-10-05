@@ -316,7 +316,7 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
         result = DKPath(e.path)
   )
 
-const
+let
   modeU = S_IRUSR or S_IWUSR or S_IXUSR
   modeG = S_IRGRP or S_IWGRP or S_IXGRP
   modeO = S_IROTH or S_IWOTH or S_IXOTH

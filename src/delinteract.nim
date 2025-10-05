@@ -133,9 +133,9 @@ proc getUserInput*(nt: Nteract, cmdline: string = ""): string =
     let k = getch()
     case k
     of '\3':
-      raise InterruptError(msg: "^C")
+      raise newException(InterruptError, "^C")
     of '\4':
-      raise InterruptError(msg: "^D")
+      raise newException(InterruptError, "^D")
     of '\7', '\127':
       if first:
         nt.clear()

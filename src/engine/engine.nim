@@ -14,7 +14,7 @@ proc setupError(engine: Engine, msg: varargs[string,`$`]) =
   var message = ""
   for m in msg:
     message &= m
-  raise SetupError(msg: "(setup) " & message)
+  raise newException(SetupError, "(setup) " & message)
 
 proc setHeads(engine: Engine, list: DeliListNode) {.inline.} =
   engine.readhead = list
