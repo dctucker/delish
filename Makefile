@@ -5,12 +5,21 @@ src/language/packcc.c: src/language/delish.packcc
 	cd src/language && packcc -o packcc delish.packcc && cd ../..
 
 src/errnos.nim: Makefile
-	echo -e 'import std/[posix]\ntype PosixError* {.pure.} = enum' > src/errnos.nim
-	gcc -E -dD - <<<'#include <errno.h>' | awk '/^#define E/ { printf "  %s = %s,\n", $$2, $$3 }' >> src/errnos.nim
-	echo "}.toTable" >> src/errnos.nim
+	echo 'type PosixError* {.pure.} = enum' >  $@
+	echo '  Error0 = 0,' >> $@
+	gcc -E -dD - <<<'#include <errno.h>' | \
+		awk '/^#define E[A-Z0-9]+ *[0-9]+/ { printf "  %s = %s,\n", $$2, $$3 }' | \
+		uniq -f 2 >> $@
+
+src/signals.nim: Makefile
+	echo 'type PosixSignal* {.pure.} = enum' >  $@
+	echo '  Signal0 = 0,' >> $@
+	gcc -E -dD - <<<'#include <signal.h>' | \
+		awk '/^#define SIG[A-Z0-9]+ *[0-9]+/ { printf "  %s = %s,\n", $$2, $$3 }' | \
+		uniq -f 2 >> $@
 
 SOURCES=$(wildcard src/**/*.nim)
-debug: src/language/packcc.c src/errnos.nim $(SOURCES)
+debug: src/language/packcc.c src/signals.nim src/errnos.nim $(SOURCES)
 	nimble build -f -d:deepDebug
 
 profile: src/language/packcc.c $(SOURCES)
