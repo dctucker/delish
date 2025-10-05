@@ -54,6 +54,9 @@ proc arrayFormat(node: DeliNode): string =
 proc `$`*(decimal: Decimal): string =
   return $(decimal.whole) & '.' & align($(decimal.fraction), decimal.decimals, '0')
 
+proc formatError(intVal: int): string =
+  return $PosixError(intVal)
+
 proc formatInt16(intVal: int): string =
   return "0x" & intVal.toHex.strip(chars={'0'}, trailing=false)
 
@@ -108,6 +111,7 @@ proc toString*(node: DeliNode): string =
      dkYear,
      dkInt10,
      dkInteger:    $(node.intVal)
+  of dkError:      node.intVal.formatError
   of dkMonth, dkDay,
      dkHour, dkMinute,
      dkSecond:     node.intval.decFormat02

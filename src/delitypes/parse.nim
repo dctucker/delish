@@ -1,5 +1,9 @@
 import std/strutils
 import ./common
+import ../errnos
+
+proc parseError*(str: string): int =
+  return parseEnum[PosixError](str).int
 
 proc parseNanoSecond*(str: string): int =
   result = parseInt(str.alignLeft(9, '0'))

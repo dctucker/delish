@@ -8,6 +8,7 @@ import std/[
 import ../[
   deliscript,
   delilog,
+  errnos,
 ]
 import ./[
   grammar
@@ -54,6 +55,7 @@ type
        dkString:       strVal*:     string
     of dkRegex:        pattern*:    string
     of dkStream,
+       dkError,
        dkYear, dkMonth, dkDay,
        dkHour, dkMinute, dkSecond,
        dkNanoSecond,

@@ -258,7 +258,7 @@ Expr          <-
               /  s:Arg      / s:VarDeref
               /  s:StrBlock / s:StrLiteral / s:Regex
               /  s:DateTime / s:Number / s:Boolean
-              /  s:BoolExpr
+              /  s:BoolExpr / s:Error
               /  s:Path     / s:JsonBlock
               /  s:Cast     / s:FunctionCall
               )                                                      { DK( Expr, s); }
@@ -423,6 +423,7 @@ Type          <- "Integer"                                           { DK( Integ
               /  "Array"                                             { DK( Array      ); }
               /  "Boolean"                                           { DK( Boolean    ); }
               /  "Identifier"                                        { DK( Identifier ); }
+              /  "Error"                                             { DK( Error      ); }
               /  "Path"                                              { DK( Path       ); }
               /  "Object"                                            { DK( Object     ); }
               /  "Regex"                                             { DK( Regex      ); }
@@ -475,6 +476,7 @@ ArgShort      <-   '-'  <       W+              >                    { NS( ArgSh
 ArgLong       <-  "--"  <     ( W ( '-' W )* )+ >                    { NS( ArgLong ); }
 String        <-        <       C+              >                    { NS( String ); }
 Regex         <-  'r/'  <    ( '\/' / !'/' . )+ > '/'                { NS( Regex ); }
+Error         <-        < 'E' [A-Z]+            >                    { NS( Error ); }
 
 Number        <- d:Decimal                                           { $$ = d; }
                / i:Integer                                           { $$ = i; }

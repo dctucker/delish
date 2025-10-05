@@ -136,6 +136,7 @@ proc parseCapture(node: DeliNode, capture: string) =
     else:
       node.sons.add(DeliNode(kind:dkString, strVal: capture))
   of dkBoolean:    node.boolVal = parseBoolean(capture)
+  of dkError:      node.intVal = parseError(capture)
   of dkInt16,
      dkInt8,
      dkInteger:    node.intVal  = parseInteger(capture)
