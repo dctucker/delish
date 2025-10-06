@@ -84,11 +84,13 @@ Body          <- ( CLeft _ < c:Code > _ CRight                      ~{ ER("missi
                                                                      { $$ = c; SL1(c); }
 
 VLine         <-
-              (  ( "\n" / ";" )                                      { $$ = -1; }
+              (                             ( "\n" / ";" )           { $$ = -1; }
               /  Comment                                             { $$ = -1; }
-              /  a:Block                                             { $$ = a; }
-              /  a:Statement S* Comment* S* ( "\n" / ";" )           { $$ = a; }
-              /  e:Expr ( "\n" / ";" )                               { $$ = e; }
+              /  a:Block                    ( "\n" / ";" )           { $$ = a; }
+              /  a:Block     S* Comment*                             { $$ = a; }
+              /  a:Statement S*             ( "\n" / ";" )           { $$ = a; }
+              /  a:Statement S* Comment*                             { $$ = a; }
+              /  e:Expr                     ( "\n" / ";" )           { $$ = e; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 
 Comment       <- '#' (! "\n" .)* "\n"

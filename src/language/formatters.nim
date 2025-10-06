@@ -126,7 +126,8 @@ proc toString*(node: DeliNode): string =
   of dkDateTime:   $(node.dtVal)
   of dkTime:       node.timeFormat
   of dkDate:       node.dateFormat
-  of dkPair:       ""
+  of dkPair,
+     dkJsonBlock:  ""
   of dkObject,
      dkRan:        node.objFormat
   of dkArray:      node.arrayFormat

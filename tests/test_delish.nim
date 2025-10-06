@@ -19,3 +19,7 @@ suite "delish":
   test "paths":
     let err = delish_main(@["tests/fixtures/test_paths.deli"])
     check err == 0
+
+  test "json":
+    let err = delish_main(@["tests/fixtures/test_json.deli"])
+    check err == 0

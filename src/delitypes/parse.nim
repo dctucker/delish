@@ -1,9 +1,13 @@
-import std/strutils
-import ./common
-import ../[
-  errnos,
-  signals,
-]
+import
+  std/[
+    strutils,
+    json,
+  ],
+  ./common,
+  ../[
+    errnos,
+    signals,
+  ]
 
 proc parseError*(str: string): int =
   return parseEnum[PosixError](str, PosixError.Error0).int
@@ -42,3 +46,28 @@ proc parseDecimal*(str: string): Decimal =
 
 proc parseString*(str: string): string =
   result = str
+
+proc assembleJson(node: JsonNode): DeliNode =
+  case node.kind
+  of JString:
+    return DKStr(node.str)
+  of JInt:
+    return DKInt(node.num)
+  of JFloat:
+    return deliNone() # TODO
+  of JBool:
+    return DKBool(node.bval)
+  of JNull:
+    return deliNone()
+  of JObject:
+    result = DK(dkObject)
+    for field,obj in node.fields.pairs:
+      result.table[field] = assembleJson(obj)
+  of JArray:
+    result = DK(dkArray)
+    for elem in node.elems:
+      result.sons.add assembleJson(elem)
+
+proc parseJsonString*(str: string): DeliNode =
+  let js = parseJson(str)
+  return assembleJson(js)

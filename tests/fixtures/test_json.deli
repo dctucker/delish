@@ -1,0 +1,22 @@
+#!/usr/bin/deli
+
+$json = json """
+{
+  "x": 5,
+  "y": 7,
+  "lines": [
+    "five",
+    "seven",
+  ]
+}
+"""
+if $json.x != 5 {
+  return 1
+}
+if $json.y != 7 {
+  return 1
+}
+$lines = $json.lines # TODO make intermediate dereferencing unnecessary
+if $lines.0 != "five" {
+  return 1
+}

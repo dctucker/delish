@@ -332,4 +332,6 @@ proc deli_event(parser: Parser, event: cint, rule: cint, level: cint, pos: csize
   ##let k = DeliKind(rule)
   ##echo indent(e, level * 2), $k, " ", capture.split("\n")[0], "\27[0m"
 
+export parse
+
 {.compile: "packcc.c" .}

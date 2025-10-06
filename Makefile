@@ -15,7 +15,7 @@ src/signals.nim: Makefile
 	echo 'type PosixSignal* {.pure.} = enum' >  $@
 	echo '  Signal0 = 0,' >> $@
 	gcc -E -dD - <<<'#include <signal.h>' | \
-		awk '/^#define SIG[A-Z0-9]+ *[0-9]+/ { printf "  %s = %s,\n", $$2, $$3 }' | \
+		awk '/^#define SIG[A-Z0-9]+ *[0-9]{1,3} *$$/ { printf "  %s = %s,\n", $$2, $$3 }' | \
 		uniq -f 2 >> $@
 
 SOURCES=$(wildcard src/**/*.nim)

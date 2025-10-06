@@ -141,6 +141,9 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
     #stderr.write printValue(result)
     return result
 
+  of dkJsonBlock:
+    result = val.sons[0].strVal.parseJsonString
+
   of dkDateTime:
     let date = val.sons[0].sons
     let time = val.sons[1].sons
