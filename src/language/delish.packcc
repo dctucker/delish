@@ -85,10 +85,12 @@ Body          <- ( CLeft _ < c:Code > _ CRight                      ~{ ER("missi
 
 VLine         <-
               (                             ( "\n" / ";" )           { $$ = -1; }
-              /                   Comment                            { $$ = -1; }
-              /  a:Block     S* ( Comment* /  "\n" / ";" )           { $$ = a; }
-              /  a:Statement S* ( Comment* /  "\n" / ";" )           { $$ = a; }
-              /  e:Expr      S* ( Comment* /  "\n" / ";" )           { $$ = e; }
+              /  Comment                                             { $$ = -1; }
+              /  a:Block                    ( "\n" / ";" )           { $$ = a; }
+              /  a:Block     S* Comment*                             { $$ = a; }
+              /  a:Statement S*             ( "\n" / ";" )           { $$ = a; }
+              /  a:Statement S* Comment*                             { $$ = a; }
+              /  e:Expr                     ( "\n" / ";" )           { $$ = e; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 
 Comment       <- '#' (! "\n" .)* "\n"
@@ -223,14 +225,14 @@ FunctionCall  <- !Keyword c:Callable                                 { $$ = c; }
               )*
 
 Callable      <- !Type i:Identifier                                  { DK( FunctionCall, DK( Callable, i ) ); }
-                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
-                                                            )*
+                          ( DerefOp ( i:Identifier / i:Integer )     { DK( FunctionCall, DK( Callable, $$, i ) ); }
+                                                                 )*
               /  !Type v:Variable                                    { DK( VarDeref, v ); }
-                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
-                                                            )+
+                          ( DerefOp ( i:Identifier / i:Integer )     { DK( FunctionCall, DK( Callable, $$, i ) ); }
+                                                                 )+
               /        t:Type                                        { DK( Type, t ); }
-                                     ( DerefOp i:Identifier          { DK( FunctionCall, DK( Callable, $$, i ) ); }
-                                                            )+
+                          ( DerefOp ( i:Identifier / i:Integer )     { DK( FunctionCall, DK( Callable, $$, i ) ); }
+                                                                 )+
 
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
 EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }

@@ -115,9 +115,9 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
 
   of dkFunctionCall:
     result = DeliNode(kind: dkCallable)
-    result.sons.add engine.evaluate(c0)
+    result.addSon engine.evaluate(c0)
     for i in 1..(callable.sons.len - 1):
-      result.sons.add callable.sons[i]
+      result.addSon callable.sons[i]
     return result
 
   of dkType:
@@ -174,6 +174,8 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
         return value.function(nextArgs)
       else:
         return value
+    elif c.sons[0].kind == dkArray and c.sons[1].kind in dkIntegerKinds:
+      return c.sons[0].sons[c.sons[1].intVal]
     c = engine.evalCallable(c)
     debug 1:
       echo "evalCallback returned ", c.repr
@@ -181,7 +183,7 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
   case c.kind
   of dkFunctionCall:
     for arg in args:
-      c.sons.add arg
+      c.addSon arg
     return engine.evaluate(c)
   of dkIdentifier:
     return engine.evalIdentifierCall(c, args)

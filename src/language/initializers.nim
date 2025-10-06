@@ -1,12 +1,15 @@
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
+proc addSon*(parent: DeliNode, node: DeliNode) =
+  node.parent = parent
+  #if node.parents.len == 0:
+  #  node.parents.add parent
+  parent.sons.add(node)
+
 proc addSons(parent: DeliNode, nodes: varargs[DeliNode]) =
   for node in nodes:
-    node.parent = parent
-    #if node.parents.len == 0:
-    #  node.parents.add parent
-    parent.sons.add(node)
+    parent.addSon node
 
 proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
   result = DeliNode(kind: kind)

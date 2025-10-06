@@ -16,7 +16,7 @@ if $json.x != 5 {
 if $json.y != 7 {
   return 1
 }
-$lines = $json.lines # TODO make intermediate dereferencing unnecessary
-if $lines.0 != "five" {
+$x = $json.lines.0
+if $x != "five" {
   return 1
 }
