@@ -85,12 +85,10 @@ Body          <- ( CLeft _ < c:Code > _ CRight                      ~{ ER("missi
 
 VLine         <-
               (                             ( "\n" / ";" )           { $$ = -1; }
-              /  Comment                                             { $$ = -1; }
-              /  a:Block                    ( "\n" / ";" )           { $$ = a; }
-              /  a:Block     S* Comment*                             { $$ = a; }
-              /  a:Statement S*             ( "\n" / ";" )           { $$ = a; }
-              /  a:Statement S* Comment*                             { $$ = a; }
-              /  e:Expr                     ( "\n" / ";" )           { $$ = e; }
+              /                   Comment                            { $$ = -1; }
+              /  a:Block     S* ( Comment* /  "\n" / ";" )           { $$ = a; }
+              /  a:Statement S* ( Comment* /  "\n" / ";" )           { $$ = a; }
+              /  e:Expr      S* ( Comment* /  "\n" / ";" )           { $$ = e; }
               )                                                      { if( $$ >= 0 ) SL($$); }
 
 Comment       <- '#' (! "\n" .)* "\n"
