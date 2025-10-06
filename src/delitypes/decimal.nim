@@ -141,6 +141,9 @@ proc `>`*(a0, b0: Decimal): bool =
     a.whole == b.whole and a.fraction > b.fraction
   )
 
+converter toFloat*(a: Decimal): float =
+  return a.whole.float + a.fraction.float / E10(a.decimals).float
+
 proc dFrac(nodes: varargs[DeliNode]): DeliNode =
   pluralMaybe(node):
     DKInt(node.decVal.fraction)
