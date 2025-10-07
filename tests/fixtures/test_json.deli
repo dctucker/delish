@@ -20,3 +20,8 @@ $x = $json.lines.0
 if $x != "five" {
   return 1
 }
+$i = 1
+$x = $json.lines.$i
+if $x != "seven" {
+  return 1
+}

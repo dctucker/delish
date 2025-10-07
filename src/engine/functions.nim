@@ -168,23 +168,32 @@ proc dereference(engine: Engine, expr: DeliNode): DeliNode =
 proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): DeliNode =
   var c = callable
   while c.kind == dkCallable and c.function == nil:
-    if c.sons[0].kind == dkObject:
-      let value = c.sons[0].table[c.sons[1].id]
-      if value.kind == dkCallable and value.function != nil:
-        var nextArgs: seq[DeliNode]
-        for arg in value.sons:
-          nextArgs.add arg
-        for arg in args:
-          nextArgs.add arg
-        return value.function(nextArgs)
-      else:
+    case c.sons[0].kind
+    of dkObject:
+      var index = c.sons[1]
+      if index.kind == dkIdentifier:
+        let value = c.sons[0].table[index.id]
+        if value.kind == dkCallable and value.function != nil:
+          var nextArgs: seq[DeliNode]
+          for arg in value.sons:
+            nextArgs.add arg
+          for arg in args:
+            nextArgs.add arg
+          return value.function(nextArgs)
+        else:
+          return c.sons[0].table[index.id]
+      elif index.kind == dkVariable:
+        index = engine.getVariable(index.varName)
+        let value = c.sons[0].table[index.strVal]
         return value
-    elif c.sons[0].kind == dkArray:
+    of dkArray:
       var index = c.sons[1]
       if index.kind == dkVariable:
         index = engine.getVariable(index.varName)
       if index.kind in dkIntegerKinds:
         return c.sons[0].sons[index.intVal]
+    else:
+      discard
     c = engine.evalCallable(c)
     debug 1:
       echo "evalCallback returned ", c.repr
