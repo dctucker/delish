@@ -143,6 +143,8 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
 
   of dkJsonBlock:
     result = val.sons[0].strVal.parseJsonString
+    if result.kind == dkError:
+      raise newException(RuntimeError, "Error parsing JSON")
 
   of dkDateTime:
     let date = val.sons[0].sons

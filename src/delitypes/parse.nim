@@ -10,10 +10,10 @@ import
   ]
 
 proc parseError*(str: string): int =
-  return parseEnum[PosixError](str, PosixError.Error0).int
+  return parseEnum[PosixError](str, PosixError.ERROR).int
 
 proc parseSignal*(str: string): int =
-  return parseEnum[PosixSignal](str, PosixSignal.Signal0).int
+  return parseEnum[PosixSignal](str, PosixSignal.SIGNAL).int
 
 proc parseNanoSecond*(str: string): int =
   result = parseInt(str.alignLeft(9, '0'))
@@ -69,5 +69,8 @@ proc assembleJson(node: JsonNode): DeliNode =
       result.sons.add assembleJson(elem)
 
 proc parseJsonString*(str: string): DeliNode =
-  let js = parseJson(str)
-  return assembleJson(js)
+  try:
+    let js = parseJson(str)
+    return assembleJson(js)
+  except JsonParsingError as e:
+    return DKError(0)
