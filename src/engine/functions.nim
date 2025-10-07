@@ -179,8 +179,12 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
         return value.function(nextArgs)
       else:
         return value
-    elif c.sons[0].kind == dkArray and c.sons[1].kind in dkIntegerKinds:
-      return c.sons[0].sons[c.sons[1].intVal]
+    elif c.sons[0].kind == dkArray:
+      var index = c.sons[1]
+      if index.kind == dkVariable:
+        index = engine.getVariable(index.varName)
+      if index.kind in dkIntegerKinds:
+        return c.sons[0].sons[index.intVal]
     c = engine.evalCallable(c)
     debug 1:
       echo "evalCallback returned ", c.repr

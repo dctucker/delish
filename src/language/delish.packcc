@@ -226,14 +226,14 @@ FunctionCall  <- !Keyword c:Callable                                 { $$ = c; }
               )*
 
 Callable      <- !Type i:Identifier                                  { DK( FunctionCall, DK( Callable, i ) ); }
-                          ( DerefOp ( i:Identifier / i:Integer )     { DK( FunctionCall, DK( Callable, $$, i ) ); }
-                                                                 )*
+              (  DerefOp ( i:Identifier / i:Integer / i:Variable )   { DK( FunctionCall, DK( Callable, $$, i ) ); }
+              )*
               /  !Type v:Variable                                    { DK( VarDeref, v ); }
-                          ( DerefOp ( i:Identifier / i:Integer )     { DK( FunctionCall, DK( Callable, $$, i ) ); }
-                                                                 )+
-              /        t:Type                                        { DK( Type, t ); }
-                          ( DerefOp ( i:Identifier / i:Integer )     { DK( FunctionCall, DK( Callable, $$, i ) ); }
-                                                                 )+
+              (  DerefOp ( i:Identifier / i:Integer / i:Variable )   { DK( FunctionCall, DK( Callable, $$, i ) ); }
+              )+
+              /  t:Type                                              { DK( Type, t ); }
+              (  DerefOp ( i:Identifier / i:Integer / i:Variable )   { DK( FunctionCall, DK( Callable, $$, i ) ); }
+              )+
 
 ArgDefault    <- e:ConstExpr                                         { DK( ArgDefault, e ); }
 EnvDefault    <- e:ConstExpr                                         { DK( EnvDefault, e ); }
