@@ -199,7 +199,7 @@ proc repr*(node: DeliNode): string =
   result &= " "
 
 proc treeRepr*(node: DeliNode, indent: int = 0): string =
-  result = "\n" & repeat(" ", indent)
+  result = "\n" & repeat("  ", indent)
 
   if node.parents.len == 0:
     result = "⌱"
@@ -213,7 +213,7 @@ proc treeRepr*(node: DeliNode, indent: int = 0): string =
     result &= "("
     for son in node.sons:
       result &= treeRepr(son, indent + 1)
-    result &= "\n" & repeat(" ", indent) & ")"
+    result &= "\n" & repeat("  ", indent) & ")"
 
 proc getOneliner*(node: DeliNode): string =
   case node.kind

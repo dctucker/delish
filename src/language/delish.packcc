@@ -163,11 +163,12 @@ AssignExpr    <-
               )                                                      { $$ = e; }
 
 AppendExpr    <-
-              (   e:ArgExpr / e:Arg / e:VarDeref / e:ConstExpr
-              /   e:Cast
+              (   e:ArgExpr / e:Arg / e:FunctionCall / e:VarDeref
+              /   e:ConstExpr       / e:Cast
               )                                                      { $$ = e; }
 
-OpenExpr      <- Open  (S+ o:RedirOper)? S+ ( p:Path / p:VarDeref ) ~{ ER("expected path"); }
+OpenExpr      <- Open  (S+ o:RedirOper)?
+                        S+ ( p:Path / p:FunctionCall / p:VarDeref ) ~{ ER("expected path"); }
                                                                      { DK( OpenExpr, p, o); }
 CloseStmt     <-
               (  Close   S+ v:Variable                              ~{ ER( expected_variable ); }
@@ -257,15 +258,15 @@ ConstExpr     <-
 Expr          <-
               (  s:MathExpr
               /  s:Array    / s:Object
-              /  s:Arg      / s:VarDeref
+              /  s:Arg
               /  s:StrBlock / s:StrLiteral / s:Regex
               /  s:DateTime / s:Number     / s:Boolean
               /  s:BoolExpr / s:Error      / s:Signal
               /  s:Path     / s:JsonBlock
-              /  s:Cast     / s:FunctionCall
+              /  s:Cast     / s:FunctionCall / s:VarDeref
               )                                                      { DK( Expr, s); }
 
-Iterable      <- ( s:Array / s:VarDeref )                            { DK( Iterable, s ); }
+Iterable      <- ( s:Array / s:FunctionCall / s:VarDeref )           { DK( Iterable, s ); }
 
 Condition     <- a:OrExpr                                            { DK( Condition, a); SL($$); }
 OrExpr        <- l:OrExpr  S+ ( o:BoolOr / o:BoolNor  ) S+ r:AndExpr { DK( CondExpr, o, l, r); }

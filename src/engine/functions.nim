@@ -155,10 +155,15 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
 
 proc dereference(engine: Engine, expr: DeliNode): DeliNode =
   result = expr
-  if result.kind == dkExpr:
-    result = expr.sons[0]
-  if result.kind == dkVarDeref:
+  case result.kind
+  of dkExpr:
+    result = engine.dereference(expr.sons[0])
+  of dkVarDeref:
     result = engine.evalVarDeref(result)
+  of dkFunctionCall:
+    result = engine.dereference(engine.evaluate(result))
+  else:
+    result = expr
 
 proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): DeliNode =
   var c = callable
