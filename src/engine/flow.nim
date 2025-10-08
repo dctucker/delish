@@ -111,8 +111,8 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
     jump_break.list_node = engine.writehead
     engine.setupPop( end_line - 1 )
 
-    loop.sons.add(jump_break)
-    loop.sons.add(jump_continue)
+    loop.addSon jump_break
+    loop.addSon jump_continue
     loop.list_node = jump_continue.list_node
 
   engine.debugNext()

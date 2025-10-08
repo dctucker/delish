@@ -7,7 +7,7 @@ var engine: Engine
 proc makeScript(stmts: seq[DeliNode]): DeliNode =
   result = DK( dkScript, DK( dkCode ) )
   for stmt in stmts:
-    result.sons[0].sons.add( DK( dkStatement, stmt ) )
+    result.sons[0].addSon DK( dkStatement, stmt )
 
 proc next() =
   discard engine.doNext()

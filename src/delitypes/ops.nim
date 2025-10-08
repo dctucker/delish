@@ -140,8 +140,8 @@ proc `+`*(a, b: DeliNode): DeliNode =
     of dkArg:     return DK(dkArgExpr, a, b)
     of dkArray:
       result = DeliNode(kind: dkArray)
-      for n in a.sons: result.sons.add(n)
-      for n in b.sons: result.sons.add(n)
+      for n in a.sons: result.addSon n
+      for n in b.sons: result.addSon n
       return result
     else:
       todo "add ", a.kind, " + ", b.kind
@@ -150,12 +150,12 @@ proc `+`*(a, b: DeliNode): DeliNode =
   case a.kind
   of dkArray:
     result = DeliNode(kind: dkArray)
-    for n in a.sons: result.sons.add(n)
-    result.sons.add(b)
+    for n in a.sons: result.addSon n
+    result.addSon b
   of dkArgExpr:
     result = DeliNode(kind: dkArgExpr)
-    for n in a.sons: result.sons.add(n)
-    result.sons.add(b)
+    for n in a.sons: result.addSon n
+    result.addSon b
   else:
     todo "add ", a.kind, " + ", b.kind
     return a

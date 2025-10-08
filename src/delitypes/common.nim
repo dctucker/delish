@@ -63,14 +63,14 @@ template pluralMaybe*(node, formula: untyped): untyped =
     if nodes[0].kind == dkArray:
       result = DK(dkArray)
       for node in nodes[0].sons:
-        result.sons.add formula
+        result.addSon formula
     else:
       node = nodes[0]
       return formula
   else:
     result = DK(dkArray)
     for node in nodes:
-      result.sons.add formula
+      result.addSon formula
 
 export ast
 export tables

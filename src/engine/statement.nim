@@ -100,7 +100,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
   of dkIncludeStmt:
     if s.sons.len == 1:
       engine.doInclude(s.sons[0])
-      s.sons.add(DKTrue)
+      s.addSon DKTrue
 
   of dkInner:
     for s in s.sons:

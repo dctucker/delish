@@ -130,7 +130,7 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
   of dkArray:
     result = DeliNode(kind: dkArray)
     for son in val.sons:
-      result.sons.add(engine.evaluate(son))
+      result.addSon engine.evaluate(son)
     return result
 
   of dkObject:

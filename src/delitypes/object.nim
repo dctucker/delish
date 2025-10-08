@@ -50,7 +50,7 @@ proc dKeys(nodes: varargs[DeliNode]): DeliNode =
 
   result = DK(dkArray)
   for key in obj.table.keys:
-    result.sons.add DKStr(key)
+    result.addSon DKStr(key)
 
 proc dLookup(nodes: varargs[DeliNode]): DeliNode =
   argvars

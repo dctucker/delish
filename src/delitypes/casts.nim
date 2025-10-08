@@ -124,35 +124,30 @@ proc toArg*(src: DeliNode): DeliNode =
   else: raise Incompatible(dkPath, src)
 
 proc toArray*(src: DeliNode): DeliNode =
-  result = case src.kind
+  result = DK(dkArray)
+  case src.kind
   of dkArray:
-    var sons = newSeq[DeliNode]()
     for item in src.sons: # should this do an explicit copy?
-      sons.add item
-    DeliNode(kind: dkArray, sons: sons)
+      result.addSon item
   of dkObject:
-    var sons = newSeq[DeliNode]()
     for key in src.table.keys: # should this do an explicit copy?
-      sons.add DeliNode(kind: dkArray, sons: @[DKStr(key), src.table[key]])
-    DeliNode(kind: dkArray, sons: sons)
+      result.addSon DK(dkArray, DKStr(key), src.table[key])
   of dkString,
      dkStrLiteral:
-    var sons = newSeq[DeliNode]()
     for str in src.strVal.split(' '):
-      sons.add DKStr(str)
-    DeliNode(kind: dkArray, sons: sons)
+      result.addSon DKStr(str)
   of dkStrBlock:
-    var sons = newSeq[DeliNode]()
     for str in src.strVal.split('\n'):
-      sons.add DKStr(str)
-    DeliNode(kind: dkArray, sons: sons)
+      result.addSon DKStr(str)
   of dkIdentifier,
      dkVariable,
      dkArg,
      dkArgShort,
      dkArgLong,
-     dkInteger:     DeliNode(kind: dkArray, sons: @[src])
-  #of dkRegex:       DeliNode(kind: dkArray, sons: src.pattern.rules)
+     dkInteger:
+    result.addSon src
+  #of dkRegex:
+  #  result.addSons src.pattern.rules
   else: raise Incompatible(dkArray, src)
 
 proc toObject*(src: DeliNode): DeliNode =

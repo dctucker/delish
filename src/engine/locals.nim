@@ -37,7 +37,7 @@ proc popLocals(engine: Engine) =
 proc setupPush(engine: Engine, line: int, table: DeliTable) =
   var inner = DKInner(line, DK(dkPush))
   for k,v in table.pairs():
-    inner.sons.add(DK(dkLocalStmt, DKVar(k), DK( dkAssignOp ), v))
+    inner.addSon DK(dkLocalStmt, DKVar(k), DK( dkAssignOp ), v)
   engine.insertStmt(inner)
 
 proc setupPop(engine: Engine, line: int) =

@@ -55,7 +55,7 @@ proc dSplit(nodes: varargs[DeliNode]): DeliNode =
 
   result = DK(dkArray)
   for s in str.strVal.split(sep.strVal):
-    result.sons.add DKStr(s)
+    result.addSon DKStr(s)
 
 let StringFunctions* = {
   "split": dSplit,
