@@ -62,11 +62,13 @@ proc assembleJson(node: JsonNode): DeliNode =
   of JObject:
     result = DK(dkObject)
     for field,obj in node.fields.pairs:
-      result.table[field] = assembleJson(obj)
+      var js = assembleJson(obj)
+      js.parent = result
+      result.table[field] = js
   of JArray:
     result = DK(dkArray)
     for elem in node.elems:
-      result.sons.add assembleJson(elem)
+      result.addSon assembleJson(elem)
 
 proc parseJsonString*(str: string): DeliNode =
   try:

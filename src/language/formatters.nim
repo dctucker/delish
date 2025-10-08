@@ -150,6 +150,11 @@ proc toString*(node: DeliNode): string =
       "Function=" & node.function.repr
     else:
       ""
+  of dkIterable:
+    if node.generator != nil:
+      "Generator=" & node.generator.repr
+    else:
+      ""
   of dkJump:
     if node.list_node != nil:
       $node.list_node.value.line

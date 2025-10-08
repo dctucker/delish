@@ -130,6 +130,12 @@ proc setupNext(engine: Engine, variable, iter: DeliNode): DeliNode =
         counter, DK(dkAppendOp), DKInt(1),
       ),
     )
+  of dkIterable:
+    result = DKInner( -variable.line,
+      DK( dkVariableStmt, # $var = evaluate($things)
+        variable, DK(dkAssignOp), things,
+      ),
+    )
   else:
     todo "setupNext " & $things.kind
   engine.insertStmt(result)

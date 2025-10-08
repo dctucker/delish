@@ -15,10 +15,22 @@ suite "type functions":
 
   test "Array.seq":
     let fn = typeFunction(dkArray, DKId("seq"))
-    check fn(DKInt(3)) == arr123i
-    check fn(DKInt(2), DKInt(5)) == DK( dkArray,
-      DKInt(2), DKInt(3), DKInt(4), DKInt(5),
-    )
+    var gen = fn(DKInt(3)).generator
+    check:
+      gen() == DKInt(1)
+      gen() == DKInt(2)
+      gen() == DKInt(3)
+    discard gen()
+    check gen.finished
+
+    gen = fn(DKInt(2), DKInt(5)).generator
+    check:
+      gen() == DKInt(2)
+      gen() == DKInt(3)
+      gen() == DKInt(4)
+      gen() == DKInt(5)
+    discard gen()
+    check gen.finished
 
   test "Array.join":
     let fn = typeFunction(dkArray, DKId("join"))

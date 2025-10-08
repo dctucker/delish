@@ -226,6 +226,12 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
   of dkElse:
     return deliTrue()
 
+  of dkIterable:
+    result = val.generator()
+    if finished(val.generator):
+      result = deliNone()
+    return result
+
   else:
     todo "evaluate ", val.kind
     return deliNone()

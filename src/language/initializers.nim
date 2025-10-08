@@ -7,7 +7,7 @@ proc addSon*(parent: DeliNode, node: DeliNode) =
   #  node.parents.add parent
   parent.sons.add(node)
 
-proc addSons(parent: DeliNode, nodes: varargs[DeliNode]) =
+proc addSons*(parent: DeliNode, nodes: varargs[DeliNode]) =
   for node in nodes:
     parent.addSon node
 

@@ -134,7 +134,7 @@ proc parseCapture(node: DeliNode, capture: string) =
     if node.cmd == "":
       node.cmd     = capture
     else:
-      node.sons.add(DeliNode(kind:dkString, strVal: capture))
+      node.addSon(DeliNode(kind:dkString, strVal: capture))
   of dkBoolean:    node.boolVal = parseBoolean(capture)
   of dkSignal:     node.intVal = parseSignal(capture)
   of dkError:      node.intVal = parseError(capture)
@@ -198,7 +198,7 @@ proc createNode1(parser: Parser, kind: DeliKind, s1: cint): cint {.exportc.} =
     stderr.write $result, " createNode1 ", $kind, " ", $s1, "\n"
   let node = DeliNode(kind: kind, sons: @[])
   let son1 = parser.getNode(s1) ; son1.parent = node
-  node.sons.add(son1)
+  node.addSon son1
   parser.addNode node
 
 proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.} =
@@ -208,8 +208,7 @@ proc createNode2(parser: Parser, kind: DeliKind, s1, s2: cint): cint {.exportc.}
   var node = DeliNode(kind: kind, sons: @[])
   let son1 = parser.getNode(s1) ; son1.parent = node
   let son2 = parser.getNode(s2) ; son2.parent = node
-  node.sons.add(son1)
-  node.sons.add(son2)
+  node.addSons son1, son2
   parser.addNode node
 
 proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.exportc.} =
@@ -220,9 +219,7 @@ proc createNode3(parser: Parser, kind: DeliKind, s1, s2, s3: cint): cint {.expor
   let son1 = parser.getNode(s1) ; son1.parent = node
   let son2 = parser.getNode(s2) ; son2.parent = node
   let son3 = parser.getNode(s3) ; son3.parent = node
-  node.sons.add(son1)
-  node.sons.add(son2)
-  node.sons.add(son3)
+  node.addSons son1, son2, son3
   parser.addNode node
 
 proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
@@ -231,7 +228,7 @@ proc nodeAppend(parser: Parser, p, s: cint): cint {.exportc.} =
   son.parent = parent
   debug 3:
     stderr.write $p, " nodeAppend ", $son.kind, " ", $s, "\n"
-  parent.sons.add(son)
+  parent.addSon son
   result = p
 
 proc setLine(parser: Parser, dk: cint, l: cint): cint {.exportc.} =
