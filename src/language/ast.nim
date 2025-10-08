@@ -41,7 +41,7 @@ type
   Decimal* = object
     whole*, fraction*, decimals*: int
 
-  Iterable* = iterator(iter: DeliNode): DeliNode
+  DeliGenerator* = iterator(): DeliNode
   DeliFunction* = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 
   DeliNodeObj* = object
@@ -91,8 +91,8 @@ type
        dkBlock:
       lineNumber*: int
       list_node*: DeliListNode
-    of dkIterable:     generator*:  Iterable
     of dkCallable:     function*:   DeliFunction
+    of dkIterable:     generator*:  DeliGenerator
     of dkScript:       script:      DeliScript
     else:
       discard

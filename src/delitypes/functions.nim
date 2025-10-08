@@ -10,8 +10,9 @@ import ./[
   datetime,
 ]
 
-type DeliFunctionTable = Table[string, DeliFunction]
-type TypeFunctionTable = Table[DeliKind, DeliFunctionTable]
+type
+  DeliFunctionTable = Table[string, DeliFunction]
+  TypeFunctionTable = Table[DeliKind, DeliFunctionTable]
 
 let TypeFunctions: TypeFunctionTable = {
   dkArray: ArrayFunctions,

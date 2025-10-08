@@ -16,10 +16,29 @@ proc dJoin(nodes: varargs[DeliNode]): DeliNode =
     result.strVal &= son.asString.strVal & sep.strVal
   result.strVal = result.strVal[0..^(1 + sep.strVal.len)]
 
+proc gSeq(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+
+  nextArg dkIntegerKinds
+  var val2 = arg.intVal
+
+  nextopt DKInt(1)
+  var val1 = arg.intVal
+
+  if val1 != 1:
+    let t = val2
+    val2 = val1
+    val1 = t
+
+  iterator gen(): DeliNode =
+    for i in val1..val2:
+      yield DKInt(i)
+  return DeliNode(kind: dkIterable, generator: gen)
+
 proc dSeq(nodes: varargs[DeliNode]): DeliNode =
   argvars
 
-  nextArg dkInteger
+  nextArg dkIntegerKinds
   var val2 = arg.intVal
 
   nextopt DKInt(1)
@@ -48,7 +67,7 @@ proc dMap(nodes: varargs[DeliNode]): DeliNode =
     result.sons.add DK(dkFunctionCall, DK(dkCallable, fn), son)
 
 let ArrayFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
-  "seq": dSeq,
+  "seq": gSeq,
   "join": dJoin,
   "map": dMap,
   "None": dNop,
