@@ -168,7 +168,10 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
     return engine.evalExpression(val)
 
   of dkVariable:
-    return engine.getVariable(val.varName)
+    result = engine.getVariable(val.varName)
+    if result.kind == dkIterable:
+      result = engine.evaluate(result)
+    return result
 
   of dkVarDeref:
     return engine.evalVarDeref(val)

@@ -117,29 +117,6 @@ proc doWhileLoop(engine: Engine, loop: DeliNode) =
 
   engine.debugNext()
 
-proc setupNext(engine: Engine, variable, iter: DeliNode): DeliNode =
-  let things = engine.evaluate( iter.sons[0] )
-  case things.kind
-  of dkArray:
-    let counter  = DKVar(".counter")
-    result = DKInner( -variable.line,
-      DK( dkVariableStmt, # $var = $things..counter
-        variable, DK(dkAssignOp), DK(dkVarDeref, things, counter),
-      ),
-      DK( dkVariableStmt, # $.counter += 1
-        counter, DK(dkAppendOp), DKInt(1),
-      ),
-    )
-  of dkIterable:
-    result = DKInner( -variable.line,
-      DK( dkVariableStmt, # $var = evaluate($things)
-        variable, DK(dkAssignOp), things,
-      ),
-    )
-  else:
-    todo "setupNext " & $things.kind
-  engine.insertStmt(result)
-
 proc doForLoop(engine: Engine, loop: DeliNode) =
   let variable = loop.sons[0]
   let iter     = loop.sons[1]
@@ -152,15 +129,20 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
 
     var jump_break    = DKJump(end_line + 1)
     var jump_continue = DKJump(end_line + 1)
+    var itercall = DK(dkFunctionCall, DK(dkCallable, iter.sons[0], DKId("iter")))
+    var iternext = DKInner( -variable.line,
+      DK(dkVariableStmt, variable, DK(dkAssignOp), DKVar(".iter")), # $var = $.iter
+    )
 
     engine.setupPush(top_line, {
-      ".counter" : DKInt(0),
+      ".iter" : itercall,
       ".break"   : jump_break,
       ".continue": jump_continue,
     }.toTbl)
 
     jump_continue.list_node = engine.write_head
-    discard engine.setupNext(variable, iter)
+
+    engine.insertStmt( iternext )
 
     var condition = DK( dkComparison, DK(dkEqOp), deliNone(), variable )
     condition.line = top_line

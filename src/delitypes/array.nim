@@ -35,6 +35,16 @@ proc gSeq(nodes: varargs[DeliNode]): DeliNode =
       yield DKInt(i)
   return DeliNode(kind: dkIterable, generator: gen)
 
+proc gIter(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextArg dkArray
+  maxarg
+
+  iterator gen(): DeliNode =
+    for son in arg.sons:
+      yield son
+  return DeliNode(kind: dkIterable, generator: gen)
+
 proc dSeq(nodes: varargs[DeliNode]): DeliNode =
   argvars
 
@@ -70,5 +80,6 @@ let ArrayFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.ni
   "seq": gSeq,
   "join": dJoin,
   "map": dMap,
+  "iter": gIter,
   "None": dNop,
 }.toTable
