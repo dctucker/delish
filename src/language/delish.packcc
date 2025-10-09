@@ -415,7 +415,9 @@ Keyword       <-
               /  In     / Out   / Err      / Include
               /  True   / False / Env      / ArgKw   / Local
               /  Return / Break / Continue
-              /  Async  / Redir / And      / Or      / Not
+              /  Async  / Redir / Shl      / Shr     / Not
+              /  And    / Or    / Xor
+              /  Nand   / Nor   / Xnor
               /  Push   / Pop   / Open     / Close   / Run
               )
 
@@ -510,7 +512,7 @@ Int8          <- < '0' !'x' [0-7]* >                                 { NS( Int8 
 Int10         <- < [0-9]+ >                                          { NS( Int10 ); }
 
 Path          <- < ("."* "/" C+ ) / "." >                            { NS( Path ); }
-Variable      <- '$' < W (W / '-')* >                                { NS( Variable ); }
+Variable      <- '$' < ( W (W / '-')* ) / '@' >                      { NS( Variable ); }
 Boolean       <- < "true" / "false" >                                { NS( Boolean ); }
 Stream        <- &[ioe] ( s:StreamIn / s:StreamOut / s:StreamErr )   { DK( Stream, s ); }
 StreamIn      <- "in"                                                { DK( StreamIn ); }

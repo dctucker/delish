@@ -15,7 +15,10 @@ proc getVariable*(engine: Engine, name: string): DeliNode =
   if engine.variables.contains(name):
     return engine.variables[name]
   elif engine.envars.contains(name):
-    return DeliNode(kind: dkString, strVal: engine.envars[name])
+    return DKStr(engine.envars[name])
+  elif name == "@":
+    # TODO
+    return DK(dkArray)
   else:
     engine.runtimeError("Unknown variable: $" & name)
 

@@ -13,7 +13,8 @@ proc isTruthy(engine: Engine, node: DeliNode): bool =
     return false
 
 proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
-  var (a, b) = (v1, v2)
+  var a = engine.evaluate(v1)
+  var b = engine.evaluate(v2)
   if {a.kind, b.kind} == {dkInteger, dkDecimal}:
     a = a.toKind(dkDecimal)
     b = b.toKind(dkDecimal)
@@ -43,14 +44,23 @@ proc evalMath(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
 
   result.remakeInt(final_kind)
 
+proc evalBitNot(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  let v = engine.evaluate( val )
+  result = not v.toInteger()
+  result.remakeInt v.kind
+  return result
+
+
 proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
+  let a = engine.evaluate(v1)
+  let b = engine.evaluate(v2)
   let val = case op.kind
-  of dkEqOp: v1 == v2
-  of dkNeOp: v1 != v2
-  of dkGtOp: v1 >  v2
-  of dkGeOp: v1 >= v2
-  of dkLtOp: v1 <  v2
-  of dkLeOp: v1 <= v2
+  of dkEqOp: a == b
+  of dkNeOp: a != b
+  of dkGtOp: a >  b
+  of dkGeOp: a >= b
+  of dkLtOp: a <  b
+  of dkLeOp: a <= b
   else:
     todo "evalComparison ", $op
     false
@@ -106,134 +116,112 @@ proc evalPairKey(engine: Engine, k: DeliNode): string =
     todo "evaluate Object with key ", k.kind
     ""
 
+proc evalArray(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  result = DeliNode(kind: dkArray)
+  for son in val.sons:
+    result.addSon engine.evaluate(son)
+
+proc evalObject(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  result = DK( dkObject )
+  for pair in val.sons:
+    let str = engine.evalPairKey( pair.sons[0] )
+    result.table[str] = engine.evaluate(pair.sons[1])
+
+proc evalJsonBlock(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  result = val.sons[0].strVal.parseJsonString
+  if result.kind == dkError:
+    raise newException(RuntimeError, "Error parsing JSON")
+
+proc evalDateTime(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  let date = val.sons[0].sons
+  let time = val.sons[1].sons
+  result = DK( dkDateTime )
+  result.dtVal = dateTime(
+    date[0].intVal,
+    Month(date[1].intVal),
+    date[2].intVal,
+    time[0].intVal,
+    time[1].intVal,
+    time[2].intVal,
+  )
+
+proc evalVariable(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  result = engine.getVariable(val.varName)
+  if result.kind == dkIterable:
+    result = engine.evaluate(result)
+  return result
+
+proc evalArg(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  debug 3:
+    stdout.write "  dereference ", val.sons[0]
+  let arg = engine.getArgument(val.sons[0])
+  #if arg.isNone(): engine.runtimeError("Undeclared argument: " & val.sons[0].argName)
+  result = engine.evaluate(arg)
+  debug 3:
+    stderr.write " = ", $result
+  return result
+
+proc evalArgExpr(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  let arg = val.sons[0]
+  let aval = engine.evalExpression(val.sons[1])
+  result = DK(dkArray, arg, aval)
+  return result
+
+proc evalIterable(engine: Engine, val: DeliNode): DeliNode {.inline.} =
+  result = val.generator()
+  if finished(val.generator):
+    result = deliNone()
+
 proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
   case val.kind
 
-  of dkBoolean, dkString, dkIdentifier, dkDecimal, dkInteger, dkPath,
-     dkInt10, dkInt8, dkInt16,
-     dkStrBlock, dkStrLiteral, dkJump, dkNone, dkRegex, dkCode:
-    return val
+  of dkBoolean,
+     dkString,
+     dkIdentifier,
+     dkDecimal,
+     dkInteger,
+     dkPath,
+     dkInt10,
+     dkInt8,
+     dkInt16,
+     dkStrBlock,
+     dkStrLiteral,
+     dkJump,
+     dkNone,
+     dkRegex,
+     dkCode:      return val
 
-  of dkLazy:
-    return val.sons[0]
+  of dkLazy:      return val.sons[0]
 
   of dkStream,
     dkEnvDefault,
     dkCondition,
-    dkBoolExpr:
-    return engine.evaluate( val.sons[0] )
+    dkBoolExpr:   return engine.evaluate( val.sons[0] )
 
   of dkStreamIn:  return DeliNode(kind: dkStream, intVal: 0)
   of dkStreamOut: return DeliNode(kind: dkStream, intVal: 1)
   of dkStreamErr: return DeliNode(kind: dkStream, intVal: 2)
 
-  of dkArray:
-    result = DeliNode(kind: dkArray)
-    for son in val.sons:
-      result.addSon engine.evaluate(son)
-    return result
-
-  of dkObject:
-    result = DK( dkObject )
-    for pair in val.sons:
-      let str = engine.evalPairKey( pair.sons[0] )
-      result.table[str] = engine.evaluate(pair.sons[1])
-    #stderr.write printValue(result)
-    return result
-
-  of dkJsonBlock:
-    result = val.sons[0].strVal.parseJsonString
-    if result.kind == dkError:
-      raise newException(RuntimeError, "Error parsing JSON")
-
-  of dkDateTime:
-    let date = val.sons[0].sons
-    let time = val.sons[1].sons
-    result = DK( dkDateTime )
-    result.dtVal = dateTime(
-      date[0].intVal,
-      Month(date[1].intVal),
-      date[2].intVal,
-      time[0].intVal,
-      time[1].intVal,
-      time[2].intVal,
-    )
-    return result
-
-  of dkRunStmt:
-    let ran = engine.doRun(val)
-    return ran
-
-  of dkExpr:
-    return engine.evalExpression(val)
-
-  of dkVariable:
-    result = engine.getVariable(val.varName)
-    if result.kind == dkIterable:
-      result = engine.evaluate(result)
-    return result
-
-  of dkVarDeref:
-    return engine.evalVarDeref(val)
-
-  of dkArg:
-    debug 3:
-      stdout.write "  dereference ", val.sons[0]
-    let arg = engine.getArgument(val.sons[0])
-    #if arg.isNone(): engine.runtimeError("Undeclared argument: " & val.sons[0].argName)
-    result = engine.evaluate(arg)
-    debug 3:
-      stderr.write " = ", $result
-    return result
-
-  of dkArgExpr:
-    let arg = val.sons[0]
-    let aval = engine.evalExpression(val.sons[1])
-    result = DK(dkArray, arg, aval)
-    return result
-
-  of dkOpenExpr:
-    return engine.doOpen(val.sons)
-
-  of dkBoolNot:
-    return not engine.evaluate( val.sons[0] ).toBoolean()
-
-  of dkCondExpr:
-    let v1 = val.sons[1]
-    let v2 = val.sons[2]
-    return engine.evalCondExpr( val.sons[0], v1, v2 )
-
-  of dkComparison:
-    let v1 = engine.evaluate(val.sons[1])
-    let v2 = engine.evaluate(val.sons[2])
-    return engine.evalComparison(val.sons[0], v1, v2)
-
-  of dkMathExpr:
-    let v1 = engine.evaluate(val.sons[1])
-    let v2 = engine.evaluate(val.sons[2])
-    return engine.evalMath(val.sons[0], v1, v2)
-
-  of dkBitNot:
-    let v = engine.evaluate( val.sons[0] )
-    result = not v.toInteger()
-    result.remakeInt v.kind
-    return result
-
-  of dkFunctionCall:
-    let v1 = val.sons[0]
-    return engine.evalFunctionCall(v1, val.sons[1 .. ^1])
-
-  of dkCast:
-    return engine.evaluate(val.sons[1]).toKind(val.sons[0].kind)
-
-  of dkElse:
-    return deliTrue()
-
-  of dkIterable:
-    result = val.generator()
-    if finished(val.generator):
-      result = deliNone()
-    return result
+  of dkArray:        return engine.evalArray(val)
+  of dkObject:       return engine.evalObject(val)
+  of dkJsonBlock:    return engine.evalJsonBlock(val)
+  of dkDateTime:     return engine.evalDateTime(val)
+  of dkRunStmt:      return engine.doRun(val)
+  of dkExpr:         return engine.evalExpression(val)
+  of dkVariable:     return engine.evalVariable(val)
+  of dkVarDeref:     return engine.evalVarDeref(val)
+  of dkArg:          return engine.evalArg(val)
+  of dkArgExpr:      return engine.evalArgExpr(val)
+  of dkOpenExpr:     return engine.doOpen(val.sons)
+  of dkBoolNot:      return not engine.evaluate(val.sons[0]).toBoolean()
+  of dkCondExpr:     return engine.evalCondExpr(val.sons[0], val.sons[1], val.sons[2])
+  of dkComparison:   return engine.evalComparison(val.sons[0], val.sons[1], val.sons[2])
+  of dkMathExpr:     return engine.evalMath(val.sons[0], val.sons[1], val.sons[2])
+  of dkBitNot:       return engine.evalBitNot(val.sons[0])
+  of dkFunctionCall: return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
+  of dkCast:         return engine.evaluate(val.sons[1]).toKind(val.sons[0].kind)
+  of dkIterable:     return engine.evalIterable(val)
+  of dkElse:         return deliTrue()
 
   else:
     todo "evaluate ", val.kind

@@ -127,15 +127,12 @@ proc toString*(node: DeliNode): string =
   of dkTime:       node.timeFormat
   of dkDate:       node.dateFormat
   of dkPair,
+     dkArgDefault,
+     dkArgNames,
      dkJsonBlock:  ""
   of dkObject,
      dkRan:        node.objFormat
   of dkArray:      node.arrayFormat
-  of dkArgDefault:
-    if node.sons.len > 0:
-      $(node.sons[0])
-    else:
-      ""
   of dkInvocation: node.cmd
   of dkArg:
     argFormat(node)

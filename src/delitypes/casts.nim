@@ -48,7 +48,10 @@ proc toBoolean*(src: DeliNode): DeliNode =
      dkArgShort,
      dkArgLong:     DKLazy(DKNotNone(src)) # TODO check engine has variables
   of dkPath:        DKBool(src.strVal.fileExists or src.strVal.dirExists)
-  of dkInteger:     DKBool( src.intVal != 0 )
+  of dkInt8,
+     dkInt10,
+     dkInt16,
+     dkInteger:     DKBool( src.intVal != 0 )
   of dkBoolean:     DKBool( src.boolVal )
   of dkArray:       DKBool( src.sons.len > 0 )
   of dkObject:      DKBool( src.table.len > 0 )
@@ -61,10 +64,10 @@ proc toBoolean*(src: DeliNode): DeliNode =
 
 proc toInteger*(src: DeliNode): DeliNode =
   result = case src.kind
-  of dkInt8,
-     dkInt16,
-     dkInt10,
-     dkInteger:    DKInt( src.intVal )
+  of dkInt8:       DKInt8( src.intVal )
+  of dkInt10:      DKInt10( src.intVal )
+  of dkInt16:      DKInt16( src.intVal )
+  of dkInteger:    DKInt( src.intVal )
   of dkStream:     DKInt(src.intVal)
   of dkBoolean:    DKInt(if src.boolVal: 1 else: 0)
   of dkString:     DKInt(src.strVal.parseInteger)
@@ -82,7 +85,10 @@ proc toInteger*(src: DeliNode): DeliNode =
 
 proc toDecimal*(src: DeliNode): DeliNode =
   result = case src.kind
-  of dkInteger: DKDecimal(src.intVal, 0, 0)
+  of dkInt8,
+     dkInt10,
+     dkInt16,
+     dkInteger: DKDecimal(src.intVal, 0, 0)
   of dkDateTime: DKDecimal(src.dtVal.toTime().toUnix(), src.dtVal.nanosecond, 9)
   else:
     todo "toDecimal ", src.kind
@@ -105,6 +111,9 @@ proc toPath*(src: DeliNode): DeliNode =
     return DKPath( src.strVal )
   of dkIdentifier,
      dkArg, dkArgLong, dkArgShort,
+     dkInt8,
+     dkInt10,
+     dkInt16,
      dkInteger,
      dkBoolean,
      dkArray,
@@ -144,6 +153,9 @@ proc toArray*(src: DeliNode): DeliNode =
      dkArg,
      dkArgShort,
      dkArgLong,
+     dkInt8,
+     dkInt10,
+     dkInt16,
      dkInteger:
     result.addSon src
   #of dkRegex:
@@ -168,7 +180,10 @@ proc toObject*(src: DeliNode): DeliNode =
   of dkIdentifier: DeliObject([(src.id     , DKLazy(src))]) # TODO evaluate value
   of dkVariable:   DeliObject([(src.varName, DKLazy(src))]) # TODO evaluate value
   of dkArg:        DeliObject([(src.argName, DKLazy(src))]) # TODO evaluate value
-  of dkInteger:    DeliObject([("int", DKInt(src.intVal))])
+  of dkInt8,
+     dkInt10,
+     dkInt16,
+     dkInteger:    DeliObject([("int", DKInt(src.intVal))])
   of dkBoolean:    DeliObject([("bool", DKBool(src.boolVal))])
   of dkStream:     DeliObject([($src.intval, deliNone())])
   else: raise Incompatible(dkObject, src)
@@ -184,7 +199,11 @@ proc toRegex*(src: DeliNode): DeliNode =
 
 proc toStream*(src: DeliNode): DeliNode =
   result = case src.kind
-  of dkStream, dkInteger:
+  of dkInt8,
+     dkInt10,
+     dkInt16,
+     dkStream,
+     dkInteger:
     return DeliNode(kind: dkStream, intVal: src.intVal)
   of dkArray, dkString, dkStrLiteral, dkStrBlock:
     todo "toStream ", src.kind

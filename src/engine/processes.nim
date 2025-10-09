@@ -3,7 +3,7 @@
 proc doRun(engine: Engine, run: DeliNode): DeliNode =
   var args = newSeq[string]()
   for inv in run.sons[0].sons:
-    args.add inv.strVal
+    args.add inv.toKind(dkString).strVal
   var p = newDeliProcess(args)
   result = p.ran
 

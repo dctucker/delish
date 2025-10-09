@@ -44,6 +44,12 @@ proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
 
 proc DKInt*(intVal: int): DeliNode =
   return DeliNode(kind: dkInteger, intVal: intVal)
+proc DKInt8*(intVal: int): DeliNode =
+  return DeliNode(kind: dkInt8, intVal: intVal)
+proc DKInt10*(intVal: int): DeliNode =
+  return DeliNode(kind: dkInt10, intVal: intVal)
+proc DKInt16*(intVal: int): DeliNode =
+  return DeliNode(kind: dkInt16, intVal: intVal)
 
 proc DKError*(intVal: int): DeliNode =
   return DeliNode(kind: dkError, intVal: intVal)
