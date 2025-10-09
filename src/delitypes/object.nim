@@ -49,8 +49,20 @@ proc dKeys(nodes: varargs[DeliNode]): DeliNode =
   let obj = arg
 
   result = DK(dkArray)
-  for key in obj.table.keys:
-    result.addSon DKStr(key)
+  for key, value in obj.table:
+    if value.kind notin {dkCallable, dkIterable}:
+      result.addSon DKStr(key)
+
+proc gIter(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextArg dkObject
+  maxarg
+
+  iterator gen(): DeliNode =
+    for key, value in arg.table:
+      if value.kind notin {dkCallable, dkIterable}:
+        yield DKStr(key)
+  return DeliNode(kind: dkIterable, generator: gen)
 
 proc dLookup(nodes: varargs[DeliNode]): DeliNode =
   argvars
@@ -64,4 +76,5 @@ let ObjectFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.n
   "": dLookup,
   "keys": dKeys,
   "json": dJson,
+  "iter": gIter,
 }.toTable

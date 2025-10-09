@@ -172,16 +172,17 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
     of dkObject:
       var index = c.sons[1]
       if index.kind == dkIdentifier:
-        let value = c.sons[0].table[index.id]
-        if value.kind == dkCallable and value.function != nil:
-          var nextArgs: seq[DeliNode]
-          for arg in value.sons:
-            nextArgs.add arg
-          for arg in args:
-            nextArgs.add arg
-          return value.function(nextArgs)
-        else:
-          return c.sons[0].table[index.id]
+        if index.id in c.sons[0].table:
+          let value = c.sons[0].table[index.id]
+          if value.kind == dkCallable and value.function != nil:
+            var nextArgs: seq[DeliNode]
+            for arg in value.sons:
+              nextArgs.add arg
+            for arg in args:
+              nextArgs.add arg
+            return value.function(nextArgs)
+          else:
+            return c.sons[0].table[index.id]
       elif index.kind == dkVariable:
         index = engine.getVariable(index.varName)
         let value = c.sons[0].table[index.strVal]

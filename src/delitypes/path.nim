@@ -400,9 +400,10 @@ proc dMkdir(nodes: varargs[DeliNode]): DeliNode =
     of dkArg,
        dkArgLong,
        dkArgShort:
-      if arg.argName == "p":
+      case arg.argName
+      of "p":
         make_ancestors = true
-      elif arg.argName == "m":
+      of "m":
         shift
         express
         case arg.kind
