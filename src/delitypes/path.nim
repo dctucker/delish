@@ -326,6 +326,9 @@ let
   modeS = S_ISUID or S_ISGID
   modeT = S_ISVTX
   modeD = S_IFDIR
+let
+  modeA   = modeU or modeG or modeO
+  modeRWX = modeR or modeW or modeX
 
 proc parseMode*(str: string, curmode: int): int =
   var op: char
@@ -384,11 +387,12 @@ proc dChmod(nodes: varargs[DeliNode]): DeliNode =
 proc dMkdir(nodes: varargs[DeliNode]): DeliNode =
   argvars
   var paths: seq[string]
-  var mode: DeliNode
   var make_ancestors = false
+  var modeval: int = modeA or modeRWX
 
   while arg_i < nodes.len:
     shift
+    express
     case arg.kind
     of dkString,
        dkPath:
@@ -400,12 +404,34 @@ proc dMkdir(nodes: varargs[DeliNode]): DeliNode =
         make_ancestors = true
       elif arg.argName == "m":
         shift
-        mode = arg
+        express
+        case arg.kind
+        of dkString:
+          modeval = parseMode(arg.strVal, modeval)
+        of dkInt8:
+          modeval = arg.intVal
+        else:
+          argerr "mode must be String or Int8"
+      else:
+        argerr "unrecognized argument: ", arg
     else:
       argerr "unexpected ", arg.kind
 
   for path in paths:
-    discard
+    if make_ancestors:
+      for dir in path.parentDirs(inclusive=false, fromRoot=true):
+        var st = Stat()
+        if stat(dir.cstring, st) == 0:
+          if st.isDir: continue
+          else:
+            #echo "not a dir: ", dir
+            return deliFalse()
+        if mkdir(dir.cstring, modeval.Mode) != 0:
+          #echo "unable to mkdir: ", dir
+          return deliFalse()
+    if mkdir(path.cstring, modeval.Mode) != 0:
+      #echo "unable to mkdir: ", path
+      return deliFalse()
 
   return deliTrue()
 
