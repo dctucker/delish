@@ -381,6 +381,34 @@ proc dChmod(nodes: varargs[DeliNode]): DeliNode =
   else:
     return DKBool(false) # TODO return POSIX errno
 
+proc dMkdir(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  var paths: seq[string]
+  var mode: DeliNode
+  var make_ancestors = false
+
+  while arg_i < nodes.len:
+    shift
+    case arg.kind
+    of dkString,
+       dkPath:
+      paths.add arg.strVal
+    of dkArg,
+       dkArgLong,
+       dkArgShort:
+      if arg.argName == "p":
+        make_ancestors = true
+      elif arg.argName == "m":
+        shift
+        mode = arg
+    else:
+      argerr "unexpected ", arg.kind
+
+  for path in paths:
+    discard
+
+  return deliTrue()
+
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "test": dTest,
   "pwd": dPwd,
@@ -390,7 +418,7 @@ let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nim
   "dirname": dDirname,
   "basename": dBasename,
   "list": dListDir,
-  #"mkdir": dMkdir,
+  "mkdir": dMkdir,
   #"unlink": dUnlink,
   #"rename": dRename,
   #"chown": dChown,
