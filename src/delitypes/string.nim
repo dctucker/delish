@@ -86,3 +86,9 @@ let StringFunctions* = {
   "split": dSplit,
   "iter": gIter,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkString] = {
+    "split": "Returns an array of strings by splitting the string by space or the specified delimiter",
+    "iter": "Generates a string after splitting the string by space",
+  }.toTable

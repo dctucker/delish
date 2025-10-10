@@ -41,6 +41,9 @@ packdeli: src/packcc.c Makefile
 parsley: src/language/packcc.c src/parsley.nim $(SOURCES)
 	nim c --hint:XDeclaredButNotUsed:off -o=parsley src/parsley.nim
 
+info: src/language/*.nim src/delitypes/*.nim src/language/packcc.c src/info.nim
+	nim c --hint:XDeclaredButNotUsed:off -d:buildWithUsage -o=info src/info.nim
+
 #tests/%.nim: $(SOURCES)
 
 tests/bin/%: tests/%.nim src/language/packcc.c src/language/packcc.h $(SOURCES)

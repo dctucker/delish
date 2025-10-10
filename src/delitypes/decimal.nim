@@ -161,3 +161,10 @@ let DecimalFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.
   "denominator": dDenom,
   "exponent": dExponent,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkDecimal] = {
+    "frac": "Returns an integer of the fractional numerator.",
+    "denominator": "Returns an integer of the fractional denominator.",
+    "exponent": "Returns the integer number of fractional significant digits.",
+  }.toTable

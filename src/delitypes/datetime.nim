@@ -30,3 +30,15 @@ let DateTimeFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {
   "second": dSecond,
   "nanosecond": dNanos,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkDateTime] = {
+    "now": "Returns the current date and time.",
+    "year": "Returns an integer year.",
+    "month": "Returns an integer month (1-12).",
+    "day": "Returns an integer day (1-31).",
+    "hour": "Returns an integer hour (0-23).",
+    "minute": "Returns an integer minute (0-59).",
+    "second": "Returns an integer second (0-59).",
+    "nanosecond": "Returns an integer nanosecond (0-999999999).",
+  }.toTable

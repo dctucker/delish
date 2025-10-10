@@ -9,3 +9,8 @@ proc dJson(nodes: varargs[DeliNode]): DeliNode =
 let BuiltinFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
   "json": dJson,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkNone] = {
+    "json": "Returns a JSON object of the parsed string",
+  }.toTable

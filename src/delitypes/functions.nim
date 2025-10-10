@@ -38,3 +38,6 @@ proc typeFunctions*(kind: DeliKind): seq[string] =
     let funcs = TypeFunctions[kind]
     for key, v in funcs:
       result.add key
+
+when buildWithUsage:
+  export typeFuncUsage

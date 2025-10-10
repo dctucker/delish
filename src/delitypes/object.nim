@@ -73,8 +73,15 @@ proc dLookup(nodes: varargs[DeliNode]): DeliNode =
   return obj.table[id]
 
 let ObjectFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
-  "": dLookup,
+  #"": dLookup,
   "keys": dKeys,
   "json": dJson,
   "iter": gIter,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkObject] = {
+    "keys": "Returns an array of strings representing the object's keys",
+    "json": "Returns a JSON string representing the object",
+    "iter": "Generates a string for each of the object's keys",
+  }.toTable

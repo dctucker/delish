@@ -26,3 +26,10 @@ let IntegerFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.
   "dec": dDec,
   "hex": dHex,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkInteger] = {
+    "oct": "Returns an octal integer (base 8)",
+    "dec": "Returns a decimal integer (base 10)",
+    "hex": "Returns a hexadcimal integer (base 16)",
+  }.toTable

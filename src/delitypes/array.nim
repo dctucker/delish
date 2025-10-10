@@ -81,5 +81,12 @@ let ArrayFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.ni
   "join": dJoin,
   "map": dMap,
   "iter": gIter,
-  "None": dNop,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkArray] = {
+    "seq": "Generates integers in sequence.",
+    "join": "Returns a string of the array joined by the specified separator.",
+    "map": "Calls a function for each item in the array.",
+    "iter": "Generates a value for each item in the array.",
+  }.toTable

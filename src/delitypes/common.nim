@@ -2,6 +2,10 @@ import std/[strutils,tables]
 import ../language/ast
 import ../errors
 
+const buildWithUsage* {.booldefine.}: bool = false
+when buildWithUsage:
+  var typeFuncUsage*: Table[DeliKind, Table[string, string]]
+
 template argerr*(msg: varargs[string, `$`]) =
   raise newException(ValueError, msg.join(""))
 

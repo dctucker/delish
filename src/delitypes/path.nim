@@ -487,3 +487,18 @@ let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nim
   "chmod": dChmod,
   #"symlink": dSymlink,
 }.toTable
+
+when buildWithUsage:
+  typeFuncUsage[dkPath] = {
+    "test": "Evaluates a condition on the path.",
+    "pwd": "Returns the path of the working directory.",
+    "home": "Returns the path of the current user's home directory.",
+    "chdir": "Change the working directory.",
+    "stat": "Returns an object representing the path's status. Also supports `stat`.",
+    "dirname": "Returns the directory portion of the path.",
+    "basename": "Returns the file portion of the path.",
+    "list": "Returns an array of paths in the specified directory.",
+    "iter": "Generates each path in the specified directory.",
+    "mkdir": "Make a directory. Use `-p` to create all parent directories.",
+    "chmod": "Change the specified path's mode.",
+  }.toTable
