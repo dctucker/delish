@@ -1,6 +1,6 @@
+import std/json
 import ./common
 import ./decimal
-import std/json
 
 proc toJson(node: DeliNode): JsonNode
 

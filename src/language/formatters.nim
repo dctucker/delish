@@ -128,8 +128,7 @@ proc toString*(node: DeliNode): string =
   of dkDate:       node.dateFormat
   of dkPair,
      dkArgDefault,
-     dkArgNames,
-     dkJsonBlock:  ""
+     dkArgNames: ""
   of dkObject,
      dkRan:        node.objFormat
   of dkArray:      node.arrayFormat

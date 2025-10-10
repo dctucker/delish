@@ -42,6 +42,9 @@ proc evalDerefFunction(engine: Engine, variable: DeliNode, args: seq[DeliNode]):
 
 
 proc evalIdentifierCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): DeliNode =
+  if fun.id in typeFunctions(dkNone):
+    return typeFunction(dkNone, fun)(args)
+
   result = DK( dkLazy, DKVar(".returned") )
   var code: DeliNode
 

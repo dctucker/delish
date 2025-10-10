@@ -8,6 +8,7 @@ import ./[
   string as str,
   decimal,
   datetime,
+  builtin,
 ]
 
 type
@@ -15,6 +16,7 @@ type
   TypeFunctionTable = Table[DeliKind, DeliFunctionTable]
 
 let TypeFunctions: TypeFunctionTable = {
+  dkNone: BuiltinFunctions,
   dkArray: ArrayFunctions,
   dkObject: ObjectFunctions,
   dkPath: PathFunctions,

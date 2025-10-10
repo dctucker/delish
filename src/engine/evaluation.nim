@@ -127,11 +127,6 @@ proc evalObject(engine: Engine, val: DeliNode): DeliNode {.inline.} =
     let str = engine.evalPairKey( pair.sons[0] )
     result.table[str] = engine.evaluate(pair.sons[1])
 
-proc evalJsonBlock(engine: Engine, val: DeliNode): DeliNode {.inline.} =
-  result = val.sons[0].strVal.parseJsonString
-  if result.kind == dkError:
-    raise newException(RuntimeError, "Error parsing JSON")
-
 proc evalDateTime(engine: Engine, val: DeliNode): DeliNode {.inline.} =
   let date = val.sons[0].sons
   let time = val.sons[1].sons
@@ -204,7 +199,6 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
 
   of dkArray:        return engine.evalArray(val)
   of dkObject:       return engine.evalObject(val)
-  of dkJsonBlock:    return engine.evalJsonBlock(val)
   of dkDateTime:     return engine.evalDateTime(val)
   of dkRunStmt:      return engine.doRun(val)
   of dkExpr:         return engine.evalExpression(val)

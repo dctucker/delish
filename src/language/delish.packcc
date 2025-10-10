@@ -252,7 +252,7 @@ ArgExpr       <- a:Arg (S+ / AssignOp) e:Expr?                       { DK( ArgEx
 ConstExpr     <-
               (  e:Number / e:StrBlock / e:StrLiteral
               /  e:Boolean / e:Array / e:Object
-              /  e:Path / e:JsonBlock
+              /  e:Path
               )                                                      { $$ = e; }
 
 Expr          <-
@@ -262,7 +262,7 @@ Expr          <-
               /  s:StrBlock / s:StrLiteral / s:Regex
               /  s:DateTime / s:Number     / s:Boolean
               /  s:BoolExpr / s:Error      / s:Signal
-              /  s:Path     / s:JsonBlock
+              /  s:Path
               /  s:Cast     / s:FunctionCall / s:VarDeref
               )                                                      { DK( Expr, s); }
 
@@ -407,7 +407,6 @@ Xor           <- "xor"
 Nand          <- "nand"
 Nor           <- "nor"
 Xnor          <- "xnor"
-Json          <- "json"
 
 Keyword       <-
               (  If      / Elif    / Else
@@ -420,7 +419,6 @@ Keyword       <-
               /  Shl     / Shr     / Not
               /  And     / Or      / Xor
               /  Nand    / Nor     / Xnor
-              /  Json
               )
 
 Type          <- "Integer"                                           { DK( Integer    ); }
@@ -469,9 +467,6 @@ KeyExpr       <-
               (
                  k:Variable / k:StrLiteral / k:Integer
               )                                                      { $$ = k; }
-
-JsonBlock     <- Json   S+ s:StrBlock                               ~{ ER("expected string literal block after `json`"); }
-                                                                     { DK( JsonBlock, s ); }
 
 StrBlock      <- "\"\"\"" < ( !"\"\"\"" . )* > "\"\"\""              { NS( String ); }
 StrLiteral    <- s1:SingleQuote                                      { $$ = s1; }

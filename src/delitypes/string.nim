@@ -83,6 +83,6 @@ proc gIter(nodes: varargs[DeliNode]): DeliNode =
   return DeliNode(kind: dkIterable, generator: gen)
 
 let StringFunctions* = {
-  "split": gSplit,
+  "split": dSplit,
   "iter": gIter,
 }.toTable
