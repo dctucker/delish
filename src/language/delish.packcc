@@ -372,8 +372,6 @@ AsyncFlag     <- Async                                               { DK( Async
 Cast          <- t:Type S* PLeft S* e:Expr                          ~{ ER( expected_expression ); }
                                  S*        PRight                    { DK( Cast, t, e ); }
 
-Json          <- "json"
-Sub           <- "sub"
 If            <- "if"
 Elif          <- "elif"
 Else          <- "else"                                              { DK( Else ); }
@@ -381,44 +379,48 @@ Do            <- "do"
 While         <- "while"
 For           <- "for"
 In            <- "in"
+Sub           <- "sub"
+Local         <- "local"
+ArgKw         <- "arg"
+Env           <- "env"
+Include       <- "include"
 Out           <- "out"
 Err           <- "err"
-Include       <- "include"
-True          <- "true"
-False         <- "false"
-Env           <- "env"
-ArgKw         <- "arg"
-Local         <- "local"
-Return        <- "return"
-Break         <- "break"
-Continue      <- "continue"
-Async         <- "async"
-Redir         <- "redir"
-Shl           <- "shl"
-Shr           <- "shr"
-And           <- "and"
-Or            <- "or"
-Nand          <- "nand"
-Nor           <- "nor"
-Xor           <- "xor"
-Xnor          <- "xnor"
-Not           <- "not"
-Push          <- "push"                                              { DK( Push ); }
-Pop           <- "pop"                                               { DK( Pop ); }
 Open          <- "open"
 Close         <- "close"
 Run           <- "run"
+Async         <- "async"
+Redir         <- "redir"
+Return        <- "return"
+Break         <- "break"
+Continue      <- "continue"
+Push          <- "push"                                              { DK( Push ); }
+Pop           <- "pop"                                               { DK( Pop ); }
+True          <- "true"
+False         <- "false"
+Shl           <- "shl"
+Shr           <- "shr"
+Not           <- "not"
+And           <- "and"
+Or            <- "or"
+Xor           <- "xor"
+Nand          <- "nand"
+Nor           <- "nor"
+Xnor          <- "xnor"
+Json          <- "json"
 
 Keyword       <-
-              (  Json   / Sub   / If       / Elif    / Else
-              /  Do     / While / For
-              /  In     / Out   / Err      / Include
-              /  True   / False / Env      / ArgKw   / Local
-              /  Return / Break / Continue
-              /  Async  / Redir / Shl      / Shr     / Not
-              /  And    / Or    / Xor
-              /  Nand   / Nor   / Xnor
-              /  Push   / Pop   / Open     / Close   / Run
+              (  If      / Elif    / Else
+              /  Do      / While   / For     / In
+              /  Sub     / Local   / ArgKw   / Env     / Include
+              /  Out     / Err     / Open    / Close
+              /  Run     / Async   / Redir
+              /  Return  / Break   / Continue
+              /  Push    / Pop     / True    / False
+              /  Shl     / Shr     / Not
+              /  And     / Or      / Xor
+              /  Nand    / Nor     / Xnor
+              /  Json
               )
 
 Type          <- "Integer"                                           { DK( Integer    ); }
