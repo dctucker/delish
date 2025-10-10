@@ -15,6 +15,8 @@ Full grammar [here](https://github.com/dctucker/delish/blob/main/src/language/de
 | Stream     | Standard input/output/error streams |
 | Variable   | Reference to runtime memory         |
 | Integer    | Numbers 0-9                         |
+| Decimal    | Integer with a base-10 fraction     |
+| DateTime   | Year-month-date hour:minute:second  |
 | String     | Collection of characters            |
 | Path       | Absolute and relative filenames     |
 | Regex      | Regular expressions                 |
@@ -86,7 +88,6 @@ These are reserved words that cannot be used as a function name.
 | `pop`      | Stack removal         |
 | `open`     | File handle acquire   |
 | `close`    | File handle release   |
-| `json`     | JSON data             |
 | `run`      | Process execution     |
 | `sub`      | Subshell              |
 
@@ -195,7 +196,38 @@ out $arr.1
 
 ## Functions
 
-Functions are defined as an identifier followed by a block of code. Here is a simple "hello world" function:
+### Built-in functions
+
+These functions can be called directly using the identifier:
+
+```
+json "[1,2,3]"
+```
+
+#### `json`
+
+Convert a string to JSON.
+
+### Type functions
+
+These functions are invoked by dereferencing a type or a typed variable. The following two code blocks do the same thing.
+
+Type call:
+
+```
+Path.stat ./src
+```
+
+Value call:
+
+```
+$src = ./src
+out $src.stat
+```
+
+### User-defined functions
+
+Functions can be defined as an identifier followed by a block of code. Here is a simple "hello world" function:
 ```
 hello = {
   out "Hello world"
