@@ -1,5 +1,6 @@
 import ./common
 import strutils
+from std/os import getEnv
 
 proc asString*(src: DeliNode): DeliNode
 
@@ -57,6 +58,31 @@ proc dSplit(nodes: varargs[DeliNode]): DeliNode =
   for s in str.strVal.split(sep.strVal):
     result.addSon DKStr(s)
 
+proc gSplit(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextarg dkString
+  let str = arg
+  nextopt DKStr(" ")
+  let sep = arg
+
+  iterator gen(): DeliNode =
+    for s in str.strVal.split(sep.strVal):
+      yield DKStr(s)
+  return DeliNode(kind: dkIterable, generator: gen)
+
+proc gIter(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextArg dkString
+  maxarg
+
+  let ifs = getEnv("IFS", " ")
+
+  iterator gen(): DeliNode =
+    for value in arg.strVal.split(ifs):
+      yield DKStr(value)
+  return DeliNode(kind: dkIterable, generator: gen)
+
 let StringFunctions* = {
-  "split": dSplit,
+  "split": gSplit,
+  "iter": gIter,
 }.toTable

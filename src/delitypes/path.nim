@@ -316,6 +316,40 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
         result = DKPath(e.path)
   )
 
+proc gIter(nodes: varargs[DeliNode]): DeliNode =
+  argvars
+  nextarg dkPath
+  let path = arg
+
+  var opt = DKArg("0")
+  var long = false
+  if arg_i < nodes.len:
+    arg = nodes[arg_i]
+    arg_i += 1
+    express
+    opt = arg
+
+  if opt.argName == "l":
+    long = true
+
+  iterator genlong(): DeliNode =
+    for entry in walkDir(path.strVal, relative=true):
+      var st = Stat()
+      discard lstat(entry.path.cstring, st)
+      var obj = st.toObject
+      obj.table["path"] = DKPath(entry.path)
+      yield obj
+
+  iterator genshort(): DeliNode =
+    for entry in walkDir(path.strVal, relative=true):
+      yield DKPath(entry.path)
+
+  result = DK(dkIterable)
+  if long:
+    result.generator = genlong
+  else:
+    result.generator = genshort
+
 let
   modeU = S_IRUSR or S_IWUSR or S_IXUSR
   modeG = S_IRGRP or S_IWGRP or S_IXGRP
@@ -445,6 +479,7 @@ let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nim
   "dirname": dDirname,
   "basename": dBasename,
   "list": dListDir,
+  "iter": gIter,
   "mkdir": dMkdir,
   #"unlink": dUnlink,
   #"rename": dRename,

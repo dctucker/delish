@@ -138,7 +138,7 @@ proc evalDateTime(engine: Engine, val: DeliNode): DeliNode {.inline.} =
   result = DK( dkDateTime )
   result.dtVal = dateTime(
     date[0].intVal,
-    Month(date[1].intVal),
+    date[1].intVal.Month,
     date[2].intVal,
     time[0].intVal,
     time[1].intVal,
@@ -198,9 +198,9 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
     dkCondition,
     dkBoolExpr:   return engine.evaluate( val.sons[0] )
 
-  of dkStreamIn:  return DeliNode(kind: dkStream, intVal: 0)
-  of dkStreamOut: return DeliNode(kind: dkStream, intVal: 1)
-  of dkStreamErr: return DeliNode(kind: dkStream, intVal: 2)
+  of dkStreamIn:     return DKStream(0)
+  of dkStreamOut:    return DKStream(1)
+  of dkStreamErr:    return DKStream(2)
 
   of dkArray:        return engine.evalArray(val)
   of dkObject:       return engine.evalObject(val)
