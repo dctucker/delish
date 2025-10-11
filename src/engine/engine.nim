@@ -162,13 +162,18 @@ proc doInclude(engine: Engine, included: DeliNode) =
   for s in parsed.sons:
     engine.insertStmt(s.sons)
 
+proc doIncludeStmt(engine: Engine, stmt: DeliNode) =
+  if stmt.sons.len == 1:
+    engine.doInclude(stmt.sons[0])
+    stmt.addSon DKTrue
+
 proc doIncludes(engine: Engine, node: DeliNode) =
   case node.kind:
   of dkScript, dkCode, dkStatement:
     for n in node.sons:
       engine.doIncludes(n)
   of dkIncludeStmt:
-    engine.doStmt(node)
+    engine.doIncludeStmt(node)
   else:
     discard
 

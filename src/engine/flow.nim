@@ -159,3 +159,23 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
       engine.printStatements()
 
   engine.debugNext()
+
+proc doContinueStmt(engine: Engine) {.inline.} =
+  var to = engine.getVariable(".continue")
+  engine.setHeads(to.list_node)
+
+proc doBreakStmt(engine: Engine) {.inline.} =
+  var to = engine.getVariable(".break")
+  engine.setHeads(to.list_node)
+
+proc doReturnStmt(engine: Engine, stmt: DeliNode) {.inline.} =
+  engine.printVariables()
+  var head_to = engine.getVariable(".return")
+  if stmt.sons.len > 0:
+    discard engine.retvals.pop()
+    engine.retvals.push( engine.evaluate(stmt.sons[0]) )
+  engine.setHeads(head_to.list_node)
+
+proc doJump(engine: Engine, node: DeliNode) {.inline.} =
+  engine.setHeads(node.list_node)
+  engine.debugNext()

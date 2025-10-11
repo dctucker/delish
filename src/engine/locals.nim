@@ -45,3 +45,9 @@ proc setupPop(engine: Engine, line: int) =
 
 proc doLocal(engine: Engine, name: DeliNode, default: DeliNode) =
   engine.locals.peekUnsafe[name.varName] = engine.evaluate(default)
+
+proc doLocalStmt(engine: Engine, stmt: DeliNode) {.inline.} =
+  if stmt.sons.len > 2:
+    engine.doLocal(stmt.sons[0], stmt.sons[2])
+  else:
+    engine.doLocal(stmt.sons[0], deliNone())

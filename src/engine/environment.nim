@@ -25,3 +25,9 @@ proc doEnv(engine: Engine, name: DeliNode, op: DeliKind = dkNone, default: DeliN
     putEnv(key, def)
   engine.envars[ name.varName ] = getEnv(key, def)
   engine.printEnvars()
+
+proc doEnvStmt(engine: Engine, stmt: DeliNode) {.inline.} =
+  if stmt.sons.len > 1:
+    engine.doEnv(stmt.sons[0], stmt.sons[1].kind, stmt.sons[2])
+  else:
+    engine.doEnv(stmt.sons[0])
