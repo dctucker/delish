@@ -184,38 +184,37 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
      dkJump,
      dkNone,
      dkRegex,
-     dkCode:      return val
+     dkCode:         return val
 
-  of dkLazy:      return val.sons[0]
-
-  of dkStream,
-    dkEnvDefault,
-    dkCondition,
-    dkBoolExpr:   return engine.evaluate( val.sons[0] )
-
-  of dkStreamIn:     return DKStream(0)
-  of dkStreamOut:    return DKStream(1)
-  of dkStreamErr:    return DKStream(2)
-
-  of dkArray:        return engine.evalArray(val)
-  of dkObject:       return engine.evalObject(val)
-  of dkDateTime:     return engine.evalDateTime(val)
-  of dkRunStmt:      return engine.doRun(val)
-  of dkExpr:         return engine.evalExpression(val)
+  of dkLazy:         return val.sons[0]
   of dkVariable:     return engine.evalVariable(val)
   of dkVarDeref:     return engine.evalVarDeref(val)
   of dkArg:          return engine.evalArg(val)
+  of dkArray:        return engine.evalArray(val)
+  of dkObject:       return engine.evalObject(val)
+  of dkDateTime:     return engine.evalDateTime(val)
+  of dkStreamIn:     return DKStream(0)
+  of dkStreamOut:    return DKStream(1)
+  of dkStreamErr:    return DKStream(2)
+  of dkStream,
+     dkEnvDefault,
+     dkCondition,
+     dkBoolExpr:     return engine.evaluate( val.sons[0] )
+
+  of dkExpr:         return engine.evalExpression(val)
   of dkArgExpr:      return engine.evalArgExpr(val)
   of dkOpenExpr:     return engine.doOpen(val.sons)
-  of dkBoolNot:      return not engine.evaluate(val.sons[0]).toBoolean()
   of dkCondExpr:     return engine.evalCondExpr(val.sons[0], val.sons[1], val.sons[2])
-  of dkComparison:   return engine.evalComparison(val.sons[0], val.sons[1], val.sons[2])
   of dkMathExpr:     return engine.evalMath(val.sons[0], val.sons[1], val.sons[2])
+  of dkComparison:   return engine.evalComparison(val.sons[0], val.sons[1], val.sons[2])
+  of dkBoolNot:      return not engine.evaluate(val.sons[0]).toBoolean()
   of dkBitNot:       return engine.evalBitNot(val.sons[0])
-  of dkFunctionCall: return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
-  of dkCast:         return engine.evaluate(val.sons[1]).toKind(val.sons[0].kind)
-  of dkIterable:     return engine.evalIterable(val)
   of dkElse:         return deliTrue()
+
+  of dkRunStmt:      return engine.doRun(val)
+  of dkFunctionCall: return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])
+  of dkIterable:     return engine.evalIterable(val)
+  of dkCast:         return engine.evaluate(val.sons[1]).toKind(val.sons[0].kind)
 
   else:
     todo "evaluate ", val.kind
