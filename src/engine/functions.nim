@@ -168,55 +168,61 @@ proc dereference(engine: Engine, expr: DeliNode): DeliNode =
   else:
     result = expr
 
+proc evalObjCall(engine: Engine, value: DeliNode, args: seq[DeliNode]): DeliNode {.inline.} =
+  if value.kind == dkCallable and value.function != nil:
+    var nextArgs: seq[DeliNode]
+    for arg in value.sons:
+      nextArgs.add arg
+    for arg in args:
+      nextArgs.add arg
+    return value.function(nextArgs)
+  else:
+    return value
+
 proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): DeliNode =
   var c = callable
   while c.kind == dkCallable and c.function == nil:
     case c.sons[0].kind
+
     of dkObject:
       var index = c.sons[1]
       if index.kind == dkIdentifier:
         if index.id in c.sons[0].table:
           let value = c.sons[0].table[index.id]
-          if value.kind == dkCallable and value.function != nil:
-            var nextArgs: seq[DeliNode]
-            for arg in value.sons:
-              nextArgs.add arg
-            for arg in args:
-              nextArgs.add arg
-            return value.function(nextArgs)
-          else:
-            return c.sons[0].table[index.id]
+          return engine.evalObjCall(value, args)
+        else:
+          discard
       elif index.kind == dkVariable:
         index = engine.getVariable(index.varName)
         let value = c.sons[0].table[index.strVal]
         return value
+      else:
+        discard
+
     of dkArray:
       var index = c.sons[1]
       if index.kind == dkVariable:
         index = engine.getVariable(index.varName)
       if index.kind in dkIntegerKinds:
         return c.sons[0].sons[index.intVal]
+
     else:
       discard
+
     c = engine.evalCallable(c)
     debug 1:
       echo "evalCallback returned ", c.repr
 
   case c.kind
+
   of dkFunctionCall:
     for arg in args:
       c.addSon arg
     return engine.evaluate(c)
+
   of dkIdentifier:
     return engine.evalIdentifierCall(c, args)
-  #of dkVarDeref:
-  #  code = engine.evaluate(fun)
-  #  if code.kind != dkCode:
-  #    return engine.evalDerefFunction(code, args)
-  #of dkType:
-  #  return engine.evalTypeFunction(fun.sons[0].kind, args[0], args[1..^1])
-  #else:
-  #  todo "evalFunctionCall ", fun
+
   of dkCallable:
     var next = c
     var value: DeliNode
@@ -230,35 +236,12 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
       debug 1:
         echo "calling ", next, " with args ", nextArgs
       return next.function(nextArgs)
-  else: discard
+
+  else:
+    discard
 
   todo "evalFunctionCall " & $c.kind
   return deliNone()
-
-
-# TODO skip this for now
-#proc checkFunctionCalls(engine: Engine, node: DeliNode) =
-#  case node.kind:
-#  of dkFunctionStmt:
-#    let args = node.sons[0].sons
-#    case args[0].kind
-#    of dkIdentifier:
-#      let id = args[0].id
-#      if id notin engine.functions:
-#        engine.setupError("Unknown function: \"" & id & "\" at " & node.script.filename & ":" & $node.line)
-#    of dkType:
-#      let deliType = args[0].sons[0].kind
-#      let id = args[1].id
-#      if id notin typeFunctions(deliType):
-#        engine.setupError("Unknown function: \"" & $deliType & "." & id & "\" at " & node.script.filename & ":" & $node.line)
-#    of dkVarDeref:
-#      # TODO needs more static analysis
-#      discard
-#    else:
-#      engine.setupError("Invalid function call: " & $args)
-#  else:
-#    for son in node.sons:
-#      engine.checkFunctionCalls(son)
 
 proc doFunctionDef(engine: Engine, id: DeliNode, code: DeliNode) =
   if id.id in engine.functions:
@@ -277,4 +260,3 @@ proc doFunctionDefs(engine: Engine, node: DeliNode) =
 
 proc initFunctions(engine: Engine, scr: DeliNode) =
   engine.doFunctionDefs(scr)
-  #engine.checkFunctionCalls(scr)

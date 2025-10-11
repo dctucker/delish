@@ -1,8 +1,25 @@
 ### Runtime ###
 
+proc doContinueStmt(engine: Engine) {.inline.} =
+  var to = engine.getVariable(".continue")
+  engine.setHeads(to.list_node)
+
+proc doBreakStmt(engine: Engine) {.inline.} =
+  var to = engine.getVariable(".break")
+  engine.setHeads(to.list_node)
+
+proc doReturnStmt(engine: Engine, stmt: DeliNode) {.inline.} =
+  engine.printVariables()
+  var head_to = engine.getVariable(".return")
+  if stmt.sons.len > 0:
+    discard engine.retvals.pop()
+    engine.retvals.push( engine.evaluate(stmt.sons[0]) )
+  engine.setHeads(head_to.list_node)
+
 proc doStmt(engine: Engine, s: DeliNode) =
   let nsons = s.sons.len()
   case s.kind
+
   of dkNone:
     discard
 
@@ -15,31 +32,10 @@ proc doStmt(engine: Engine, s: DeliNode) =
     engine.setHeads(s.list_node)
     engine.debugNext()
 
-  of dkVariableStmt:
-    engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
-
-  of dkVarDerefStmt:
-    engine.doDerefAssign(s.sons[0], s.sons[1], s.sons[2])
-
-  of dkCloseStmt:
-    engine.doClose(s.sons[0])
-
-  of dkArgStmt:
-    if s.sons[0].kind == dkVariable:
-      var shifted = engine.shift()
-      var value = if shifted.kind != dkNone:
-        shifted
-      elif nsons > 1: # DefaultOp ArgDefault Expr
-        s.sons[2].sons[0]
-      else:
-        deliNone()
-      engine.assignVariable(s.sons[0].varName, value)
-    else:
-      if nsons > 1:
-        engine.doArg(s.sons[0].sons, s.sons[2].sons[0])
-      else:
-        engine.doArg(s.sons[0].sons, deliNone())
-    engine.printVariables()
+  of dkVariableStmt: engine.doAssign(s.sons[0], s.sons[1], s.sons[2])
+  of dkVarDerefStmt: engine.doDerefAssign(s.sons[0], s.sons[1], s.sons[2])
+  of dkCloseStmt:    engine.doClose(s.sons[0])
+  of dkArgStmt:      engine.doArgStmt(s)
 
   of dkEnvStmt:
     if nsons > 1:
@@ -53,49 +49,18 @@ proc doStmt(engine: Engine, s: DeliNode) =
     else:
       engine.doLocal(s.sons[0], deliNone())
 
-  of dkConditional:
-    engine.doConditional(s)
-
-  of dkForLoop:
-    engine.doForLoop(s)
-
-  of dkWhileLoop:
-    engine.doWhileLoop(s)
-
-  of dkDoLoop:
-    engine.doDoLoop(s)
-
-  of dkFunctionDef:
-    engine.doFunctionDef(s.sons[0], s.sons[1])
-
-  of dkFunctionStmt:
-    let call = s.sons[0]
-    discard engine.evaluate(call)
-
-  of dkContinueStmt:
-    var to = engine.getVariable(".continue")
-    engine.setHeads(to.list_node)
-
-  of dkBreakStmt:
-    var to = engine.getVariable(".break")
-    engine.setHeads(to.list_node)
-
-  of dkReturnStmt:
-    engine.printVariables()
-    var head_to = engine.getVariable(".return")
-    if nsons > 0:
-      discard engine.retvals.pop()
-      engine.retvals.push( engine.evaluate(s.sons[0]) )
-    engine.setHeads(head_to.list_node)
-
-  of dkPush:
-    engine.pushLocals()
-
-  of dkPop:
-    engine.popLocals()
-
-  of dkStreamStmt:
-    engine.doStream(s.sons)
+  of dkConditional:  engine.doConditional(s)
+  of dkForLoop:      engine.doForLoop(s)
+  of dkWhileLoop:    engine.doWhileLoop(s)
+  of dkDoLoop:       engine.doDoLoop(s)
+  of dkFunctionDef:  engine.doFunctionDef(s.sons[0], s.sons[1])
+  of dkFunctionStmt: discard engine.evaluate(s.sons[0])
+  of dkContinueStmt: engine.doContinueStmt
+  of dkBreakStmt:    engine.doBreakStmt
+  of dkReturnStmt:   engine.doReturnStmt(s)
+  of dkPush:         engine.pushLocals()
+  of dkPop:          engine.popLocals()
+  of dkStreamStmt:   engine.doStream(s.sons)
 
   of dkIncludeStmt:
     if s.sons.len == 1:
@@ -106,8 +71,7 @@ proc doStmt(engine: Engine, s: DeliNode) =
     for s in s.sons:
       engine.doStmt(s)
 
-  of dkRunStmt:
-    discard engine.doRun(s)
+  of dkRunStmt:      discard engine.doRun(s)
 
   else:
     todo "doStmt ", s.kind

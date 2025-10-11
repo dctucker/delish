@@ -65,12 +65,30 @@ proc doArg(engine: Engine, names: seq[DeliNode], default: DeliNode) =
     #engine.printArguments()
     #echo "\n"
 
+proc doArgStmt(engine: Engine, stmt: DeliNode) =
+  let nsons = stmt.sons.len
+  if stmt.sons[0].kind == dkVariable:
+    var shifted = engine.shift()
+    var value = if shifted.kind != dkNone:
+      shifted
+    elif nsons > 1: # DefaultOp ArgDefault Expr
+      stmt.sons[2].sons[0]
+    else:
+      deliNone()
+    engine.assignVariable(stmt.sons[0].varName, value)
+  else:
+    if nsons > 1:
+      engine.doArg(stmt.sons[0].sons, stmt.sons[2].sons[0])
+    else:
+      engine.doArg(stmt.sons[0].sons, deliNone())
+  engine.printVariables()
+
 proc doArgStmts(engine: Engine, node: DeliNode) =
   case node.kind
   of dkStatement:
     engine.doArgStmts(node.sons[0])
   of dkArgStmt:
-    engine.doStmt(node)
+    engine.doArgStmt(node)
   of dkCode:
     for son in node.sons:
       engine.doArgStmts(son)
