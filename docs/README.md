@@ -9,19 +9,21 @@ Full grammar [here](https://github.com/dctucker/delish/blob/main/src/language/de
 
 | Type       | Description                         |
 |------------|-------------------------------------|
-| Arg        | Arguments and flags                 |
-| Boolean    | Logical true or false               |
+| String     | Collection of characters            |
 | Identifier | Object key or function name         |
-| Stream     | Standard input/output/error streams |
 | Variable   | Reference to runtime memory         |
+| Arg        | Arguments and flags                 |
+| Path       | Absolute and relative filenames     |
 | Integer    | Numbers 0-9                         |
 | Decimal    | Integer with a base-10 fraction     |
 | DateTime   | Year-month-date hour:minute:second  |
-| String     | Collection of characters            |
-| Path       | Absolute and relative filenames     |
-| Regex      | Regular expressions                 |
+| Boolean    | Logical true or false               |
 | Array      | Zero-indexed collection             |
 | Object     | Key/value pair collection           |
+| Regex      | Regular expressions                 |
+| Stream     | Standard input/output/error streams |
+| Error      | Standard error values (errno.h)     |
+| Signal     | Standard process signals (signal.h) |
 
 ### Casts
 
@@ -64,32 +66,40 @@ These are reserved words that cannot be used as a function name.
 | Keyword    | Description           |
 |------------|-----------------------|
 | `if`       | Conditional           |
-| `while`    | Pre-test loop         |
+| `elif`     | " "                   |
+| `else`     | " "                   |
 | `do`       | Post-test loop        |
+| `while`    | Pre-test loop         |
 | `for`      | Iterator loop         |
+| `sub`      | Subshell              |
+| `local`    | Local variable        |
+| `arg`      | Argument variable     |
+| `env`      | Environment variable  |
+| `include`  | Inclusion directive   |
 | `in`       | Input stream          |
 | `out`      | Output stream         |
 | `err`      | Error stream          |
-| `include`  | Inclusion directive   |
-| `true`     | Boolean literal       |
-| `false`    | Boolean literal       |
-| `env`      | Environment variable  |
-| `arg`      | Argument variable     |
-| `local`    | Local variable        |
-| `return`   | Return statement      |
-| `break`    | Loop exit             |
-| `continue` | Early next iteration  |
-| `async`    | Background process    |
-| `redir`    | Stream redirection    |
-| `and`      | Logical conjunction   |
-| `or`       | Logical disjunction   |
-| `not`      | Logical negation      |
-| `push`     | Stack addition        |
-| `pop`      | Stack removal         |
 | `open`     | File handle acquire   |
 | `close`    | File handle release   |
 | `run`      | Process execution     |
-| `sub`      | Subshell              |
+| `async`    | Background process    |
+| `redir`    | Stream redirection    |
+| `return`   | Return statement      |
+| `break`    | Loop exit             |
+| `continue` | Early next iteration  |
+| `push`     | Stack addition        |
+| `pop`      | Stack removal         |
+| `true`     | Boolean literal       |
+| `false`    | Boolean literal       |
+| `shl`      | Bitwise shift left    |
+| `shr`      | Bitwise shift right   |
+| `not`      | Negation              |
+| `and`      | Conjunction           |
+| `or`       | Disjunction           |
+| `xor`      | Exclusive disjunction |
+| `nand`     | Non-conjunction       |
+| `nor`      | Non-disjunction       |
+| `xnor`     | Connective            |
 
 ## Operators
 
@@ -210,15 +220,18 @@ Convert a string to JSON.
 
 ### Type functions
 
-These functions are invoked by dereferencing a type or a typed variable. The following two code blocks do the same thing.
+These functions are invoked by dereferencing a type or a typed variable. See the [function reference](functions.md).
 
-Type call:
+The following two code blocks do the same thing.
+
+Pass the target as the first parameter in a type call:
 
 ```
-Path.stat ./src
+$src = ./src
+out Path.stat $src
 ```
 
-Value call:
+Dereference the target in a value call:
 
 ```
 $src = ./src
