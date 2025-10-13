@@ -23,7 +23,7 @@ proc isFlag*(arg: Argument):bool =
   return arg.short_name != "" or arg.long_name != ""
 
 proc strVal(s:string): DeliNode =
-  return DeliNode(kind: dkString, strVal: s)
+  return DKStr(s)
 
 iterator parseCmdLine(cmdline: seq[string] = @[]): Argument =
   var p = initOptParser(cmdline)

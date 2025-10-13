@@ -52,7 +52,7 @@ proc doOpen(engine: Engine, nodes: seq[DeliNode]): DeliNode =
     let file = open(path, mode)
     let num = file.getOsFileHandle()
     engine.fds[num] = initFd(file)
-    result = DeliNode(kind: dkStream, intVal: num)
+    result = DKStream(num)
     engine.variables[variable] = result
   except IOError:
     engine.runtimeError("Unable to open: " & path)

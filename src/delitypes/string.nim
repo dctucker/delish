@@ -68,7 +68,7 @@ proc gSplit(nodes: varargs[DeliNode]): DeliNode =
   iterator gen(): DeliNode =
     for s in str.strVal.split(sep.strVal):
       yield DKStr(s)
-  return DeliNode(kind: dkIterable, generator: gen)
+  return DKIter(gen)
 
 proc gIter(nodes: varargs[DeliNode]): DeliNode =
   argvars
@@ -80,7 +80,7 @@ proc gIter(nodes: varargs[DeliNode]): DeliNode =
   iterator gen(): DeliNode =
     for value in arg.strVal.split(ifs):
       yield DKStr(value)
-  return DeliNode(kind: dkIterable, generator: gen)
+  return DKIter(gen)
 
 let StringFunctions* = {
   "split": dSplit,

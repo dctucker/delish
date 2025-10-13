@@ -101,7 +101,9 @@ proc todo*(msg: varargs[string, `$`])
 proc name*(kind: DeliKind): string =
   return ($kind).substr(2)
 
-let None0 = DeliNode(kind: dkNone)
+proc deliNone*(): DeliNode
+
+let None0 = deliNone()
 
 proc `parent=`*(node: DeliNode, parent: DeliNode) =
   while node.parents.len > 0:

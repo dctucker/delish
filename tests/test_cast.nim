@@ -18,16 +18,16 @@ import ./common
 
 suite "cast":
   let ing = DKStr("Reuben")
-  let ide = DeliNode(kind: dkIdentifier, id: "bread")
-  let ari = DeliNode(kind: dkVariable, varName: "cheese")
-  let arg = DeliNode(kind: dkArgLong, argName: "mustard")
-  let pat = DeliNode(kind: dkPath, strVal: "./olives")
+  let ide = DKId("bread")
+  let ari = DKVar("cheese")
+  let arg = DKArgLong("mustard")
+  let pat = DKPath("./olives")
   let num = DKInt(1)
   let boo = DKTrue
   let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
-  let obj = DeliNode(kind: dkObject, table: {"onions": DKStr("fresh")}.toTbl)
-  let reg = DeliNode(kind: dkRegex, pattern: "[A-Za-z0-9]")
-  let eam = DeliNode(kind: dkStream, intVal: 1)
+  let obj = DeliObject({"onions": DKStr("fresh")})
+  let reg = DKRegex("[A-Za-z0-9]")
+  let eam = DKStream(1)
 
   test "cast to boolean":
     for node in @[ing, num, arr, obj]: # these evaluate to true

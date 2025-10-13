@@ -62,7 +62,7 @@ proc gIter(nodes: varargs[DeliNode]): DeliNode =
     for key, value in arg.table:
       if value.kind notin {dkCallable, dkIterable}:
         yield DKStr(key)
-  return DeliNode(kind: dkIterable, generator: gen)
+  return DKIter(gen)
 
 proc dLookup(nodes: varargs[DeliNode]): DeliNode =
   argvars

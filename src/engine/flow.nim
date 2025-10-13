@@ -35,10 +35,8 @@ proc doConditional(engine: Engine, cond: DeliNode) =
         cond.sons = @[condition, jump_true]
         cond.line = condition.line
       else:
-        conditional = DeliNode(kind: dkConditional, sons: @[
-            condition,
-            jump_true,
-        ], lineNumber: condition.line)
+        conditional = DK(dkConditional, condition, jump_true)
+        conditional.line = condition.line
         engine.insertStmt(conditional)
 
       engine.insertStmt(code)

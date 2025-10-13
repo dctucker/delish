@@ -64,7 +64,7 @@ proc evalComparison(engine: Engine, op, v1, v2: DeliNode): DeliNode {.inline.} =
   else:
     todo "evalComparison ", $op
     false
-  return DeliNode(kind: dkBoolean, boolVal: val)
+  return DKBool(val)
 
 proc evalCondExpr(engine: Engine, op: DeliNode, v1: DeliNode, v2: DeliNode): DeliNode {.inline.} =
   case op.kind
@@ -117,12 +117,12 @@ proc evalPairKey(engine: Engine, k: DeliNode): string =
     ""
 
 proc evalArray(engine: Engine, val: DeliNode): DeliNode {.inline.} =
-  result = DeliNode(kind: dkArray)
+  result = dkArray
   for son in val.sons:
     result.addSon engine.evaluate(son)
 
 proc evalObject(engine: Engine, val: DeliNode): DeliNode {.inline.} =
-  result = DK( dkObject )
+  result = dkObject
   for pair in val.sons:
     let str = engine.evalPairKey( pair.sons[0] )
     result.table[str] = engine.evaluate(pair.sons[1])

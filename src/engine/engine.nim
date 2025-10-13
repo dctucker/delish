@@ -118,7 +118,7 @@ proc initScript(engine: Engine, scr: DeliNode) =
   if scr.script != nil:
     endline = max(endline, scr.script.line_count + 1)
   engine.tail.value.line = endline
-  engine.assignVariable(".return", DeliNode( kind: dkJump, list_node: engine.tail ))
+  engine.assignVariable(".return", DKJump(engine.tail))
 
   debug 3:
     echo engine.statements

@@ -53,7 +53,7 @@ suite "engine":
       nextVar("x") == 4
 
   test "arguments":
-    let arg = DK( dkArg, DeliNode(kind: dkArgShort, argName: "a") )
+    let arg = DK( dkArg, DKArgShort("a") )
     DKScript(
       DK( dkArgStmt, DK( dkArgNames, arg ), DK( dkDefaultOp ), DKExpr( DKInt(3) ) ),
       DKVarStmt("x", dkAssignOp, arg),
@@ -85,13 +85,13 @@ suite "engine":
     skip
 
   test "functions":
-    let id = DeliNode(kind: dkIdentifier, id: "foo")
+    let id = DKId("foo")
     DKScript(
       DKVarStmt("x", dkAssignOp, DKInt(0)),
       DK( dkFunctionDef, id, DK( dkCode,
         DKVarStmt("x", dkAssignOp, DKInt(1)),
       )),
-      DK( dkFunctionStmt, DK( dkFunctionCall, DeliNode(kind: dkCallable, sons: @[id]) ) ),
+      DK( dkFunctionStmt, DK( dkFunctionCall, DK(dkCallable, id) ) ),
     )
     check engine.nextLen == 3
     check nextVar("x") == 0

@@ -124,9 +124,9 @@ proc `==`*(o: DeliNode, b: bool): bool =
 proc `not`*(a: DeliNode): DeliNode =
   case a.kind:
   of dkBoolean:
-    return DeliNode(kind: dkBoolean, boolVal: not a.boolVal)
+    return DKBool(not a.boolVal)
   of dkInteger:
-    return DeliNode(kind: dkInteger, intVal: not a.intVal)
+    return DKInt(not a.intVal)
   else:
     todo "not ", a.kind
 
@@ -139,7 +139,7 @@ proc `+`*(a, b: DeliNode): DeliNode =
       dkPath:     return DKStr(a.strVal & b.strVal)
     of dkArg:     return DK(dkArgExpr, a, b)
     of dkArray:
-      result = DeliNode(kind: dkArray)
+      result = dkArray
       for n in a.sons: result.addSon n
       for n in b.sons: result.addSon n
       return result
@@ -149,11 +149,11 @@ proc `+`*(a, b: DeliNode): DeliNode =
 
   case a.kind
   of dkArray:
-    result = DeliNode(kind: dkArray)
+    result = dkArray
     for n in a.sons: result.addSon n
     result.addSon b
   of dkArgExpr:
-    result = DeliNode(kind: dkArgExpr)
+    result = dkArgExpr
     for n in a.sons: result.addSon n
     result.addSon b
   else:

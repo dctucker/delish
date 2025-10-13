@@ -134,7 +134,7 @@ proc parseCapture(node: DeliNode, capture: string) =
     if node.cmd == "":
       node.cmd     = capture
     else:
-      node.addSon(DeliNode(kind:dkString, strVal: capture))
+      node.addSon DKStr(capture)
   of dkBoolean:    node.boolVal = parseBoolean(capture)
   of dkSignal:     node.intVal = parseSignal(capture)
   of dkError:      node.intVal = parseError(capture)

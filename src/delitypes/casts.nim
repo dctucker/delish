@@ -18,18 +18,18 @@ proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
 
 proc toIdentifier*(src: DeliNode): DeliNode =
   result = case src.kind
-  of dkIdentifier: DeliNode(kind: dkIdentifier, id: src.id)
-  of dkString:     DeliNode(kind: dkIdentifier, id: src.strVal)
-  of dkVariable:   DeliNode(kind: dkIdentifier, id: src.varName)
+  of dkIdentifier: DKId(src.id)
+  of dkString:     DKId(src.strVal)
+  of dkVariable:   DKId(src.varName)
   of dkArg,
      dkArgShort,
-     dkArgLong:    DeliNode(kind: dkIdentifier, id: src.argName) # TODO check this
+     dkArgLong:    DKId(src.argName) # TODO check this
   else: raise Incompatible(dkIdentifier, src)
 
 proc toVariable*(src: DeliNode): DeliNode =
   result = case src.kind
   of dkVariable:
-    DeliNode(kind: dkVariable, varName: src.varName)
+    DKVar(src.varName)
   of dkString,
      dkIdentifier,
      dkArg, dkArgShort, dkArgLong:
@@ -128,8 +128,8 @@ proc toArg*(src: DeliNode): DeliNode =
      dkStrLiteral: DKArg(src.strVal)
   of dkIdentifier: DKArg(src.id)
   of dkVariable:   DKArg(src.varName)
-  of dkArgShort:   DeliNode(kind: dkArgShort, argName: src.argName)
-  of dkArgLong:    DeliNode(kind: dkArgLong, argName: src.argName)
+  of dkArgShort:   DKArgShort(src.argName)
+  of dkArgLong:    DKArgLong(src.argName)
   else: raise Incompatible(dkPath, src)
 
 proc toArray*(src: DeliNode): DeliNode =
@@ -176,7 +176,7 @@ proc toObject*(src: DeliNode): DeliNode =
       obj.table[$i] = item
       i += 1
     obj
-  of dkObject:     DeliNode(kind: dkObject, table: src.table) # explicit copy needed?
+  of dkObject:     DKObject(src.table) # explicit copy needed?
   of dkIdentifier: DeliObject([(src.id     , DKLazy(src))]) # TODO evaluate value
   of dkVariable:   DeliObject([(src.varName, DKLazy(src))]) # TODO evaluate value
   of dkArg:        DeliObject([(src.argName, DKLazy(src))]) # TODO evaluate value
@@ -191,7 +191,7 @@ proc toObject*(src: DeliNode): DeliNode =
 proc toRegex*(src: DeliNode): DeliNode =
   result = case src.kind
   of dkRegex:
-    DeliNode(kind: dkRegex, pattern: src.pattern)
+    DKRegex(src.pattern)
   of dkString, dkStrLiteral, dkStrBlock, dkArray:
     todo "toRegex ", src.kind
     deliNone()
@@ -204,7 +204,7 @@ proc toStream*(src: DeliNode): DeliNode =
      dkInt16,
      dkStream,
      dkInteger:
-    return DeliNode(kind: dkStream, intVal: src.intVal)
+    return DKStream( src.intVal)
   of dkArray, dkString, dkStrLiteral, dkStrBlock:
     todo "toStream ", src.kind
     deliNone()

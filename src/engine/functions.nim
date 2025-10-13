@@ -56,7 +56,7 @@ proc evalIdentifierCall(engine: Engine, fun: DeliNode, args: seq[DeliNode]): Del
 
   engine.setupPush( -code.sons[0].line + 1, {
     ".return": jump_return,
-    ".args"  : DeliNode(kind: dkArray, sons: args),
+    ".args"  : DKArray(args),
     ".revtal": result,
   }.toTbl)
 
@@ -75,7 +75,7 @@ proc setupCallCode(engine: Engine, code: DeliNode, args: seq[DeliNode]): DeliNod
 
   engine.setupPush( -code.sons[0].line + 1, {
     ".return": jump_return,
-    ".args"  : DeliNode(kind: dkArray, sons: args),
+    ".args"  : DKArray(args),
     ".revtal": result,
   }.toTbl)
 
@@ -117,7 +117,7 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
     #return engine.evalCallable(c0)
 
   of dkFunctionCall:
-    result = DeliNode(kind: dkCallable)
+    result = dkCallable
     result.addSon engine.evaluate(c0)
     for i in 1..(callable.sons.len - 1):
       result.addSon callable.sons[i]

@@ -1,3 +1,6 @@
+converter toDeliNode*(kind: DeliKind): DeliNode {.inline.} =
+  return DeliNode(kind: kind)
+
 proc deliNone*(): DeliNode =
   return DeliNode(kind: dkNone, none: true)
 
@@ -15,6 +18,10 @@ proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
   result = DeliNode(kind: kind)
   result.addSons nodes
 
+proc DKArray*(nodes: varargs[DeliNode]): DeliNode =
+  result = DeliNode(kind: dkArray)
+  result.addSons nodes
+
 proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
   result = DK( dkExpr )
   result.addSons nodes
@@ -23,12 +30,18 @@ proc DKExprList*(nodes: varargs[DeliNode]): DeliNode =
   result = DK( dkExprList )
   result.addSons nodes
 
+proc DKArgShort*(argName: string): DeliNode =
+  return DeliNode(kind: dkArgShort, argName: argName)
+
+proc DKArgLong*(argName: string): DeliNode =
+  return DeliNode(kind: dkArgLong, argName: argName)
+
 proc DKArg*(argName: string): DeliNode =
   if argName.len == 0:
     raise newException(ValueError, "empty argument name")
   if argName.len == 1:
-    return DeliNode(kind: dkArgShort, argName: argName)
-  return DeliNode(kind: dkArgLong, argName: argName)
+    return DKArgShort(argName)
+  return DKArgLong(argName)
 
 proc DKId*(id: string): DeliNode =
   return DeliNode(kind: dkIdentifier, id: id)
@@ -117,7 +130,7 @@ proc DKStmt*(kind: DeliKind, args: varargs[DeliNode]): DeliNode =
   return DK( dkStatement, DK( kind, args ) )
 
 proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
-  result = DeliNode(kind: dkInner)
+  result = dkInner
   result.line = line
   result.addSons nodes
   for son in result.sons:
@@ -126,6 +139,10 @@ proc DKInner*(line: int, nodes: varargs[DeliNode]): DeliNode =
 proc DKJump*(line: int): DeliNode =
   result = DeliNode(kind: dkJump)
   result.line = line
+
+proc DKJump*(list_node: DeliListNode): DeliNode =
+  result = DeliNode(kind: dkJump)
+  result.list_node = list_node
 
 proc DKBreak*(line: int): DeliNode =
   result = DeliNode(kind: dkBreakStmt)
@@ -141,8 +158,20 @@ proc DKCallable*(fn: DeliFunction, sons: seq[DeliNode]): DeliNode =
 proc DKType*(kind: DeliKind): DeliNode =
   result = DK( dkType, DK( kind ) )
 
+proc DKIter*(gen: DeliGenerator): DeliNode =
+  return DeliNode(kind: dkIterable, generator: gen)
+
 let DKTrue*  = DeliNode(kind: dkBoolean, boolVal: true)
 let DKFalse* = DeliNode(kind: dkBoolean, boolVal: false)
 
+proc DKObject*(table: DeliTable): DeliNode =
+  return DeliNode(kind: dkObject, table: table)
+
+proc DKRegex*(pattern: string): DeliNode =
+  return DeliNode(kind: dkRegex, pattern: pattern)
+
 proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
   return DeliNode(kind: dkObject, table: table.toTbl)
+
+proc DKNone*(): DeliNode =
+  return dkNone

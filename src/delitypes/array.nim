@@ -7,7 +7,7 @@ proc dJoin(nodes: varargs[DeliNode]): DeliNode =
   nextArg dkArray
   let sons = arg.sons
 
-  var sep = DeliNode(kind: dkString, strVal: "")
+  var sep = DKStr("")
   if arg_i < nodes.len:
     sep = nodes[arg_i]
 
@@ -33,7 +33,7 @@ proc gSeq(nodes: varargs[DeliNode]): DeliNode =
   iterator gen(): DeliNode =
     for i in val1..val2:
       yield DKInt(i)
-  return DeliNode(kind: dkIterable, generator: gen)
+  return DKIter(gen)
 
 proc gIter(nodes: varargs[DeliNode]): DeliNode =
   argvars
@@ -43,7 +43,7 @@ proc gIter(nodes: varargs[DeliNode]): DeliNode =
   iterator gen(): DeliNode =
     for son in arg.sons:
       yield son
-  return DeliNode(kind: dkIterable, generator: gen)
+  return DKIter(gen)
 
 proc dSeq(nodes: varargs[DeliNode]): DeliNode =
   argvars
@@ -59,7 +59,7 @@ proc dSeq(nodes: varargs[DeliNode]): DeliNode =
     val2 = val1
     val1 = t
 
-  result = DeliNode(kind: dkArray)
+  result = dkArray
   for i in val1..val2:
     result.addSon DKInt(i)
 
@@ -72,7 +72,7 @@ proc dMap(nodes: varargs[DeliNode]): DeliNode =
   shift
   let fn = arg
 
-  result = DK(dkArray)
+  result = dkArray
   for son in sons:
     result.addSon DK(dkFunctionCall, DK(dkCallable, fn), son)
 
