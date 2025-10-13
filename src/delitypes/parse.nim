@@ -47,7 +47,7 @@ proc parseDecimal*(str: string): Decimal =
 proc parseString*(str: string): string =
   result = str
 
-proc assembleJson(node: JsonNode): DeliNode =
+proc assembleJson(node: JsonNode): DeliValue =
   case node.kind
   of JString:
     return DKStr(node.str)
@@ -60,17 +60,16 @@ proc assembleJson(node: JsonNode): DeliNode =
   of JNull:
     return deliNone()
   of JObject:
-    result = DK(dkObject)
+    result = DeliValue(kind: dkObject)
     for field,obj in node.fields.pairs:
       var js = assembleJson(obj)
-      js.parent = result
       result.table[field] = js
   of JArray:
-    result = DK(dkArray)
+    result = DeliValue(kind: dkArray)
     for elem in node.elems:
-      result.addSon assembleJson(elem)
+      result.values.add assembleJson(elem)
 
-proc parseJsonString*(str: string): DeliNode =
+proc parseJsonString*(str: string): DeliValue =
   try:
     let js = parseJson(str)
     return assembleJson(js)

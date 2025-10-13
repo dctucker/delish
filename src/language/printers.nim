@@ -16,7 +16,7 @@ proc printSons*(node: DeliNode, level: int): string =
       result &= printSons(son, level+1)
 
 proc printObject(node: DeliNode): string =
-  for k,v in node.table.pairs():
+  for k,v in node.value.table.pairs():
     result &= k & ": " & $v
     result &= "; "
 

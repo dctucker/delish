@@ -44,9 +44,7 @@ type
   DeliGenerator* = iterator(): DeliNode
   DeliFunction* = proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.}
 
-  DeliNodeObj* = object
-    parents: seq[DeliNode]
-    sons*: seq[DeliNode]
+  DeliValue* = object
     case kind*: DeliKind
     of dkNone:         none:        bool
     of dkIdentifier:   id*:         string
@@ -70,11 +68,49 @@ type
     of dkVariable:     varName*:    string
     of dkInvocation:   cmd*:        string
     of dkObject,
-       dkRan:          table*:      DeliTable
+       dkRan:          table*:      OrderedTable[string, DeliValue]
     of dkDateTime:     dtVal*:      DateTime
     of dkArgShort,
        dkArgLong,
        dkArg:          argName*:    string
+    of dkIterable:     generator*:  DeliGenerator
+    of dkArray:        values*:     seq[DeliValue]
+    else:
+      discard
+
+  DeliNodeObj* = object
+    parents: seq[DeliNode]
+    sons*: seq[DeliNode]
+    case kind*: DeliKind
+    of dkNone,
+       dkIdentifier,
+       dkPath,
+       dkStrBlock,
+       dkStrLiteral,
+       dkString,
+       dkRegex,
+       dkStream,
+       dkError,
+       dkSignal,
+       dkYear, dkMonth, dkDay,
+       dkHour, dkMinute, dkSecond,
+       dkNanoSecond,
+       dkInt10,
+       dkInt16,
+       dkInt8,
+       dkInteger,
+       dkDecimal,
+       dkBoolean,
+       dkVariable,
+       dkInvocation,
+       dkObject,
+       dkRan,
+       dkDateTime,
+       dkArgShort,
+       dkArgLong,
+       #dkArg,
+       dkIterable:    value*: DeliValue
+
     of dkJump,
        dkWhileLoop,
        dkDoLoop,
@@ -92,18 +128,86 @@ type
       lineNumber*: int
       list_node*: DeliListNode
     of dkCallable:     function*:   DeliFunction
-    of dkIterable:     generator*:  DeliGenerator
     of dkScript:       script:      DeliScript
     else:
       discard
+
+converter toDeliValue(node: DeliNode): DeliValue =
+  case node.kind
+  of dkNone,
+     dkIdentifier,
+     dkPath,
+     dkStrBlock,
+     dkStrLiteral,
+     dkString,
+     dkRegex,
+     dkStream,
+     dkError,
+     dkSignal,
+     dkYear, dkMonth, dkDay,
+     dkHour, dkMinute, dkSecond,
+     dkNanoSecond,
+     dkInt10,
+     dkInt16,
+     dkInt8,
+     dkInteger,
+     dkDecimal,
+     dkBoolean,
+     dkVariable,
+     dkInvocation,
+     dkObject,
+     dkRan,
+     dkDateTime,
+     dkArgShort,
+     dkArgLong,
+     dkArg,
+     dkCallable,
+     dkIterable:
+    return node.value
+  else:
+    raise newException(ValueError, "Not a value type")
+
+converter toDeliNode(value: DeliValue): DeliNode =
+  case value.kind
+  of dkNone,
+     dkIdentifier,
+     dkPath,
+     dkStrBlock,
+     dkStrLiteral,
+     dkString,
+     dkRegex,
+     dkStream,
+     dkError,
+     dkSignal,
+     dkYear, dkMonth, dkDay,
+     dkHour, dkMinute, dkSecond,
+     dkNanoSecond,
+     dkInt10,
+     dkInt16,
+     dkInt8,
+     dkInteger,
+     dkDecimal,
+     dkBoolean,
+     dkVariable,
+     dkInvocation,
+     dkObject,
+     dkRan,
+     dkDateTime,
+     dkArgShort,
+     dkArgLong,
+     dkArg,
+     dkCallable,
+     dkIterable:
+    result.kind = value.kind
+    result.value = value
+  else:
+    return DeliNode(kind: dkNone)
 
 proc todo*(msg: varargs[string, `$`])
 proc name*(kind: DeliKind): string =
   return ($kind).substr(2)
 
-proc deliNone*(): DeliNode
-
-let None0 = deliNone()
+let None0 = DeliNode(kind: dkNone)
 
 proc `parent=`*(node: DeliNode, parent: DeliNode) =
   while node.parents.len > 0:

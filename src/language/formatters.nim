@@ -9,35 +9,35 @@ proc argFormat(node: DeliNode): string =
     of dkArgLong:
       if current_kind != son.kind:
         result &= " "
-      result &= "--" & son.argName
+      result &= "--" & son.value.argName
     of dkArgShort:
       if current_kind != son.kind:
         result &= "-"
-      result &= son.argName
+      result &= son.value.argName
     of dkArg:
       let a = son.sons[0]
       case a.kind
       of dkArgLong:
         if current_kind != a.kind and result.len > 0:
           result &= " "
-        result &= "--" & a.argName
+        result &= "--" & a.value.argName
       of dkArgShort:
         if current_kind != a.kind:
           result &= "-"
-        result &= a.argName
+        result &= a.value.argName
       else:
         result &= $a
       current_kind = a.kind
       continue
     of dkString:
-      result &= son.strVal
+      result &= son.value.strVal
     of dkExpr:
       result &= " " & son.sons[0].toString
     else:
       result &= $son
     current_kind = son.kind
 
-proc objFormat(node: DeliNode): string =
+proc objFormat(node: DeliValue): string =
   result = "["
   for key,value in node.table:
     result &= key & ": " & value.toString() & "; "
@@ -74,14 +74,14 @@ proc decFormat09(intVal: int): string =
 
 proc timeFormat(node: DeliNode): string =
   result = node.sons[0..2].map(proc(x: DeliNode): string =
-    x.intVal.decFormat02
+    x.value.intVal.decFormat02
   ).join(":")
   if not node.sons[3].isNone():
     result &= "." & $node.sons[3]
 
 proc dateFormat(node: DeliNode): string =
   return node.sons.map(proc(x: DeliNode): string =
-    x.intVal.decFormat02
+    x.value.intVal.decFormat02
   ).join("-")
 
 proc toString*(node: DeliNode): string =
@@ -103,42 +103,42 @@ proc toString*(node: DeliNode): string =
   return case kind
   of dkScript:     node.script.filename
   of dkVarDeref:   "$"
-  of dkIdentifier: node.id
+  of dkIdentifier: node.value.id
   of dkPath,
      dkStrLiteral,
      dkStrBlock,
-     dkString:     node.strVal
-  of dkInt16:      node.intVal.formatInt16
-  of dkInt8:       node.intVal.formatInt8
+     dkString:     node.value.strVal
+  of dkInt16:      node.value.intVal.formatInt16
+  of dkInt8:       node.value.intVal.formatInt8
   of dkStream,
      dkYear,
      dkInt10,
-     dkInteger:    $(node.intVal)
-  of dkError:      node.intVal.formatError
-  of dkSignal:     node.intVal.formatSignal
+     dkInteger:    $(node.value.intVal)
+  of dkError:      node.value.intVal.formatError
+  of dkSignal:     node.value.intVal.formatSignal
   of dkMonth, dkDay,
      dkHour, dkMinute,
-     dkSecond:     node.intval.decFormat02
-  of dkNanoSecond: node.intval.decFormat09
-  of dkDecimal:    $(node.decVal)
-  of dkBoolean:    $(node.boolVal)
-  of dkVariable:   $(node.varName)
-  of dkDateTime:   $(node.dtVal)
-  of dkTime:       node.timeFormat
-  of dkDate:       node.dateFormat
+     dkSecond:     node.value.intval.decFormat02
+  of dkNanoSecond: node.value.intval.decFormat09
+  of dkDecimal:    $(node.value.decVal)
+  of dkBoolean:    $(node.value.boolVal)
+  of dkVariable:   $(node.value.varName)
+  of dkDateTime:   $(node.value.dtVal)
+  of dkTime:       node.value.timeFormat
+  of dkDate:       node.value.dateFormat
   of dkPair,
      dkArgDefault,
      dkArgNames: ""
   of dkObject,
-     dkRan:        node.objFormat
-  of dkArray:      node.arrayFormat
-  of dkInvocation: node.cmd
+     dkRan:        node.value.objFormat
+  of dkArray:      node.value.arrayFormat
+  of dkInvocation: node.value.cmd
   of dkArg:
     argFormat(node)
   of dkArgShort:
-    "-" & node.argName
+    "-" & node.value.argName
   of dkArgLong:
-    "--" & node.argName
+    "--" & node.value.argName
   of dkArgExpr:
     argFormat(node)
   of dkCallable:
@@ -147,8 +147,8 @@ proc toString*(node: DeliNode): string =
     else:
       ""
   of dkIterable:
-    if node.generator != nil:
-      "Generator=" & node.generator.repr
+    if node.value.generator != nil:
+      "Generator=" & node.value.generator.repr
     else:
       ""
   of dkJump:
@@ -221,11 +221,11 @@ proc getOneliner*(node: DeliNode): string =
   of dkNone:
     return "nop"
   of dkVariableStmt:
-    return "$" & node.sons[0].varName & " " & node.sons[1].toString() & " " & node.sons[2].toString()
+    return "$" & node.sons[0].value.varName & " " & node.sons[1].toString() & " " & node.sons[2].toString()
   of dkCloseStmt:
-    return "close $" & node.sons[0].varName
+    return "close $" & node.sons[0].value.varName
   of dkLocalStmt:
-    result = "local $" & node.sons[0].varName
+    result = "local $" & node.sons[0].value.varName
     if node.sons.len > 1:
       result &= " = " & node.sons[1].toString()
   of dkPush: return "push"

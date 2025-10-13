@@ -86,7 +86,7 @@ proc parse*(parser: Parser): DeliNode =
   parser.initParser()
 
   var cstr = parser.script.source.cstring
-  parser.nodes = @[deliNone()]
+  parser.nodes = @[DeliNode(kind: dkNone, value: deliNone())]
   discard packcc_main(cstr, parser.script.source.len.cint, parser)
   if parser.brackets.len > 0:
     let b = parser.brackets.peekUnsafe()
@@ -126,28 +126,28 @@ proc parseCapture(node: DeliNode, capture: string) =
   case node.kind
   of dkStrLiteral,
      dkStrBlock,
-     dkString:     node.strVal  = parseString(capture)
-  of dkPath:       node.strVal  = capture
-  of dkIdentifier: node.id      = capture
-  of dkVariable:   node.varName = capture
+     dkString:     node.value.strVal  = parseString(capture)
+  of dkPath:       node.value.strVal  = capture
+  of dkIdentifier: node.value.id      = capture
+  of dkVariable:   node.value.varName = capture
   of dkInvocation:
-    if node.cmd == "":
-      node.cmd     = capture
+    if node.value.cmd == "":
+      node.value.cmd     = capture
     else:
-      node.addSon DKStr(capture)
-  of dkBoolean:    node.boolVal = parseBoolean(capture)
-  of dkSignal:     node.intVal = parseSignal(capture)
-  of dkError:      node.intVal = parseError(capture)
+      node.addSon DeliNode(kind:dkString, value: DKStr(capture))
+  of dkBoolean:    node.value.boolVal = parseBoolean(capture)
+  of dkSignal:     node.value.intVal = parseSignal(capture)
+  of dkError:      node.value.intVal = parseError(capture)
   of dkInt16,
      dkInt8,
-     dkInteger:    node.intVal  = parseInteger(capture)
+     dkInteger:    node.value.intVal  = parseInteger(capture)
   of dkYear, dkMonth, dkDay,
      dkHour, dkMinute, dkSecond,
-     dkInt10:      node.intVal = parseInt10(capture)
-  of dkNanoSecond: node.intVal = parseNanoSecond(capture)
-  of dkDecimal:    node.decVal  = parseDecimal(capture)
-  of dkArgShort:   node.argName = capture
-  of dkArgLong:    node.argName = capture
+     dkInt10:      node.value.intVal = parseInt10(capture)
+  of dkNanoSecond: node.value.intVal = parseNanoSecond(capture)
+  of dkDecimal:    node.value.decVal  = parseDecimal(capture)
+  of dkArgShort:   node.value.argName = capture
+  of dkArgLong:    node.value.argName = capture
   else:
     todo "capture failed for ", $(node.kind), " '", capture, "'"
 
@@ -183,7 +183,7 @@ proc nodeString(parser: Parser, kind: DeliKind, rstart, rend: csize_t, buffer: c
   parser.addNode node
 
 proc getNode(parser: Parser, i: cint): DeliNode =
-  result = if i.int <= 0: deliNone() else: parser.nodes[i.int]
+  result = if i.int <= 0: DeliNode(kind: dkNone, value: deliNone()) else: parser.nodes[i.int]
 
 proc createNode0(parser: Parser, kind: DeliKind): cint {.exportc.} =
   result = parser.nodes.len.cint

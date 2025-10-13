@@ -120,14 +120,14 @@ proc testFunc2(op: string): proc(st1, st2: Stat): bool {.nimcall.} =
   of "i", "equal", "same": isSame
   else: nop2
 
-proc DKTime(time: Timespec): DeliNode =
+proc DKTime(time: Timespec): DeliValue =
   return DKDecimal(time.tv_sec.int, time.tv_nsec, 9)
 
 converter toTimespec(decVal: Decimal): Timespec =
   result.tv_sec = decVal.whole.Time
   result.tv_nsec = decVal.fraction
 
-converter toStat(node: DeliNode): Stat =
+converter toStat(node: DeliValue): Stat =
   result.st_dev       = node.table["dev"].intVal.Dev
   result.st_ino       = node.table["ino"].intVal.Ino
   result.st_mode      = node.table["mode"].intVal.Mode
@@ -142,12 +142,12 @@ converter toStat(node: DeliNode): Stat =
   result.st_blksize   = node.table["blksize"].intVal.Blksize
   result.st_blocks    = node.table["blocks"].intVal.Blkcnt
 
-converter toStatMode(node: DeliNode): Stat =
+converter toStatMode(node: DeliValue): Stat =
   result.st_mode      = node.table["mode"].intVal.Mode
 
 
 
-proc dTest(nodes: varargs[DeliNode]): DeliNode =
+proc dTest(nodes: varargs[DeliValue]): DeliValue =
   #echo "dTest ", nodes
   argvars
   shift
@@ -215,7 +215,7 @@ proc dTest(nodes: varargs[DeliNode]): DeliNode =
       raise newException(ValueError, "Unsupported test argument: " & op.kind.name & ":" & $op)
   else: discard
 
-converter toObject(st: Stat): DeliNode =
+converter toObject(st: Stat): DeliValue =
   result = DeliObject([
     ("dev",     DKInt(st.st_dev.int)),
     ("ino",     DKInt(st.st_ino.int)),
@@ -233,7 +233,7 @@ converter toObject(st: Stat): DeliNode =
   ])
   result.table["test"] = DKCallable(dTest, @[result])
 
-proc statObj(path: DeliNode): DeliNode {.inline.} =
+proc statObj(path: DeliValue): DeliValue {.inline.} =
   var st = Stat()
   if lstat(path.strVal.cstring, st) == 0:
     result = st.toObject
@@ -241,7 +241,7 @@ proc statObj(path: DeliNode): DeliNode {.inline.} =
     return result
   return deliNone()
 
-proc dStat(nodes: varargs[DeliNode]): DeliNode =
+proc dStat(nodes: varargs[DeliValue]): DeliValue =
   pluralMaybe(node):
     node.statObj
 
@@ -259,31 +259,31 @@ proc basename(path: string): string  =
   cstr = cstr.basename
   return $cstr
 
-proc dDirname(nodes: varargs[DeliNode]): DeliNode =
+proc dDirname(nodes: varargs[DeliValue]): DeliValue =
   pluralMaybe(node):
     DKPath(nodes[0].strVal.dirname)
 
-proc dBasename(nodes: varargs[DeliNode]): DeliNode =
+proc dBasename(nodes: varargs[DeliValue]): DeliValue =
   pluralMaybe(node):
     DKPath(node.strVal.basename)
 
 # file and directory operations
-proc dChdir(nodes: varargs[DeliNode]): DeliNode =
+proc dChdir(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkPath
   result = DKBool( chdir(arg.strVal.cstring) == 0 )
 
-proc dPwd(nodes: varargs[DeliNode]): DeliNode =
+proc dPwd(nodes: varargs[DeliValue]): DeliValue =
   noargs
   result = DKPath($os.getCurrentDir())
 
-proc dHome(nodes: varargs[DeliNode]): DeliNode =
+proc dHome(nodes: varargs[DeliValue]): DeliValue =
   noargs
   result = DKPath($os.getHomeDir())
 
 type PathEntry = tuple[kind: PathComponent, path: string]
 
-proc dListDir(nodes: varargs[DeliNode]): DeliNode =
+proc dListDir(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkPath
   let path = arg
@@ -306,7 +306,7 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
       let s2 = $(e2.kind) & e2.path
       return system.cmp[string](s1, s2)
   ).map(
-    proc(e: PathEntry): DeliNode =
+    proc(e: PathEntry): DeliValue =
       if long:
         var st = Stat()
         discard lstat(e.path.cstring, st)
@@ -316,7 +316,7 @@ proc dListDir(nodes: varargs[DeliNode]): DeliNode =
         result = DKPath(e.path)
   )
 
-proc gIter(nodes: varargs[DeliNode]): DeliNode =
+proc gIter(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkPath
   let path = arg
@@ -332,7 +332,7 @@ proc gIter(nodes: varargs[DeliNode]): DeliNode =
   if opt.argName == "l":
     long = true
 
-  iterator genlong(): DeliNode =
+  iterator genlong(): DeliValue =
     for entry in walkDir(path.strVal, relative=true):
       var st = Stat()
       discard lstat(entry.path.cstring, st)
@@ -340,7 +340,7 @@ proc gIter(nodes: varargs[DeliNode]): DeliNode =
       obj.table["path"] = DKPath(entry.path)
       yield obj
 
-  iterator genshort(): DeliNode =
+  iterator genshort(): DeliValue =
     for entry in walkDir(path.strVal, relative=true):
       yield DKPath(entry.path)
 
@@ -395,7 +395,7 @@ proc parseMode*(str: string, curmode: int): int =
   else:
     argerr "Unsupported mode operation: ", $op
 
-proc dChmod(nodes: varargs[DeliNode]): DeliNode =
+proc dChmod(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkPath
   let path = arg
@@ -418,7 +418,7 @@ proc dChmod(nodes: varargs[DeliNode]): DeliNode =
   else:
     return DKBool(false) # TODO return POSIX errno
 
-proc dMkdir(nodes: varargs[DeliNode]): DeliNode =
+proc dMkdir(nodes: varargs[DeliValue]): DeliValue =
   argvars
   var paths: seq[string]
   var make_ancestors = false
@@ -470,7 +470,7 @@ proc dMkdir(nodes: varargs[DeliNode]): DeliNode =
 
   return deliTrue()
 
-let PathFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+let PathFunctions*: Table[string, proc(nodes: varargs[DeliValue]): DeliValue {.nimcall.} ] = {
   "test": dTest,
   "pwd": dPwd,
   "home": dHome,
