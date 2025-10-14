@@ -36,7 +36,7 @@ template nextarg*(kinds: static[set[DeliKind]]) =
   if arg.kind notin kinds:
     argerr "expected one of ", kinds, ", not ", arg.kind.name
 
-template nextopt*(default: DeliNode) =
+template nextopt*(default: DeliValue) =
   if arg_i >= nodes.len:
     arg = default
   else:
@@ -52,17 +52,17 @@ template maxarg*() =
 
 template argvars*() =
   var arg_i {.inject.}: int = 0
-  var arg {.inject.}: DeliNode
+  var arg {.inject.}: DeliValue
 
 template noargs*() =
   if nodes.len > 0:
     raise newException(ValueError, "too many arguments: " & $nodes)
 
-proc dNop*(nodes: varargs[DeliNode]): DeliNode =
+proc dNop*(nodes: varargs[DeliValue]): DeliValue =
   return deliNone()
 
 template pluralMaybe*(node, formula: untyped): untyped =
-  var node: DeliNode
+  var node: DeliValue
   if nodes.len == 1:
     if nodes[0].kind == dkArray:
       result = DK(dkArray)

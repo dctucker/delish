@@ -97,6 +97,8 @@ type
     else:
       discard
 
+  DeliValue* = DeliNode
+
 proc todo*(msg: varargs[string, `$`])
 proc name*(kind: DeliKind): string =
   return ($kind).substr(2)

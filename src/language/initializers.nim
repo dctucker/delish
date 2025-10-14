@@ -18,7 +18,7 @@ proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
   result = DeliNode(kind: kind)
   result.addSons nodes
 
-proc DKArray*(nodes: varargs[DeliNode]): DeliNode =
+proc DKArray*(nodes: varargs[DeliNode]): DeliValue =
   result = DeliNode(kind: dkArray)
   result.addSons nodes
 
@@ -30,24 +30,24 @@ proc DKExprList*(nodes: varargs[DeliNode]): DeliNode =
   result = DK( dkExprList )
   result.addSons nodes
 
-proc DKArgShort*(argName: string): DeliNode =
-  return DeliNode(kind: dkArgShort, argName: argName)
+proc DKArgShort*(argName: string): DeliValue =
+  return DeliValue(kind: dkArgShort, argName: argName)
 
-proc DKArgLong*(argName: string): DeliNode =
-  return DeliNode(kind: dkArgLong, argName: argName)
+proc DKArgLong*(argName: string): DeliValue =
+  return DeliValue(kind: dkArgLong, argName: argName)
 
-proc DKArg*(argName: string): DeliNode =
+proc DKArg*(argName: string): DeliValue =
   if argName.len == 0:
     raise newException(ValueError, "empty argument name")
   if argName.len == 1:
     return DKArgShort(argName)
   return DKArgLong(argName)
 
-proc DKId*(id: string): DeliNode =
-  return DeliNode(kind: dkIdentifier, id: id)
+proc DKId*(id: string): DeliValue =
+  return DeliValue(kind: dkIdentifier, id: id)
 
-proc DKVar*(varName: string): DeliNode =
-  return DeliNode(kind: dkVariable, varName: varName)
+proc DKVar*(varName: string): DeliValue =
+  return DeliValue(kind: dkVariable, varName: varName)
 
 proc DKVarStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
   return DK( dkVariableStmt, DKVar(v), DK( op ), DKExpr(val) )
@@ -55,25 +55,25 @@ proc DKVarStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
 proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
   return DK( dkLocalStmt, DKVar(v), DK( op ), DKExpr(val) )
 
-proc DKInt*(intVal: int): DeliNode =
-  return DeliNode(kind: dkInteger, intVal: intVal)
-proc DKInt8*(intVal: int): DeliNode =
-  return DeliNode(kind: dkInt8, intVal: intVal)
-proc DKInt10*(intVal: int): DeliNode =
-  return DeliNode(kind: dkInt10, intVal: intVal)
-proc DKInt16*(intVal: int): DeliNode =
-  return DeliNode(kind: dkInt16, intVal: intVal)
+proc DKInt*(intVal: int): DeliValue =
+  return DeliValue(kind: dkInteger, intVal: intVal)
+proc DKInt8*(intVal: int): DeliValue =
+  return DeliValue(kind: dkInt8, intVal: intVal)
+proc DKInt10*(intVal: int): DeliValue =
+  return DeliValue(kind: dkInt10, intVal: intVal)
+proc DKInt16*(intVal: int): DeliValue =
+  return DeliValue(kind: dkInt16, intVal: intVal)
 
-proc DKError*(intVal: int): DeliNode =
-  return DeliNode(kind: dkError, intVal: intVal)
+proc DKError*(intVal: int): DeliValue =
+  return DeliValue(kind: dkError, intVal: intVal)
 
-proc DKDec*(decVal: Decimal): DeliNode =
-  return DeliNode(kind: dkDecimal, decVal: decVal)
+proc DKDec*(decVal: Decimal): DeliValue =
+  return DeliValue(kind: dkDecimal, decVal: decVal)
 
-proc DKDecimal*(whole, fraction: int, decimals: int): DeliNode =
-  return DeliNode(kind: dkDecimal, decVal: Decimal(whole: whole, fraction: fraction, decimals: decimals))
+proc DKDecimal*(whole, fraction: int, decimals: int): DeliValue =
+  return DeliValue(kind: dkDecimal, decVal: Decimal(whole: whole, fraction: fraction, decimals: decimals))
 
-proc DKDateTime*(str: string): DeliNode =
+proc DKDateTime*(str: string): DeliValue =
   let strs = str.split({'T','t',' ','+','@'})
   let date = times.parse(strs[0], "yyyy-MM-dd")
   let time = times.parse(strs[1], "HH:mm:ss")
@@ -81,23 +81,23 @@ proc DKDateTime*(str: string): DeliNode =
     date.year, date.month, date.monthday,
     time.hour, time.minute, time.second
   )
-  return DeliNode(kind: dkDateTime, dtVal: dtVal)
+  return DeliValue(kind: dkDateTime, dtVal: dtVal)
 
-proc DKDateTime*(dtVal: DateTime): DeliNode =
-  return DeliNode(kind: dkDateTime, dtVal: dtVal)
+proc DKDateTime*(dtVal: DateTime): DeliValue =
+  return DeliValue(kind: dkDateTime, dtVal: dtVal)
 
-proc DKDateTime*(decVal: Decimal): DeliNode =
-  result = DeliNode(kind: dkDateTime)
+proc DKDateTime*(decVal: Decimal): DeliValue =
+  result = DeliValue(kind: dkDateTime)
   result.dtVal = decVal.whole.fromUnix().local()
   {.warning[Deprecated]:off.}
   result.dtVal.nanosecond = decVal.fraction
   {.warning[Deprecated]:on.}
 
-proc DKBool*(boolVal: bool): DeliNode =
-  return DeliNode(kind: dkBoolean, boolVal: boolVal)
+proc DKBool*(boolVal: bool): DeliValue =
+  return DeliValue(kind: dkBoolean, boolVal: boolVal)
 
-proc deliTrue* (): DeliNode = DKBool(true)
-proc deliFalse*(): DeliNode = DKBool(false)
+proc deliTrue* (): DeliValue = DKBool(true)
+proc deliFalse*(): DeliValue = DKBool(false)
 
 proc DKLazy*(node: DeliNode): DeliNode =
   return DeliNode(kind: dkLazy, sons: @[node])
@@ -105,26 +105,26 @@ proc DKLazy*(node: DeliNode): DeliNode =
 proc DKNotNone*(node: DeliNode): DeliNode =
   result = DK(dkBoolExpr, node, DK(dkNeOp), deliNone())
 
-proc DKStr*(strVal: string): DeliNode =
-  return DeliNode(kind: dkString, strVal: strVal)
+proc DKStr*(strVal: string): DeliValue =
+  return DeliValue(kind: dkString, strVal: strVal)
 
-proc DKStream*(intVal: int, args: varargs[DeliNode]): DeliNode =
-  result = DeliNode(kind: dkStream, intVal: intVal)
+proc DKStream*(intVal: int, args: varargs[DeliValue]): DeliValue =
+  result = DeliValue(kind: dkStream, intVal: intVal)
   result.addSons args
 
 proc DKOut*(): DeliNode = DKStream(0, DK(dkStreamOut))
 
-proc DKRan*(): DeliNode =
-  return DeliNode(kind: dkRan, table: {
-    "id": DeliNode(kind: dkNone),
-    "in":  DeliNode(kind: dkNone),
-    "out": DeliNode(kind: dkNone),
-    "err": DeliNode(kind: dkNone),
-    "exit": DeliNode(kind: dkNone),
+proc DKRan*(): DeliValue =
+  return DeliValue(kind: dkRan, table: {
+    "id": DeliValue(kind: dkNone),
+    "in":  DeliValue(kind: dkNone),
+    "out": DeliValue(kind: dkNone),
+    "err": DeliValue(kind: dkNone),
+    "exit": DeliValue(kind: dkNone),
   }.toTbl)
 
-proc DKPath*(strVal: string): DeliNode =
-  return DeliNode(kind: dkPath, strVal: strVal)
+proc DKPath*(strVal: string): DeliValue =
+  return DeliValue(kind: dkPath, strVal: strVal)
 
 proc DKStmt*(kind: DeliKind, args: varargs[DeliNode]): DeliNode =
   return DK( dkStatement, DK( kind, args ) )
@@ -161,17 +161,17 @@ proc DKType*(kind: DeliKind): DeliNode =
 proc DKIter*(gen: DeliGenerator): DeliNode =
   return DeliNode(kind: dkIterable, generator: gen)
 
-let DKTrue*  = DeliNode(kind: dkBoolean, boolVal: true)
-let DKFalse* = DeliNode(kind: dkBoolean, boolVal: false)
+let DKTrue*  = DeliValue(kind: dkBoolean, boolVal: true)
+let DKFalse* = DeliValue(kind: dkBoolean, boolVal: false)
 
-proc DKObject*(table: DeliTable): DeliNode =
-  return DeliNode(kind: dkObject, table: table)
+proc DKObject*(table: DeliTable): DeliValue =
+  return DeliValue(kind: dkObject, table: table)
 
-proc DKRegex*(pattern: string): DeliNode =
-  return DeliNode(kind: dkRegex, pattern: pattern)
+proc DKRegex*(pattern: string): DeliValue =
+  return DeliValue(kind: dkRegex, pattern: pattern)
 
-proc DeliObject*(table: openArray[tuple[key: string, val: DeliNode]]): DeliNode =
-  return DeliNode(kind: dkObject, table: table.toTbl)
+proc DeliObject*(table: openArray[tuple[key: string, val: DeliValue]]): DeliValue =
+  return DeliValue(kind: dkObject, table: table.toTbl)
 
-proc DKNone*(): DeliNode =
+proc DKNone*(): DeliValue =
   return dkNone

@@ -3,25 +3,25 @@ import std/[
 ]
 import ./common
 
-proc dOct(nodes: varargs[DeliNode]): DeliNode =
+proc dOct(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkIntegerKinds
   maxarg
   return DKInt8(arg.intVal)
 
-proc dDec(nodes: varargs[DeliNode]): DeliNode =
+proc dDec(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkIntegerKinds
   maxarg
   return DKInt10(arg.intVal)
 
-proc dHex(nodes: varargs[DeliNode]): DeliNode =
+proc dHex(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkIntegerKinds
   maxarg
   return DKInt16(arg.intVal)
 
-let IntegerFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+let IntegerFunctions*: Table[string, proc(nodes: varargs[DeliValue]): DeliValue {.nimcall.} ] = {
   "oct": dOct,
   "dec": dDec,
   "hex": dHex,

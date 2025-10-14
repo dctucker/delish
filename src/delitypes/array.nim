@@ -1,7 +1,7 @@
 import ./common
 import ./string as str
 
-proc dJoin(nodes: varargs[DeliNode]): DeliNode =
+proc dJoin(nodes: varargs[DeliValue]): DeliValue =
   argvars
 
   nextArg dkArray
@@ -16,7 +16,7 @@ proc dJoin(nodes: varargs[DeliNode]): DeliNode =
     result.strVal &= son.asString.strVal & sep.strVal
   result.strVal = result.strVal[0..^(1 + sep.strVal.len)]
 
-proc gSeq(nodes: varargs[DeliNode]): DeliNode =
+proc gSeq(nodes: varargs[DeliValue]): DeliValue =
   argvars
 
   nextArg dkIntegerKinds
@@ -30,22 +30,22 @@ proc gSeq(nodes: varargs[DeliNode]): DeliNode =
     val2 = val1
     val1 = t
 
-  iterator gen(): DeliNode =
+  iterator gen(): DeliValue =
     for i in val1..val2:
       yield DKInt(i)
   return DKIter(gen)
 
-proc gIter(nodes: varargs[DeliNode]): DeliNode =
+proc gIter(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextArg dkArray
   maxarg
 
-  iterator gen(): DeliNode =
+  iterator gen(): DeliValue =
     for son in arg.sons:
       yield son
   return DKIter(gen)
 
-proc dSeq(nodes: varargs[DeliNode]): DeliNode =
+proc dSeq(nodes: varargs[DeliValue]): DeliValue =
   argvars
 
   nextArg dkIntegerKinds
@@ -63,7 +63,7 @@ proc dSeq(nodes: varargs[DeliNode]): DeliNode =
   for i in val1..val2:
     result.addSon DKInt(i)
 
-proc dMap(nodes: varargs[DeliNode]): DeliNode =
+proc dMap(nodes: varargs[DeliValue]): DeliValue =
   argvars
 
   nextArg dkArray
@@ -76,7 +76,7 @@ proc dMap(nodes: varargs[DeliNode]): DeliNode =
   for son in sons:
     result.addSon DK(dkFunctionCall, DK(dkCallable, fn), son)
 
-let ArrayFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+let ArrayFunctions*: Table[string, proc(nodes: varargs[DeliValue]): DeliValue {.nimcall.} ] = {
   "seq": gSeq,
   "join": dJoin,
   "map": dMap,

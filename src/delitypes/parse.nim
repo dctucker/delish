@@ -47,7 +47,7 @@ proc parseDecimal*(str: string): Decimal =
 proc parseString*(str: string): string =
   result = str
 
-proc assembleJson(node: JsonNode): DeliNode =
+proc assembleJson(node: JsonNode): DeliValue =
   case node.kind
   of JString:
     return DKStr(node.str)
@@ -70,7 +70,7 @@ proc assembleJson(node: JsonNode): DeliNode =
     for elem in node.elems:
       result.addSon assembleJson(elem)
 
-proc parseJsonString*(str: string): DeliNode =
+proc parseJsonString*(str: string): DeliValue =
   try:
     let js = parseJson(str)
     return assembleJson(js)

@@ -2,7 +2,7 @@ import std/json
 import ./common
 import ./decimal
 
-proc toJson(node: DeliNode): JsonNode
+proc toJson(node: DeliValue): JsonNode
 
 proc toJson(table: DeliTable): JsonNode =
   result = JsonNode(kind: JObject)
@@ -10,13 +10,13 @@ proc toJson(table: DeliTable): JsonNode =
     if value.kind == dkCallable: continue
     result.fields[key] = toJson(value)
 
-proc toJson(sons: seq[DeliNode]): JsonNode =
+proc toJson(sons: seq[DeliValue]): JsonNode =
   result = JsonNode(kind: JArray)
   for value in sons:
     if value.kind == dkCallable: continue
     result.elems.add toJson(value)
 
-proc toJson(node: DeliNode): JsonNode =
+proc toJson(node: DeliValue): JsonNode =
   result = case node.kind
   of dkStrLiteral,
      dkStrBlock,
@@ -35,7 +35,7 @@ proc toJson(node: DeliNode): JsonNode =
   of dkArray:   node.sons.toJson
   else:         JsonNode(kind: JString, str: $node)
 
-proc dJson(nodes: varargs[DeliNode]): DeliNode =
+proc dJson(nodes: varargs[DeliValue]): DeliValue =
   argvars
   shift
   let obj = arg
@@ -43,7 +43,7 @@ proc dJson(nodes: varargs[DeliNode]): DeliNode =
 
   result = DKStr($obj.toJson)
 
-proc dKeys(nodes: varargs[DeliNode]): DeliNode =
+proc dKeys(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkObject
   let obj = arg
@@ -53,18 +53,18 @@ proc dKeys(nodes: varargs[DeliNode]): DeliNode =
     if value.kind notin {dkCallable, dkIterable}:
       result.addSon DKStr(key)
 
-proc gIter(nodes: varargs[DeliNode]): DeliNode =
+proc gIter(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextArg dkObject
   maxarg
 
-  iterator gen(): DeliNode =
+  iterator gen(): DeliValue =
     for key, value in arg.table:
       if value.kind notin {dkCallable, dkIterable}:
         yield DKStr(key)
   return DKIter(gen)
 
-proc dLookup(nodes: varargs[DeliNode]): DeliNode =
+proc dLookup(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkObject
   let obj = arg
@@ -72,7 +72,7 @@ proc dLookup(nodes: varargs[DeliNode]): DeliNode =
   let id = arg.id
   return obj.table[id]
 
-let ObjectFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+let ObjectFunctions*: Table[string, proc(nodes: varargs[DeliValue]): DeliValue {.nimcall.} ] = {
   #"": dLookup,
   "keys": dKeys,
   "json": dJson,

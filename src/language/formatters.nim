@@ -37,13 +37,13 @@ proc argFormat(node: DeliNode): string =
       result &= $son
     current_kind = son.kind
 
-proc objFormat(node: DeliNode): string =
+proc objFormat(node: DeliValue): string =
   result = "["
   for key,value in node.table:
     result &= key & ": " & value.toString() & "; "
   result &= "]"
 
-proc arrayFormat(node: DeliNode): string =
+proc arrayFormat(node: DeliValue): string =
   if node.sons.len == 0:
     return "[]"
   result = "[ "

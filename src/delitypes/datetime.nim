@@ -1,7 +1,7 @@
 import std/times
 import ./common
 
-proc dNow(nodes: varargs[DeliNode]): DeliNode =
+proc dNow(nodes: varargs[DeliValue]): DeliValue =
   argvars
   maxarg
   return DKDateTime(now())
@@ -12,15 +12,15 @@ template intAccessor(attr: untyped): untyped =
   maxarg
   return DKInt(arg.dtVal.attr.int)
 
-proc dYear(  nodes: varargs[DeliNode]): DeliNode = intAccessor year
-proc dMonth( nodes: varargs[DeliNode]): DeliNode = intAccessor month
-proc dDay(   nodes: varargs[DeliNode]): DeliNode = intAccessor monthday
-proc dHour(  nodes: varargs[DeliNode]): DeliNode = intAccessor hour
-proc dMinute(nodes: varargs[DeliNode]): DeliNode = intAccessor minute
-proc dSecond(nodes: varargs[DeliNode]): DeliNode = intAccessor second
-proc dNanos( nodes: varargs[DeliNode]): DeliNode = intAccessor nanosecond
+proc dYear(  nodes: varargs[DeliValue]): DeliValue = intAccessor year
+proc dMonth( nodes: varargs[DeliValue]): DeliValue = intAccessor month
+proc dDay(   nodes: varargs[DeliValue]): DeliValue = intAccessor monthday
+proc dHour(  nodes: varargs[DeliValue]): DeliValue = intAccessor hour
+proc dMinute(nodes: varargs[DeliValue]): DeliValue = intAccessor minute
+proc dSecond(nodes: varargs[DeliValue]): DeliValue = intAccessor second
+proc dNanos( nodes: varargs[DeliValue]): DeliValue = intAccessor nanosecond
 
-let DateTimeFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+let DateTimeFunctions*: Table[string, proc(nodes: varargs[DeliValue]): DeliValue {.nimcall.} ] = {
   "now": dNow,
   "year": dYear,
   "month": dMonth,

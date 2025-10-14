@@ -2,9 +2,9 @@ import ./common
 import strutils
 from std/os import getEnv
 
-proc asString*(src: DeliNode): DeliNode
+proc asString*(src: DeliValue): DeliValue
 
-proc argToString(node: DeliNode): string =
+proc argToString(node: DeliValue): string =
   # TODO include value
   result = case node.kind
   of dkArg:        node.argName
@@ -12,19 +12,19 @@ proc argToString(node: DeliNode): string =
   of dkArgLong:    node.argName
   else: "?"
 
-proc arrayToString(node: DeliNode): string =
+proc arrayToString(node: DeliValue): string =
   for son in node.sons:
     result &= son.asString.strVal & " "
   result = result[0..^2]
 
-proc objectToString(node: DeliNode): string =
+proc objectToString(node: DeliValue): string =
   result = "["
   for key, value in node.table:
     result &= key & ": \"" & value.asString.strVal & "\", "
   result = result[0..^3]
   result &= "]"
 
-proc asString*(src: DeliNode): DeliNode =
+proc asString*(src: DeliValue): DeliValue =
   result = DKStr("")
   result.strVal = case src.kind
   of dkStrLiteral,
@@ -47,7 +47,7 @@ proc asString*(src: DeliNode): DeliNode =
   else: $src.kind & "?"
 
 
-proc dSplit(nodes: varargs[DeliNode]): DeliNode =
+proc dSplit(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkString
   let str = arg
@@ -58,26 +58,26 @@ proc dSplit(nodes: varargs[DeliNode]): DeliNode =
   for s in str.strVal.split(sep.strVal):
     result.addSon DKStr(s)
 
-proc gSplit(nodes: varargs[DeliNode]): DeliNode =
+proc gSplit(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextarg dkString
   let str = arg
   nextopt DKStr(" ")
   let sep = arg
 
-  iterator gen(): DeliNode =
+  iterator gen(): DeliValue =
     for s in str.strVal.split(sep.strVal):
       yield DKStr(s)
   return DKIter(gen)
 
-proc gIter(nodes: varargs[DeliNode]): DeliNode =
+proc gIter(nodes: varargs[DeliValue]): DeliValue =
   argvars
   nextArg dkString
   maxarg
 
   let ifs = getEnv("IFS", " ")
 
-  iterator gen(): DeliNode =
+  iterator gen(): DeliValue =
     for value in arg.strVal.split(ifs):
       yield DKStr(value)
   return DKIter(gen)

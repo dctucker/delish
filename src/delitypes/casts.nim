@@ -11,12 +11,12 @@ import
     string
   ]
 
-proc Incompatible(kind: DeliKind, node: DeliNode): ref Exception =
+proc Incompatible(kind: DeliKind, node: DeliValue): ref Exception =
   let k1 = kind.name
   let k2 = node.kind.name
   return newException(ValueError, "incompatible type: " & k1 & "(" & k2 & ")")
 
-proc toIdentifier*(src: DeliNode): DeliNode =
+proc toIdentifier*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkIdentifier: DKId(src.id)
   of dkString:     DKId(src.strVal)
@@ -26,7 +26,7 @@ proc toIdentifier*(src: DeliNode): DeliNode =
      dkArgLong:    DKId(src.argName) # TODO check this
   else: raise Incompatible(dkIdentifier, src)
 
-proc toVariable*(src: DeliNode): DeliNode =
+proc toVariable*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkVariable:
     DKVar(src.varName)
@@ -37,7 +37,7 @@ proc toVariable*(src: DeliNode): DeliNode =
     deliNone()
   else: raise Incompatible(dkVariable, src)
 
-proc toBoolean*(src: DeliNode): DeliNode =
+proc toBoolean*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkString,
      dkStrLiteral,
@@ -62,7 +62,7 @@ proc toBoolean*(src: DeliNode): DeliNode =
     todo "toBoolean ", src.kind
     deliNone()
 
-proc toInteger*(src: DeliNode): DeliNode =
+proc toInteger*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkInt8:       DKInt8( src.intVal )
   of dkInt10:      DKInt10( src.intVal )
@@ -83,7 +83,7 @@ proc toInteger*(src: DeliNode): DeliNode =
     todo "toInteger ", src.kind
     deliNone()
 
-proc toDecimal*(src: DeliNode): DeliNode =
+proc toDecimal*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkInt8,
      dkInt10,
@@ -94,7 +94,7 @@ proc toDecimal*(src: DeliNode): DeliNode =
     todo "toDecimal ", src.kind
     deliNone()
 
-proc toDateTime*(src: DeliNode): DeliNode =
+proc toDateTime*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkString: DKDateTime(src.strVal)
   of dkDecimal: DKDateTime(src.decVal)
@@ -102,7 +102,7 @@ proc toDateTime*(src: DeliNode): DeliNode =
     todo "toDateTime ", src.kind
     deliNone()
 
-proc toPath*(src: DeliNode): DeliNode =
+proc toPath*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkPath,
      dkString,
@@ -122,7 +122,7 @@ proc toPath*(src: DeliNode): DeliNode =
     deliNone()
   else: raise Incompatible(dkPath, src)
 
-proc toArg*(src: DeliNode): DeliNode =
+proc toArg*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkString,
      dkStrLiteral: DKArg(src.strVal)
@@ -132,7 +132,7 @@ proc toArg*(src: DeliNode): DeliNode =
   of dkArgLong:    DKArgLong(src.argName)
   else: raise Incompatible(dkPath, src)
 
-proc toArray*(src: DeliNode): DeliNode =
+proc toArray*(src: DeliValue): DeliValue =
   result = DK(dkArray)
   case src.kind
   of dkArray:
@@ -162,7 +162,7 @@ proc toArray*(src: DeliNode): DeliNode =
   #  result.addSons src.pattern.rules
   else: raise Incompatible(dkArray, src)
 
-proc toObject*(src: DeliNode): DeliNode =
+proc toObject*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkString,
      dkStrLiteral,
@@ -188,7 +188,7 @@ proc toObject*(src: DeliNode): DeliNode =
   of dkStream:     DeliObject([($src.intval, deliNone())])
   else: raise Incompatible(dkObject, src)
 
-proc toRegex*(src: DeliNode): DeliNode =
+proc toRegex*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkRegex:
     DKRegex(src.pattern)
@@ -197,7 +197,7 @@ proc toRegex*(src: DeliNode): DeliNode =
     deliNone()
   else: raise Incompatible(dkRegex, src)
 
-proc toStream*(src: DeliNode): DeliNode =
+proc toStream*(src: DeliValue): DeliValue =
   result = case src.kind
   of dkInt8,
      dkInt10,
@@ -210,7 +210,7 @@ proc toStream*(src: DeliNode): DeliNode =
     deliNone()
   else: raise Incompatible(dkStream, src)
 
-proc toKind*(src: DeliNode, dest: DeliKind): DeliNode =
+proc toKind*(src: DeliValue, dest: DeliKind): DeliValue =
   if src.kind == dest:
     result = src
     return result # TODO: verify this is a copy

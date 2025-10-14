@@ -2,7 +2,7 @@ import std/tables
 import ./common
 import ./decimal
 
-proc `<=`*(o1, o2: DeliNode): bool =
+proc `<=`*(o1, o2: DeliValue): bool =
   case o1.kind
   of dkInteger:
     return o1.intVal <= o2.intVal
@@ -13,7 +13,7 @@ proc `<=`*(o1, o2: DeliNode): bool =
   else:
     todo "<= ", o1.kind, " ", o2.kind
 
-proc `<`*(o1, o2: DeliNode): bool =
+proc `<`*(o1, o2: DeliValue): bool =
   case o1.kind
   of dkInteger:
     return o1.intVal < o2.intVal
@@ -22,7 +22,7 @@ proc `<`*(o1, o2: DeliNode): bool =
   else:
     todo "< ", o1.kind, " ", o2.kind
 
-proc `>=`*(o1, o2: DeliNode): bool =
+proc `>=`*(o1, o2: DeliValue): bool =
   case o1.kind
   of dkInteger:
     return o1.intVal >= o2.intVal
@@ -31,7 +31,7 @@ proc `>=`*(o1, o2: DeliNode): bool =
   else:
     todo ">= ", o1.kind, " ", o2.kind
 
-proc `>`*(o1, o2: DeliNode): bool =
+proc `>`*(o1, o2: DeliValue): bool =
   case o1.kind
   of dkInteger:
     return o1.intVal > o2.intVal
@@ -40,7 +40,7 @@ proc `>`*(o1, o2: DeliNode): bool =
   else:
     todo "> ", o1.kind, " ", o2.kind
 
-proc `!=`*(o1, o2: DeliNode): bool =
+proc `!=`*(o1, o2: DeliValue): bool =
   case o1.kind
   of dkDecimal:
     return o1.decVal != o2.decVal
@@ -56,7 +56,7 @@ proc `!=`*(o1, o2: DeliNode): bool =
   else:
     todo "!= ", o1.kind, " ", o2.kind
 
-proc `==`*(o1, o2: DeliNode): bool =
+proc `==`*(o1, o2: DeliValue): bool =
   if o1.kind == dkNone or o2.kind == dkNone:
     return o1.kind == o2.kind
 
@@ -105,23 +105,23 @@ proc `==`*(o1, o2: DeliNode): bool =
   else:
     todo "== ", o1.kind, " ", o2.kind
 
-proc `==`*(o: DeliNode, i: int): bool =
+proc `==`*(o: DeliValue, i: int): bool =
   if o.kind in dkIntegerKinds:
     return o.intVal == i
   return false
 
-proc `==`*(o: DeliNode, s: string): bool =
+proc `==`*(o: DeliValue, s: string): bool =
   if o.kind == dkString:
     return o.strVal == s
   return false
 
-proc `==`*(o: DeliNode, b: bool): bool =
+proc `==`*(o: DeliValue, b: bool): bool =
   if o.kind == dkBoolean:
     return o.boolVal == b
   return false
 
 
-proc `not`*(a: DeliNode): DeliNode =
+proc `not`*(a: DeliValue): DeliValue =
   case a.kind:
   of dkBoolean:
     return DKBool(not a.boolVal)
@@ -130,7 +130,7 @@ proc `not`*(a: DeliNode): DeliNode =
   else:
     todo "not ", a.kind
 
-proc `+`*(a, b: DeliNode): DeliNode =
+proc `+`*(a, b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(a.intVal + b.intval)
@@ -160,7 +160,7 @@ proc `+`*(a, b: DeliNode): DeliNode =
     todo "add ", a.kind, " + ", b.kind
     return a
 
-proc `-`*(a, b: DeliNode): DeliNode =
+proc `-`*(a, b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(a.intVal - b.intval)
@@ -169,7 +169,7 @@ proc `-`*(a, b: DeliNode): DeliNode =
   todo "sub ", a.kind, " - ", b.kind
   return deliNone()
 
-proc `*`*(a, b: DeliNode): DeliNode =
+proc `*`*(a, b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(a.intVal * b.intVal)
@@ -178,7 +178,7 @@ proc `*`*(a, b: DeliNode): DeliNode =
   todo "mul ", a.kind, " * ", b.kind
   return deliNone()
 
-proc `/`*(a, b: DeliNode): DeliNode =
+proc `/`*(a, b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(a.intVal div b.intVal)
@@ -187,7 +187,7 @@ proc `/`*(a, b: DeliNode): DeliNode =
   todo "div ", a.kind, " / ", b.kind
   return deliNone()
 
-proc `mod`*(a, b: DeliNode): DeliNode =
+proc `mod`*(a, b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(a.intVal mod b.intVal)
@@ -196,7 +196,7 @@ proc `mod`*(a, b: DeliNode): DeliNode =
   todo "mod ", a.kind, " % ", b.kind
   return deliNone()
 
-proc `xor`*(a,b: DeliNode): DeliNode =
+proc `xor`*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt( a.intVal xor b.intVal )
@@ -204,7 +204,7 @@ proc `xor`*(a,b: DeliNode): DeliNode =
     else: discard
   todo "excl ", a.kind, " xor ", b.kind
 
-proc xnor*(a,b: DeliNode): DeliNode =
+proc xnor*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(  not ( a.intVal xor b.intVal ) )
@@ -212,7 +212,7 @@ proc xnor*(a,b: DeliNode): DeliNode =
     else: discard
   todo "conn ", a.kind, " nxor ", b.kind
 
-proc `and`*(a,b: DeliNode): DeliNode =
+proc `and`*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt( a.intVal and b.intVal )
@@ -220,7 +220,7 @@ proc `and`*(a,b: DeliNode): DeliNode =
     else: discard
   todo "con ", a.kind, " and ", b.kind
 
-proc nand*(a,b: DeliNode): DeliNode =
+proc nand*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(  not ( a.intVal  and b.intVal  ) )
@@ -228,7 +228,7 @@ proc nand*(a,b: DeliNode): DeliNode =
     else: discard
   todo "ncon ", a.kind, " nand ", b.kind
 
-proc `or`*(a,b: DeliNode): DeliNode =
+proc `or`*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt( a.intVal or b.intVal )
@@ -236,7 +236,7 @@ proc `or`*(a,b: DeliNode): DeliNode =
     else: discard
   todo "dis ", a.kind, " or ", b.kind
 
-proc nor*(a,b: DeliNode): DeliNode =
+proc nor*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt(  not ( a.intVal  or b.intVal  ) )
@@ -244,14 +244,14 @@ proc nor*(a,b: DeliNode): DeliNode =
     else: discard
   todo "ndis ", a.kind, " nor ", b.kind
 
-proc `shl`*(a,b: DeliNode): DeliNode =
+proc `shl`*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt( a.intVal shl b.intVal )
     else: discard
   todo "shl ", a.kind, " by ", b.kind
 
-proc `shr`*(a,b: DeliNode): DeliNode =
+proc `shr`*(a,b: DeliValue): DeliValue =
   if a.kind == b.kind:
     case a.kind
     of dkInteger: return DKInt( a.intVal shr b.intVal )

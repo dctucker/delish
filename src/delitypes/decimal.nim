@@ -144,19 +144,19 @@ proc `>`*(a0, b0: Decimal): bool =
 converter toFloat*(a: Decimal): float =
   return a.whole.float + a.fraction.float / E10(a.decimals).float
 
-proc dFrac(nodes: varargs[DeliNode]): DeliNode =
+proc dFrac(nodes: varargs[DeliValue]): DeliValue =
   pluralMaybe(node):
     DKInt(node.decVal.fraction)
 
-proc dDenom(nodes: varargs[DeliNode]): DeliNode =
+proc dDenom(nodes: varargs[DeliValue]): DeliValue =
   pluralMaybe(node):
     DKInt(E10(node.decVal.decimals))
 
-proc dExponent(nodes: varargs[DeliNode]): DeliNode =
+proc dExponent(nodes: varargs[DeliValue]): DeliValue =
   pluralMaybe(node):
     DKInt(node.decVal.decimals)
 
-let DecimalFunctions*: Table[string, proc(nodes: varargs[DeliNode]): DeliNode {.nimcall.} ] = {
+let DecimalFunctions*: Table[string, proc(nodes: varargs[DeliValue]): DeliValue {.nimcall.} ] = {
   "frac": dFrac,
   "denominator": dDenom,
   "exponent": dExponent,

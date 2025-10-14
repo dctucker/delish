@@ -29,7 +29,7 @@ let TypeFunctions: TypeFunctionTable = {
   dkDateTime: DateTimeFunctions,
 }.toTable
 
-proc typeFunction*(kind: DeliKind, op: DeliNode): DeliFunction =
+proc typeFunction*(kind: DeliKind, op: DeliValue): DeliFunction =
   assert op.kind == dkIdentifier
   TypeFunctions[kind][op.id]
 
