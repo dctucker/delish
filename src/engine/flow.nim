@@ -123,7 +123,6 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
   if loop.list_node == nil:
     let top_line = -loop.line
     let end_line = -code.sons[^1].line - 1
-    let counter  = DKVar(".counter")
 
     var jump_break    = DKJump(end_line + 1)
     var jump_continue = DKJump(end_line + 1)

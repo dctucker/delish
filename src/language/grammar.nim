@@ -48,7 +48,6 @@ proc simplifyBody(body: string): string {.compileTime.} =
 
 proc getRule(name: string): string {.compileTime.} =
   var found = false
-  var body = ""
   for x in grammar_lines:
     if x.startsWith(name & " "):
       found = true

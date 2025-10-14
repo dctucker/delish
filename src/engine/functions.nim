@@ -17,7 +17,7 @@ proc evalTypeFunction(engine: Engine, ty: DeliKind, fun: DeliNode, args: seq[Del
     return fn(nextArgs)
   except ValueError as e:
     engine.runtimeError(e.msg)
-  except KeyError as e:
+  except KeyError:
     engine.runtimeError("Unknown type function: ", $ty, ".", $fun.id)
 
 proc evalValueFunction(engine: Engine, value, id: DeliNode, args: seq[DeliNode]): DeliNode =

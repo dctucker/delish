@@ -74,5 +74,5 @@ proc parseJsonString*(str: string): DeliValue =
   try:
     let js = parseJson(str)
     return assembleJson(js)
-  except JsonParsingError as e:
+  except JsonParsingError:
     return DKError(0)

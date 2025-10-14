@@ -37,7 +37,6 @@ proc evalVarDeref(engine: Engine, vard: DeliNode): DeliNode =
   for son in vard.sons[1 .. ^1]:
     case result.kind
     of dkObject, dkRan:
-      let kind = ($result.kind)[2 .. ^1]
       let str = son.toString()
       if str notin result.table:
         engine.runtimeError("$" & variable.varName & " does not contain \"" & str & "\"")

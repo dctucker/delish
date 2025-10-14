@@ -215,18 +215,36 @@ proc dTest(nodes: varargs[DeliValue]): DeliValue =
       raise newException(ValueError, "Unsupported test argument: " & op.kind.name & ":" & $op)
   else: discard
 
-proc dPwUid(nodes: varargs[DeliValue]): DeliValue =
+proc dUserName(nodes: varargs[DeliValue]): DeliValue =
   argvars
-  nextarg dkIntegerKinds
+  shift
   maxarg
-  let user = getpwuid(arg.intVal.Uid)
+
+  var uid: int
+  if arg.kind in dkIntegerKinds:
+    uid = arg.intVal
+  elif arg.kind == dkObject:
+    uid = arg.table["uid"].intVal
+  else:
+    argerr "Unknown user argument: ", $arg
+
+  let user = getpwuid(uid.Uid)
   return DKStr($user.pw_name)
 
-proc dGrGid(nodes: varargs[DeliValue]): DeliValue =
+proc dGroupName(nodes: varargs[DeliValue]): DeliValue =
   argvars
-  nextarg dkIntegerKinds
+  shift
   maxarg
-  let group = getgrgid(arg.intVal.Gid)
+
+  var gid: int
+  if arg.kind in dkIntegerKinds:
+    gid = arg.intVal
+  elif arg.kind == dkObject:
+    gid = arg.table["gid"].intVal
+  else:
+    argerr "Unknown group argument: ", $arg
+
+  let group = getgrgid(gid.Gid)
   return DKStr($group.gr_name)
 
 converter toObject(st: Stat): DeliValue =
@@ -246,8 +264,8 @@ converter toObject(st: Stat): DeliValue =
     "blocks":  DKInt(st.st_blocks),
   })
   result.table["test"] = DKCallable(dTest, @[result])
-  result.table["user"] = DKCallable(dPwUid, @[result.table["uid"]])
-  result.table["group"] = DKCallable(dGrGid, @[result.table["gid"]])
+  result.table["user"] = DKCallable(dUserName, @[result])
+  result.table["group"] = DKCallable(dGroupName, @[result])
 
 proc statObj(path: DeliValue): DeliValue {.inline.} =
   var st = Stat()

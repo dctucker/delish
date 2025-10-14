@@ -258,8 +258,8 @@ when deepDebug:
     cToken= "\27[0;34m"
     cNorm = "\27[0m"
     cClear= "\27[J"
-    cUp   = "\27[A"
-    cDown = "\27[B"
+    #cUp   = "\27[A"
+    #cDown = "\27[B"
 
   var lastpos = -1
 

@@ -10,7 +10,6 @@ proc doBlock(engine: Engine, node: DeliNode) {.inline.} =
   engine.debugNext()
 
 proc doStmt(engine: Engine, s: DeliNode) =
-  let nsons = s.sons.len()
   case s.kind
 
   of dkBlock,
