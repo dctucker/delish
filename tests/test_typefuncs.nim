@@ -47,11 +47,11 @@ suite "type functions":
 
   test "Object.keys":
     let fn = typeFunction(dkObject, DKId("keys"))
-    check fn(DeliObject([
-      ("1", DKStr("1")),
-      ("2", DKStr("2")),
-      ("3", DKStr("3")),
-    ])) == arr123s
+    check fn(DKObject({
+      "1": DKStr("1"),
+      "2": DKStr("2"),
+      "3": DKStr("3"),
+    })) == arr123s
 
   test "Path.stat":
     let fn = typeFunction(dkPath, DKId("stat"))

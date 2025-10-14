@@ -1,9 +1,6 @@
 converter toDeliNode*(kind: DeliKind): DeliNode {.inline.} =
   return DeliNode(kind: kind)
 
-proc deliNone*(): DeliNode =
-  return DeliNode(kind: dkNone, none: true)
-
 proc addSon*(parent: DeliNode, node: DeliNode) =
   node.parent = parent
   #if node.parents.len == 0:
@@ -14,20 +11,11 @@ proc addSons*(parent: DeliNode, nodes: varargs[DeliNode]) =
   for node in nodes:
     parent.addSon node
 
-proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
-  result = DeliNode(kind: kind)
-  result.addSons nodes
 
-proc DKArray*(nodes: varargs[DeliNode]): DeliValue =
+### Values ###
+
+proc DKArray*(nodes: varargs[DeliValue]): DeliValue =
   result = DeliNode(kind: dkArray)
-  result.addSons nodes
-
-proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
-  result = DK( dkExpr )
-  result.addSons nodes
-
-proc DKExprList*(nodes: varargs[DeliNode]): DeliNode =
-  result = DK( dkExprList )
   result.addSons nodes
 
 proc DKArgShort*(argName: string): DeliValue =
@@ -48,12 +36,6 @@ proc DKId*(id: string): DeliValue =
 
 proc DKVar*(varName: string): DeliValue =
   return DeliValue(kind: dkVariable, varName: varName)
-
-proc DKVarStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
-  return DK( dkVariableStmt, DKVar(v), DK( op ), DKExpr(val) )
-
-proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
-  return DK( dkLocalStmt, DKVar(v), DK( op ), DKExpr(val) )
 
 proc DKInt*(intVal: int): DeliValue =
   return DeliValue(kind: dkInteger, intVal: intVal)
@@ -99,20 +81,12 @@ proc DKBool*(boolVal: bool): DeliValue =
 proc deliTrue* (): DeliValue = DKBool(true)
 proc deliFalse*(): DeliValue = DKBool(false)
 
-proc DKLazy*(node: DeliNode): DeliNode =
-  return DeliNode(kind: dkLazy, sons: @[node])
-
-proc DKNotNone*(node: DeliNode): DeliNode =
-  result = DK(dkBoolExpr, node, DK(dkNeOp), deliNone())
-
 proc DKStr*(strVal: string): DeliValue =
   return DeliValue(kind: dkString, strVal: strVal)
 
 proc DKStream*(intVal: int, args: varargs[DeliValue]): DeliValue =
   result = DeliValue(kind: dkStream, intVal: intVal)
   result.addSons args
-
-proc DKOut*(): DeliNode = DKStream(0, DK(dkStreamOut))
 
 proc DKRan*(): DeliValue =
   return DeliValue(kind: dkRan, table: {
@@ -125,6 +99,51 @@ proc DKRan*(): DeliValue =
 
 proc DKPath*(strVal: string): DeliValue =
   return DeliValue(kind: dkPath, strVal: strVal)
+
+let DKTrue*  = DeliValue(kind: dkBoolean, boolVal: true)
+let DKFalse* = DeliValue(kind: dkBoolean, boolVal: false)
+
+proc DKObject*(table: DeliTable): DeliValue =
+  return DeliValue(kind: dkObject, table: table)
+
+proc DKRegex*(pattern: string): DeliValue =
+  return DeliValue(kind: dkRegex, pattern: pattern)
+
+proc DKObject*(table: openArray[tuple[key: string, val: DeliValue]]): DeliValue =
+  return DeliValue(kind: dkObject, table: table.toTbl)
+
+proc DKNone*(): DeliValue =
+  return dkNone
+
+
+### Nodes ###
+
+proc deliNone*(): DeliNode =
+  return DeliNode(kind: dkNone, none: true)
+
+proc DK*(kind: DeliKind, nodes: varargs[DeliNode]): DeliNode =
+  result = DeliNode(kind: kind)
+  result.addSons nodes
+
+proc DKExpr*(nodes: varargs[DeliNode]): DeliNode =
+  result = DK( dkExpr )
+  result.addSons nodes
+
+proc DKExprList*(nodes: varargs[DeliNode]): DeliNode =
+  result = DK( dkExprList )
+  result.addSons nodes
+
+proc DKVarStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
+  return DK( dkVariableStmt, DKVar(v), DK( op ), DKExpr(val) )
+
+proc DKLocalStmt*(v: string, op: DeliKind, val: DeliNode): DeliNode =
+  return DK( dkLocalStmt, DKVar(v), DK( op ), DKExpr(val) )
+
+proc DKLazy*(node: DeliNode): DeliNode =
+  return DeliNode(kind: dkLazy, sons: @[node])
+
+proc DKNotNone*(node: DeliNode): DeliNode =
+  result = DK(dkBoolExpr, node, DK(dkNeOp), deliNone())
 
 proc DKStmt*(kind: DeliKind, args: varargs[DeliNode]): DeliNode =
   return DK( dkStatement, DK( kind, args ) )
@@ -161,17 +180,4 @@ proc DKType*(kind: DeliKind): DeliNode =
 proc DKIter*(gen: DeliGenerator): DeliNode =
   return DeliNode(kind: dkIterable, generator: gen)
 
-let DKTrue*  = DeliValue(kind: dkBoolean, boolVal: true)
-let DKFalse* = DeliValue(kind: dkBoolean, boolVal: false)
 
-proc DKObject*(table: DeliTable): DeliValue =
-  return DeliValue(kind: dkObject, table: table)
-
-proc DKRegex*(pattern: string): DeliValue =
-  return DeliValue(kind: dkRegex, pattern: pattern)
-
-proc DeliObject*(table: openArray[tuple[key: string, val: DeliValue]]): DeliValue =
-  return DeliValue(kind: dkObject, table: table.toTbl)
-
-proc DKNone*(): DeliValue =
-  return dkNone

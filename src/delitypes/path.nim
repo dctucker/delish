@@ -216,21 +216,21 @@ proc dTest(nodes: varargs[DeliValue]): DeliValue =
   else: discard
 
 converter toObject(st: Stat): DeliValue =
-  result = DeliObject([
-    ("dev",     DKInt(st.st_dev.int)),
-    ("ino",     DKInt(st.st_ino.int)),
-    ("mode",    DKInt(st.st_mode.int)),
-    ("nlink",   DKInt(st.st_nlink.int)),
-    ("uid",     DKInt(st.st_uid.int)),
-    ("gid",     DKInt(st.st_gid.int)),
-    ("rdev",    DKInt(st.st_rdev.int)),
-    ("size",    DKInt(st.st_size)),
-    ("atime",   DKTime(st.st_atim)),
-    ("mtime",   DKTime(st.st_mtim)),
-    ("ctime",   DKTime(st.st_ctim)),
-    ("blksize", DKInt(st.st_blksize)),
-    ("blocks",  DKInt(st.st_blocks)),
-  ])
+  result = DKObject({
+    "dev":     DKInt(st.st_dev.int),
+    "ino":     DKInt(st.st_ino.int),
+    "mode":    DKInt(st.st_mode.int),
+    "nlink":   DKInt(st.st_nlink.int),
+    "uid":     DKInt(st.st_uid.int),
+    "gid":     DKInt(st.st_gid.int),
+    "rdev":    DKInt(st.st_rdev.int),
+    "size":    DKInt(st.st_size),
+    "atime":   DKTime(st.st_atim),
+    "mtime":   DKTime(st.st_mtim),
+    "ctime":   DKTime(st.st_ctim),
+    "blksize": DKInt(st.st_blksize),
+    "blocks":  DKInt(st.st_blocks),
+  })
   result.table["test"] = DKCallable(dTest, @[result])
 
 proc statObj(path: DeliValue): DeliValue {.inline.} =

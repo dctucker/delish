@@ -25,7 +25,7 @@ suite "cast":
   let num = DKInt(1)
   let boo = DKTrue
   let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
-  let obj = DeliObject({"onions": DKStr("fresh")})
+  let obj = DKObject({"onions": DKStr("fresh")})
   let reg = DKRegex("[A-Za-z0-9]")
   let eam = DKStream(1)
 

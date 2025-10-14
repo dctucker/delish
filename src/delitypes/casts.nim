@@ -170,22 +170,22 @@ proc toObject*(src: DeliValue): DeliValue =
     todo "toObject parse ", src.kind
     deliNone()
   of dkArray:
-    var obj = DeliObject([])
+    var obj = DKObject({:})
     var i = 0
     for item in src.sons:
       obj.table[$i] = item
       i += 1
     obj
   of dkObject:     DKObject(src.table) # explicit copy needed?
-  of dkIdentifier: DeliObject([(src.id     , DKLazy(src))]) # TODO evaluate value
-  of dkVariable:   DeliObject([(src.varName, DKLazy(src))]) # TODO evaluate value
-  of dkArg:        DeliObject([(src.argName, DKLazy(src))]) # TODO evaluate value
+  of dkIdentifier: DKObject([(src.id     , DKLazy(src))]) # TODO evaluate value
+  of dkVariable:   DKObject([(src.varName, DKLazy(src))]) # TODO evaluate value
+  of dkArg:        DKObject([(src.argName, DKLazy(src))]) # TODO evaluate value
   of dkInt8,
      dkInt10,
      dkInt16,
-     dkInteger:    DeliObject([("int", DKInt(src.intVal))])
-  of dkBoolean:    DeliObject([("bool", DKBool(src.boolVal))])
-  of dkStream:     DeliObject([($src.intval, deliNone())])
+     dkInteger:    DKObject({"int": DKInt(src.intVal)})
+  of dkBoolean:    DKObject({"bool": DKBool(src.boolVal)})
+  of dkStream:     DKObject({$src.intval: deliNone()})
   else: raise Incompatible(dkObject, src)
 
 proc toRegex*(src: DeliValue): DeliValue =
