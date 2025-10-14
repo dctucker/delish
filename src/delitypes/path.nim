@@ -215,6 +215,20 @@ proc dTest(nodes: varargs[DeliValue]): DeliValue =
       raise newException(ValueError, "Unsupported test argument: " & op.kind.name & ":" & $op)
   else: discard
 
+proc dPwUid(nodes: varargs[DeliValue]): DeliValue =
+  argvars
+  nextarg dkIntegerKinds
+  maxarg
+  let user = getpwuid(arg.intVal.Uid)
+  return DKStr($user.pw_name)
+
+proc dGrGid(nodes: varargs[DeliValue]): DeliValue =
+  argvars
+  nextarg dkIntegerKinds
+  maxarg
+  let group = getgrgid(arg.intVal.Gid)
+  return DKStr($group.gr_name)
+
 converter toObject(st: Stat): DeliValue =
   result = DKObject({
     "dev":     DKInt(st.st_dev.int),
@@ -232,6 +246,8 @@ converter toObject(st: Stat): DeliValue =
     "blocks":  DKInt(st.st_blocks),
   })
   result.table["test"] = DKCallable(dTest, @[result])
+  result.table["user"] = DKCallable(dPwUid, @[result.table["uid"]])
+  result.table["group"] = DKCallable(dGrGid, @[result.table["gid"]])
 
 proc statObj(path: DeliValue): DeliValue {.inline.} =
   var st = Stat()
