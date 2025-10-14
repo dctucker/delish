@@ -21,7 +21,7 @@ suite "flow control":
 
 
     node = parsed.traverse(0,0,0,2)
-    node.sons[0] = deliFalse()
+    node.sons[0] = DKBool(false)
 
     engine = newEngine(parsed, 0)
     discard engine.doNext()

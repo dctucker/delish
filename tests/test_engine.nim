@@ -159,14 +159,14 @@ suite "engine":
 
   test "conditionals":
     DKScript(
-      DKVarStmt("y", dkAssignOp, DKFalse),
+      DKVarStmt("y", dkAssignOp, DKBool(false)),
       DKVarStmt("x", dkAssignOp, DKInt(1)),
       DK( dkConditional,
         DK( dkCondition, DK( dkComparison,
           DK( dkGtOp ), DKVar("x"), DKInt(0)
         )),
         DK( dkCode,
-          DKVarStmt("y", dkAssignOp, DKTrue),
+          DKVarStmt("y", dkAssignOp, DKBool(true)),
         )
       )
     )

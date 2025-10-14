@@ -209,7 +209,7 @@ proc evaluate*(engine: Engine, val: DeliNode): DeliNode =
   of dkComparison:   return engine.evalComparison(val.sons[0], val.sons[1], val.sons[2])
   of dkBoolNot:      return not engine.evaluate(val.sons[0]).toBoolean()
   of dkBitNot:       return engine.evalBitNot(val.sons[0])
-  of dkElse:         return deliTrue()
+  of dkElse:         return DKBool(true)
 
   of dkRunStmt:      return engine.doRun(val)
   of dkFunctionCall: return engine.evalFunctionCall(val.sons[0], val.sons[1 .. ^1])

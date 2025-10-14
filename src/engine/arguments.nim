@@ -113,7 +113,7 @@ proc initArguments(engine: Engine, scr: DeliNode) =
         engine.setupError("Unknown argument: " & arg.long_name)
       else:
         if arg.value.isNone():
-          arg.value = deliTrue()
+          arg.value = DKBool(true)
         f.value = arg.value
   debug 3:
     engine.printArguments()

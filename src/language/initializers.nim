@@ -78,9 +78,6 @@ proc DKDateTime*(decVal: Decimal): DeliValue =
 proc DKBool*(boolVal: bool): DeliValue =
   return DeliValue(kind: dkBoolean, boolVal: boolVal)
 
-proc deliTrue* (): DeliValue = DKBool(true)
-proc deliFalse*(): DeliValue = DKBool(false)
-
 proc DKStr*(strVal: string): DeliValue =
   return DeliValue(kind: dkString, strVal: strVal)
 
@@ -99,9 +96,6 @@ proc DKRan*(): DeliValue =
 
 proc DKPath*(strVal: string): DeliValue =
   return DeliValue(kind: dkPath, strVal: strVal)
-
-let DKTrue*  = DeliValue(kind: dkBoolean, boolVal: true)
-let DKFalse* = DeliValue(kind: dkBoolean, boolVal: false)
 
 proc DKObject*(table: DeliTable): DeliValue =
   return DeliValue(kind: dkObject, table: table)

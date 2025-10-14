@@ -57,7 +57,7 @@ proc toBoolean*(src: DeliValue): DeliValue =
   of dkObject:      DKBool( src.table.len > 0 )
   of dkRegex:       raise Incompatible(dkBoolean, src)
   of dkStream:      DKLazy(DKNotNone(src)) # TODO src.intVal in engine.fds
-  of dkNone:        deliFalse()
+  of dkNone:        DKBool(false)
   else:
     todo "toBoolean ", src.kind
     deliNone()

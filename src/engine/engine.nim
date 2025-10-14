@@ -165,7 +165,7 @@ proc doInclude(engine: Engine, included: DeliNode) =
 proc doIncludeStmt(engine: Engine, stmt: DeliNode) =
   if stmt.sons.len == 1:
     engine.doInclude(stmt.sons[0])
-    stmt.addSon DKTrue
+    stmt.addSon DKBool(true)
 
 proc doIncludes(engine: Engine, node: DeliNode) =
   case node.kind:

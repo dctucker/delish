@@ -23,7 +23,7 @@ suite "cast":
   let arg = DKArgLong("mustard")
   let pat = DKPath("./olives")
   let num = DKInt(1)
-  let boo = DKTrue
+  let boo = DKBool(true)
   let arr = DK(dkArray, DKStr("mayo"), DKStr("lettuce"))
   let obj = DKObject({"onions": DKStr("fresh")})
   let reg = DKRegex("[A-Za-z0-9]")

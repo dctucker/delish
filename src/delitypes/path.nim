@@ -460,15 +460,15 @@ proc dMkdir(nodes: varargs[DeliValue]): DeliValue =
           if st.isDir: continue
           else:
             #echo "not a dir: ", dir
-            return deliFalse()
+            return DKBool(false)
         if mkdir(dir.cstring, modeval.Mode) != 0:
           #echo "unable to mkdir: ", dir
-          return deliFalse()
+          return DKBool(false)
     if mkdir(path.cstring, modeval.Mode) != 0:
       #echo "unable to mkdir: ", path
-      return deliFalse()
+      return DKBool(false)
 
-  return deliTrue()
+  return DKBool(true)
 
 let PathFunctions*: Table[string, proc(nodes: varargs[DeliValue]): DeliValue {.nimcall.} ] = {
   "test": dTest,
