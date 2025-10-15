@@ -44,7 +44,8 @@ template nextopt*(default: DeliValue) =
     express
     arg_i += 1
     if arg.kind != default.kind:
-      raise newException(ValueError, "expected " & default.kind.name & ", not " & arg.kind.name)
+      if default.kind in dkIntegerKinds and arg.kind notin dkIntegerKinds:
+        raise newException(ValueError, "expected " & default.kind.name & ", not " & arg.kind.name)
 
 template maxarg*() =
   if nodes.len > arg_i:

@@ -504,9 +504,11 @@ Timezone      <- <  [-+] [0-2] [0-9] ':'? [0-6] [0-9] / 'Z' >        { NS( Timez
 Integer       <-  &"0x"  h:Int16                                     { $$ = h; }
               /   &'0'   o:Int8                                      { $$ = o; }
               /   !'0'   d:Int10                                     { $$ = d; }
+              /          z:Int0                                      { $$ = z; }
 Int16         <- < "0x" [0-9A-Fa-f]+ >                               { NS( Int16 ); }
-Int8          <- < '0' !'x' [0-7]* >                                 { NS( Int8  ); }
+Int8          <- < '0' !'x' [0-7]+ >                                 { NS( Int8  ); }
 Int10         <- < [0-9]+ >                                          { NS( Int10 ); }
+Int0          <- < '0' >                                             { NS( Integer ); }
 
 Path          <- < ("."* "/" C+ ) / "." >                            { NS( Path ); }
 Variable      <- '$' < ( W (W / '-')* ) / '@' >                      { NS( Variable ); }

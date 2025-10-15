@@ -105,6 +105,8 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
   let c0 = callable.sons[0]
   if callable.sons.len == 1:
     return c0
+  if c0.kind == dkIterable:
+    return c0
 
   let id = callable.sons[1]
 
@@ -144,6 +146,7 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
       return DK(dkCallable, deref, id)
     else:
       return varFunctionCall(deref, id)
+
   else:
     if c0.kind in dkTypeKinds:
       return DK(dkFunctionCall, DK(dkCallable, DKType(c0.kind), id), c0)
@@ -236,6 +239,9 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
       debug 1:
         echo "calling ", next, " with args ", nextArgs
       return next.function(nextArgs)
+
+  of dkIterable:
+    return c
 
   else:
     discard

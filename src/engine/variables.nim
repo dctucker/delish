@@ -129,7 +129,11 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       val
     debug 3:
       echo variable, " += ", value.repr
-    engine.varAssignLazy(key, op, variable + value)
+    if variable.kind in dkIntegerKinds:
+      let eval = engine.evaluate(DK(dkMathExpr, dkAddOp, variable, value))
+      engine.varAssignLazy(key, op, eval)
+    else:
+      engine.varAssignLazy(key, op, variable + value)
   of dkRemoveOp:
     let variable = engine.getVariable(key.varName)
     let value = if val.kind == dkVarDeref:

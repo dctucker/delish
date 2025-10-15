@@ -1,0 +1,9 @@
+#!/usr/bin/delish
+
+$j = 0
+for $i in Array.seq 1 9 {
+  $j += 1
+  if $i != $j {
+    return 1
+  }
+}

@@ -19,6 +19,8 @@ proc parseNanoSecond*(str: string): int =
   result = parseInt(str.alignLeft(9, '0'))
 
 proc parseInt10*(str: string): int =
+  if str.len > 1 and str[0] == '0':
+    raise newException(SetupError, "decimal integers do not start with 0")
   result = parseInt(str)
 
 proc parseInteger*(str: string): int =
