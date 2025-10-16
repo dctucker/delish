@@ -108,7 +108,10 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
   if c0.kind == dkIterable:
     return c0
 
-  let id = callable.sons[1]
+  var id = callable.sons[1]
+  if id.kind in {dkVariable, dkVarDeref}:
+    id = engine.evaluate(id)
+
 
   #debug 1:
   #  echo "evalCallable ", c0.kind, "..."
@@ -210,11 +213,12 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
         return c.sons[0].sons[index.intVal]
 
     else:
+      echo "got ", c.sons[0].repr
       discard
 
     c = engine.evalCallable(c)
     debug 1:
-      echo "evalCallback returned ", c.repr
+      echo "evalCallable returned ", c.repr
 
   case c.kind
 

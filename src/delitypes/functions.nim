@@ -27,6 +27,7 @@ let TypeFunctions: TypeFunctionTable = {
   dkString: StringFunctions,
   dkDecimal: DecimalFunctions,
   dkDateTime: DateTimeFunctions,
+  dkIterable: IterableFunctions,
 }.toTable
 
 proc typeFunction*(kind: DeliKind, op: DeliValue): DeliFunction =

@@ -126,7 +126,10 @@ proc doForLoop(engine: Engine, loop: DeliNode) =
 
     var jump_break    = DKJump(end_line + 1)
     var jump_continue = DKJump(end_line + 1)
-    var itercall = DK(dkFunctionCall, DK(dkCallable, iter.sons[0], DKId("iter")))
+    var itercall = if iter.sons[0].kind == dkIterable:
+        iter.sons[0]
+      else:
+        DK(dkFunctionCall, DK(dkCallable, iter.sons[0], DKId("iter")))
     var iternext = DKInner( -variable.line,
       DK(dkVariableStmt, variable, DK(dkAssignOp), DKVar(".iter")), # $var = $.iter
     )

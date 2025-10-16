@@ -123,10 +123,13 @@ proc doAssign(engine: Engine, key: DeliNode, op: DeliNode, expr: DeliNode) =
       echo key, " = " & value.repr
   of dkAppendOp:
     let variable = engine.getVariable(key.varName)
-    let value = if val.kind == dkVarDeref:
-      engine.evalVarDeref(val)
-    else:
-      val
+    let value = case val.kind
+      of dkVarDeref:
+        engine.evalVarDeref(val)
+      of dkFunctionCall:
+        engine.evaluate(val)
+      else:
+        val
     debug 3:
       echo variable, " += ", value.repr
     if variable.kind in dkIntegerKinds:
