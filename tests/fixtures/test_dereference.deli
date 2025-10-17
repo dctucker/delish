@@ -1,0 +1,12 @@
+#!/usr/bin/delish
+
+$a = [1,2,3]
+$b = $a.1
+if $b != 2 {
+  return 1
+}
+$c = 2
+$d = $a.$c
+if $d != 3 {
+  return 1
+}
