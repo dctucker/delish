@@ -147,6 +147,8 @@ proc evalCallable(engine: Engine, callable: DeliNode): DeliNode =
       todo "evalCallable dkVarDeref dkCode"
     of dkObject:
       return DK(dkCallable, deref, id)
+    of dkArray:
+      return DK(dkCallable, deref, id)
     else:
       return varFunctionCall(deref, id)
 
@@ -213,7 +215,7 @@ proc evalFunctionCall(engine: Engine, callable: DeliNode, args: seq[DeliNode]): 
         return c.sons[0].sons[index.intVal]
 
     else:
-      echo "got ", c.sons[0].repr
+      #echo "got ", c.sons[0].repr
       discard
 
     c = engine.evalCallable(c)
